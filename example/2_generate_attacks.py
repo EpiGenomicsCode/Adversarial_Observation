@@ -7,6 +7,30 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os 
 
+#============ cute visualizations===========
+# define plot settings dictionary
+plot_settings = {
+    'font.size': 16,
+    'xtick.major.size': 7,
+    'xtick.major.width': 1.5,
+    'ytick.major.size': 7,
+    'ytick.major.width': 1.5,
+    'xtick.minor.size': 4,
+    'xtick.minor.width': 1,
+    'ytick.minor.size': 4,
+    'ytick.minor.width': 1,
+    'axes.linewidth': 1.5,
+    'legend.frameon': False,
+    'xtick.direction': 'in',
+    'ytick.direction': 'in',
+    'xtick.top': True,
+    'ytick.right': True
+}
+
+# update plot settings
+plt.rcParams.update(plot_settings)
+#=========================================
+
 # load the data
 def loadData():
     """
@@ -59,8 +83,9 @@ def main():
         break
 
     # add a batch dimension
-    img = data[0].unsqueeze(0)
-    label = target[0]
+    random = np.random.randint(0, len(data))
+    img = data[random].unsqueeze(0)
+    label = target[random]
 
     os.makedirs('FGSM', exist_ok=True)   
     # generate the attack
@@ -69,13 +94,12 @@ def main():
         # create a 1x2 subplot where the first image is the original image and the second is the perturbed image
         fig, ax = plt.subplots(1, 2)
         ax[0].imshow(img.reshape(28,28), cmap='gray')
-        ax[0].set_title('Original Image')
+        condifence = model(img)[0].detach().numpy()[label]
+        ax[0].set_title(f'Original\nConf.: {condifence:.4f}')
 
-        attacked = per + img.numpy()
-        attacked = attacked.reshape(28, 28)
-
-        ax[1].imshow(attacked, cmap='gray')
-        ax[1].set_title('Perturbed Image')
+        ax[1].imshow(per.reshape(28,28), cmap='gray')
+        condifence = model(torch.tensor(per).to(torch.float32).reshape(1,1, 28,28))[0].detach().numpy()[label]
+        ax[1].set_title(f'Adversarial\nConf.: {condifence:.4f}')
         plt.savefig(f'FGSM/eps_{eps}.png')
 
     os.makedirs('Activation', exist_ok=True)

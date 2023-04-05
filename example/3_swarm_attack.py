@@ -10,6 +10,31 @@ import pickle
 import os
 from sklearn.decomposition import PCA
 
+
+#============ cute visualizations===========
+# define plot settings dictionary
+plot_settings = {
+    'font.size': 16,
+    'xtick.major.size': 7,
+    'xtick.major.width': 1.5,
+    'ytick.major.size': 7,
+    'ytick.major.width': 1.5,
+    'xtick.minor.size': 4,
+    'xtick.minor.width': 1,
+    'ytick.minor.size': 4,
+    'ytick.minor.width': 1,
+    'axes.linewidth': 1.5,
+    'legend.frameon': False,
+    'xtick.direction': 'in',
+    'ytick.direction': 'in',
+    'xtick.top': True,
+    'ytick.right': True
+}
+
+# update plot settings
+plt.rcParams.update(plot_settings)
+#=========================================
+
 # ==== Global Variables ====
 # The value of the column we want to optimize for
 startValue: int = 0
@@ -83,19 +108,19 @@ def plotInfo(swarm, model, dirname, epoch):
     This function takes a swarm and plots the average position of the swarm.
     """
     # plot the average position of the swarm
-    average = torch.mean(torch.stack([i.position_i for i in swarm.swarm]), dim=0)
-    confidence = model(torch.reshape(average, (1, 1, 28, 28)).to(torch.float32)).detach().numpy()[0][endValue]
-    plt.title(f'Average Position of Swarm at Epoch {epoch} with Confidence {confidence}')
-    plt.imshow(average.reshape(28, 28).detach().numpy(), cmap='gray')
-    plt.colorbar()
-    plt.savefig(f'./artifacts/{dirname}/average_{epoch}.png')
-    plt.clf()
-    plt.close()
+    # average = torch.mean(torch.stack([i.position_i for i in swarm.swarm]), dim=0)
+    # confidence = model(torch.reshape(average, (1, 1, 28, 28)).to(torch.float32)).detach().numpy()[0][endValue]
+    # plt.title(f'Average Position of Swarm at Epoch {epoch} with Confidence {confidence}')
+    # plt.imshow(average.reshape(28, 28).detach().numpy(), cmap='gray')
+    # plt.colorbar()
+    # plt.savefig(f'./artifacts/{dirname}/average_{epoch}.png')
+    # plt.clf()
+    # plt.close()
 
     # plot the best position of the swarm
     best = swarm.pos_best_g
     confidence = model(torch.reshape(best, (1, 1, 28, 28)).to(torch.float32)).detach().numpy()[0][endValue]
-    plt.title(f'Best Position of Swarm at Epoch {epoch} with Confidence {confidence}')
+    plt.title(f'Best Particle\nConf.: {confidence:.3f}')
     plt.imshow(best.reshape(28, 28).detach().numpy(), cmap='gray')
     plt.colorbar()
     plt.savefig(f'./artifacts/{dirname}/best_{epoch}.png')
@@ -112,7 +137,9 @@ def visualizeSwarm(positions, stable, stable_lables,  pca, title, specific=None)
     # plot the swarm in PCA space
     fig = plt.figure(figsize=(10,10))
     ax = fig.add_subplot(111)
-    ax.set_title(title)
+    figtitle = title.split('/')[-1]
+    figtitle = figtitle.replace('_', ' ')
+    ax.set_title(figtitle)
     ax.set_xlabel("PCA 1")
     ax.set_ylabel("PCA 2")
 
