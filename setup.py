@@ -16,7 +16,7 @@ setup(
     long_description=LONG_DESCRIPTION,
     author=["Jamil Gafur", "Study Duck", "Suely Oliveira", "Olivia Lang", "Justin Cha", "William Lai"]
     author_email=["Jamil-gafur@uiowa.edu"]
-    author_email="<your email>",
+    author_email="jamil-gafur@uiowa.edu",
     license='MIT',
     packages=find_packages(),
     install_requires=[torch, numpy, tqdm, pandas, matplotlib, sklearn, os, torchvision, pickle ],
