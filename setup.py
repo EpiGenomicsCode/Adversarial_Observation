@@ -5,7 +5,7 @@ DESCRIPTION = 'This package is used to help with the interpretation and adversar
 LONG_DESCRIPTION = 'The "Adversarial Observation" framework is introduced to address concerns about the fairness and social impact of neural network models by allowing users to attack the network for adversarial resistance. This framework increases the explainability and transparency of the network using an adversarial swarm optimizer, making it more interpretable for stakeholders. The framework has the potential to improve the social impact of neural network models and enhance their effectiveness and efficiency by providing a user-friendly approach to adversarial testing and explainability.'
 
 setup(
-    name="Adversarial_Observation",
+    name="Adversarial-Observation",
     version=VERSION,
     description=DESCRIPTION,
     long_description=LONG_DESCRIPTION,
