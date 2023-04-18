@@ -9,11 +9,11 @@ setup(
     version=VERSION,
     description=DESCRIPTION,
     long_description=LONG_DESCRIPTION,
-    author=["Jamil Gafur", "Study Duck", "Suely Oliveira", "Olivia Lang", "Justin Cha", "William Lai"],
+    author=["Jamil Gafur", "Study Duck", "Olivia Lang", "Justin Cha","Suely Oliveira", "William Lai"],
     author_email="Jamil-gafur@uiowa.edu",
     license='MIT',
     packages=find_packages(),
-    install_requires=["torch", "numpy", "tqdm", "pandas", "matplotlib", "sklearn", "os", "torchvision" ],
+    install_requires=["torch", "numpy", "tqdm", "pandas", "matplotlib", " scikit-learn", "torchvision" ],
     keywords=['Interpretability', 'Adversarial', 'Explainability', 'Swarm', 'PSO', 'Pytorch', 'Neural Networks', 'Machine Learning', 'Deep Learning'],
     classifiers= [
         "Development Status :: 3 - Alpha",
