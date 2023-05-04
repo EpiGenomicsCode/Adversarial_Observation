@@ -22,4 +22,4 @@ def visualizeGIF(filenames: List[str], output_file: str = 'output.gif') -> None:
     #close the images
     plt.close('all')
     
-    
+

@@ -14,7 +14,7 @@ from sklearn.decomposition import PCA
 #============ cute visualizations===========
 # define plot settings dictionary
 plot_settings = {
-    'font.size': 16,
+    'font.size': 18,
     'xtick.major.size': 7,
     'xtick.major.width': 1.5,
     'ytick.major.size': 7,
@@ -120,10 +120,13 @@ def plotInfo(swarm, model, dirname, epoch):
     # plot the best position of the swarm
     best = swarm.pos_best_g
     confidence = model(torch.reshape(best, (1, 1, 28, 28)).to(torch.float32)).detach().numpy()[0][endValue]
-    plt.title(f'Best Particle\nConf.: {confidence:.3f}')
-    plt.imshow(best.reshape(28, 28).detach().numpy(), cmap='gray')
-    plt.colorbar()
-    plt.savefig(f'./artifacts/{dirname}/best_{epoch}.png')
+    fig, ax = plt.subplots(figsize=(10,10))
+    ax.set_title(f'Model Confidence of 3: {confidence:.3f}', fontsize=20)
+    #  convert plt.imshow for ax 
+    ax.imshow(best.reshape(28, 28).detach().numpy(), cmap='gray')
+    # enable colorbar
+    ax.figure.colorbar(ax.images[0], ax=ax)
+    plt.savefig(f'./artifacts/{dirname}/best_{epoch}.png', bbox_inches='tight')
     plt.clf()
     plt.close()
 
@@ -142,25 +145,34 @@ def visualizeSwarm(positions, stable, stable_lables,  pca, title, specific=None)
     ax.set_title(figtitle)
     ax.set_xlabel("PCA 1")
     ax.set_ylabel("PCA 2")
+    # set ax font size to 20
+    ax.tick_params(axis='both', which='major', labelsize=20)
+    # title font size to 20 
+    ax.title.set_fontsize(20)
+    # label font size to 20
+    ax.xaxis.label.set_fontsize(20)
+    ax.yaxis.label.set_fontsize(20)
+
+    
 
     # plot the stable data
     if specific is None:
         for i in range(10):
-            ax.scatter(stable[stable_lables == i][:,0], stable[stable_lables == i][:,1], c=f'C{i}', alpha=.5, label=i)
+            ax.scatter(stable[stable_lables == i][:,0], stable[stable_lables == i][:,1], c=f'C{i}', alpha=.3, label=i)
     else:
         for i in specific:
-            ax.scatter(stable[stable_lables == i][:,0], stable[stable_lables == i][:,1], c=f'C{i}', alpha=.5, label=i)
+            ax.scatter(stable[stable_lables == i][:,0], stable[stable_lables == i][:,1], c=f'C{i}', alpha=.3, label=i)
 
 
     
     positions = pca.transform(positions.reshape(-1, 28*28))
     # plot the swarm
-    ax.scatter(positions[:,0], positions[:,1], c='black', alpha=.5, marker='x', label='swarm')
+    ax.scatter(positions[:,0], positions[:,1], c='black', alpha=.3, marker='x', label='swarm')
 
     # show the legend
-    plt.legend()
+    plt.legend(fontsize=20)
 
-    plt.savefig(title+".png")
+    plt.savefig(title+".png", bbox_inches='tight')
     plt.clf()
     plt.close()
     
@@ -182,7 +194,7 @@ def main():
     # set sparcity of the inputs to 0
     random_inputs[random_inputs < sparcity] = 0
     # SwarmPSO(model, random_inputs, costFunc, epochs)
-    SwarmPSOVisualize(model, random_inputs, costFunc, epochs, "ran_attack_vis")
+    # SwarmPSOVisualize(model, random_inputs, costFunc, epochs, "ran_attack_vis")
 
     # load the train data using torchvision
     train_data = torchvision.datasets.MNIST('./data', train=True, download=True, transform=torchvision.transforms.Compose([

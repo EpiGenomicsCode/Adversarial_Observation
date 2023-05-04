@@ -13,6 +13,7 @@ setup(
     author_email="Jamil-gafur@uiowa.edu",
     license='MIT',
     packages=find_packages(),
+    python_requires='>=3.6',
     install_requires=["torch", "numpy", "tqdm", "pandas", "matplotlib", " scikit-learn", "torchvision" ],
     keywords=['Interpretability', 'Adversarial', 'Explainability', 'Swarm', 'PSO', 'Pytorch', 'Neural Networks', 'Machine Learning', 'Deep Learning'],
     classifiers= [

@@ -1,6 +1,6 @@
 import Adversarial_Observation
 from Adversarial_Observation.utils import seedEverything, buildCNN
-from Adversarial_Observation.Attacks import fgsm_attack, saliency_map
+from Adversarial_Observation.Attacks import fgsm_attack, activation_map
 import torch
 import torchvision
 import numpy as np
@@ -10,7 +10,7 @@ import os
 #============ cute visualizations===========
 # define plot settings dictionary
 plot_settings = {
-    'font.size': 16,
+    'font.size': 18,
     'xtick.major.size': 7,
     'xtick.major.width': 1.5,
     'ytick.major.size': 7,
@@ -79,8 +79,7 @@ def main():
     epsilon = [.1, .2, .3, .4, .5, .6, .7, .8, .9, 1.0]
 
     # get one image to attack from the test loader
-    for data, target in test_loader:
-        break
+    data, target = next(iter(test_loader))
 
     # add a batch dimension
     random = np.random.randint(0, len(data))
@@ -91,27 +90,37 @@ def main():
     # generate the attack
     for eps in epsilon:
         per = fgsm_attack(img, label, eps, model)
-        # create a 1x2 subplot where the first image is the original image and the second is the perturbed image
-        fig, ax = plt.subplots(1, 2)
-        ax[0].imshow(img.reshape(28,28), cmap='gray')
+        
+
+        plt.imshow(img.reshape(28,28), cmap='gray')
         condifence = model(img)[0].detach().numpy()[label]
-        ax[0].set_title(f'Original\nConf.: {condifence:.4f}')
+        plt.title(f'Original\nConf.: {condifence:.4f}')
+        plt.savefig(f'FGSM/original_eps_{eps}.png',bbox_inches='tight' )
+        plt.clf()
+        plt.close()
+        
+        plt.imshow(per.reshape(28,28), cmap='gray')
+        condifence = model(img)[0].detach().numpy()[label]
+        plt.title(f'Original\nConf.: {condifence:.4f}')
+        plt.savefig(f'FGSM/Perterbation_eps_{eps}.png',bbox_inches='tight' )
+        plt.clf()
+        plt.close()
+        
+        # add the perturbation to the original image
+        per = per + img
 
-        ax[1].imshow(per.reshape(28,28), cmap='gray')
+        plt.imshow(per.reshape(28,28), cmap='gray')
         condifence = model(torch.tensor(per).to(torch.float32).reshape(1,1, 28,28))[0].detach().numpy()[label]
-        ax[1].set_title(f'Adversarial\nConf.: {condifence:.4f}')
-        plt.savefig(f'FGSM/eps_{eps}.png')
+        plt.title(f'Adversarial\nConf.: {condifence:.4f}')
+        plt.savefig(f'FGSM/adver_eps_{eps}.png',bbox_inches='tight' )
+        plt.clf()
+        plt.close()
 
-    os.makedirs('Activation', exist_ok=True)
-    sal = saliency_map(img, model)
+        act = activation_map(img, model)
+        plt.imshow(act.reshape(28,28), cmap='gray')
+        plt.title('Activation Map')
+        plt.savefig(f'FGSM/adver_eps_{eps}_activation.png',bbox_inches='tight' )
 
-    # create a 1x2 subplot where the first image is the original image and the second is the activation map
-    fig, ax = plt.subplots(1, 2)
-    ax[0].imshow(img.reshape(28,28), cmap='gray')
-    ax[0].set_title('Original Image')
-    ax[1].imshow(sal.reshape(28,28), cmap='gray')
-    ax[1].set_title('Activation Map')
-    plt.savefig('Activation/activation.png')
 
 
 if __name__ == '__main__':
