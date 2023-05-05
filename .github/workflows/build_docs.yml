@@ -32,9 +32,8 @@ jobs:
           make clean
           make html
 
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          deploy_key: ${{ secrets.DEPLOY_KEY }}
-          publish_dir: ./docs/build/html
-          cname: mydomain.com # Optional: replace with your custom domain name
+        - name: Deploy to GitHub Pages
+          uses: peaceiris/actions-gh-pages@v4
+          with:
+            deploy_key: ${{ secrets.DEPLOY_KEY }}
+            publish_dir: ./docs/build/html
