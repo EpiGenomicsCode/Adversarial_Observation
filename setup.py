@@ -17,7 +17,10 @@ setup(
     author=["Jamil Gafur", "Study Duck", "Olivia Lang", "Justin Cha", "William Lai"],
     author_email="Jamil-gafur@uiowa.edu",
     license='MIT',
-    packages=find_packages(),
+    packages=[  
+                "Adversarial_Observation", 
+                "Swarm_Observer"
+            ],
     python_requires='>=3.6',
     install_requires=[
                         "imageio",

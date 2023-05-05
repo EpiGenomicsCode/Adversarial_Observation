@@ -13,13 +13,13 @@ class BirdParticle:
             c2 (float): The social weight.
         """
 
-        self.position_i = torch.tensor(position)
-        self.velocity_i = torch.rand(self.position_i.shape) 
+        self.position_i = position.clone()
+        self.velocity_i = torch.rand(position.shape) 
         # copy the current position to the best position
 
         self.history = [self.position_i]
         
-        self.pos_best_i = self.position_i.detach().clone()   # best position individual
+        self.pos_best_i = position.clone()   # best position individual
         self.cost_best_i = -1   # best error individual
         self.cost_i = -1   # error individual
 
