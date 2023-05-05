@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Adversarial_Observation package &mdash; Adversarial_Observation 0.0.1 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Swarm_Observer package" href="Swarm_Observer.html" />
+    <link rel="prev" title="Welcome to Adversarial_Observation’s documentation!" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Adversarial_Observation
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Adversarial_Observation package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-Adversarial_Observation.Attacks">Adversarial_Observation.Attacks module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#Adversarial_Observation.Attacks.activation_map"><code class="docutils literal notranslate"><span class="pre">activation_map()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Adversarial_Observation.Attacks.fgsm_attack"><code class="docutils literal notranslate"><span class="pre">fgsm_attack()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-Adversarial_Observation.utils">Adversarial_Observation.utils module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#Adversarial_Observation.utils.buildCNN"><code class="docutils literal notranslate"><span class="pre">buildCNN()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Adversarial_Observation.utils.seedEverything"><code class="docutils literal notranslate"><span class="pre">seedEverything()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-Adversarial_Observation.visualize">Adversarial_Observation.visualize module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#Adversarial_Observation.visualize.visualizeGIF"><code class="docutils literal notranslate"><span class="pre">visualizeGIF()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-Adversarial_Observation">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="Swarm_Observer.html">Swarm_Observer package</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Adversarial_Observation</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Adversarial_Observation package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/Adversarial_Observation.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="adversarial-observation-package">
+<h1>Adversarial_Observation package<a class="headerlink" href="#adversarial-observation-package" title="Permalink to this heading"></a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this heading"></a></h2>
+</section>
+<section id="module-Adversarial_Observation.Attacks">
+<span id="adversarial-observation-attacks-module"></span><h2>Adversarial_Observation.Attacks module<a class="headerlink" href="#module-Adversarial_Observation.Attacks" title="Permalink to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="Adversarial_Observation.Attacks.activation_map">
+<span class="sig-prename descclassname"><span class="pre">Adversarial_Observation.Attacks.</span></span><span class="sig-name descname"><span class="pre">activation_map</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Module</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="_modules/Adversarial_Observation/Attacks.html#activation_map"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#Adversarial_Observation.Attacks.activation_map" title="Permalink to this definition"></a></dt>
+<dd><p>Generate an activation map for an input data given a pre-trained PyTorch model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_data</strong> (<em>torch.Tensor</em>) – Input data as a PyTorch tensor.</p></li>
+<li><p><strong>model</strong> (<em>torch.nn.Module</em>) – Pre-trained PyTorch model used to generate the activation map.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Activation map for the input data based on the input model.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>activation_map (torch.Tensor)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="Adversarial_Observation.Attacks.fgsm_attack">
+<span class="sig-prename descclassname"><span class="pre">Adversarial_Observation.Attacks.</span></span><span class="sig-name descname"><span class="pre">fgsm_attack</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epsilon</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'cpu'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="_modules/Adversarial_Observation/Attacks.html#fgsm_attack"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#Adversarial_Observation.Attacks.fgsm_attack" title="Permalink to this definition"></a></dt>
+<dd><p>Generates adversarial example using fast gradient sign method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_data</strong> (<em>torch.Tensor</em>) – The input_data to be modified.</p></li>
+<li><p><strong>label</strong> (<em>int</em>) – The true label of the input data.</p></li>
+<li><p><strong>epsilon</strong> (<em>float</em>) – Magnitude of the perturbation added to the input data.</p></li>
+<li><p><strong>model</strong> (<em>torch.nn.Module</em>) – The neural network model.</p></li>
+<li><p><strong>device</strong> (<em>str</em>) – Device to use for the computation.
+default: “cpu”</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>the updated input with the noise added.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>perturbed (torch.Tensor)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-Adversarial_Observation.utils">
+<span id="adversarial-observation-utils-module"></span><h2>Adversarial_Observation.utils module<a class="headerlink" href="#module-Adversarial_Observation.utils" title="Permalink to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="Adversarial_Observation.utils.buildCNN">
+<span class="sig-prename descclassname"><span class="pre">Adversarial_Observation.utils.</span></span><span class="sig-name descname"><span class="pre">buildCNN</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Sequential</span></span></span><a class="reference internal" href="_modules/Adversarial_Observation/utils.html#buildCNN"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#Adversarial_Observation.utils.buildCNN" title="Permalink to this definition"></a></dt>
+<dd><p>Builds a convolutional neural network model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>output_size</strong> (<em>int</em>) – The number of output classes.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A convolutional neural network model with the specified output size.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>model (torch.nn.Sequential)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="Adversarial_Observation.utils.seedEverything">
+<span class="sig-prename descclassname"><span class="pre">Adversarial_Observation.utils.</span></span><span class="sig-name descname"><span class="pre">seedEverything</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/Adversarial_Observation/utils.html#seedEverything"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#Adversarial_Observation.utils.seedEverything" title="Permalink to this definition"></a></dt>
+<dd><p>Seeds the random number generators for Python, PyTorch, and CUDA to make the results reproducible.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>seed</strong> (<em>int</em>) – The seed to use for random number generation.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-Adversarial_Observation.visualize">
+<span id="adversarial-observation-visualize-module"></span><h2>Adversarial_Observation.visualize module<a class="headerlink" href="#module-Adversarial_Observation.visualize" title="Permalink to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="Adversarial_Observation.visualize.visualizeGIF">
+<span class="sig-prename descclassname"><span class="pre">Adversarial_Observation.visualize.</span></span><span class="sig-name descname"><span class="pre">visualizeGIF</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filenames</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'output.gif'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/Adversarial_Observation/visualize.html#visualizeGIF"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#Adversarial_Observation.visualize.visualizeGIF" title="Permalink to this definition"></a></dt>
+<dd><p>Given a list of filenames, generate a GIF file in that order and save it to the specified output file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filenames</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – A list of filenames of the images to include in the GIF.</p></li>
+<li><p><strong>output_file</strong> (<em>str</em>) – The name of the output GIF file (default: ‘output.gif’).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-Adversarial_Observation">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-Adversarial_Observation" title="Permalink to this heading"></a></h2>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="Welcome to Adversarial_Observation’s documentation!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="Swarm_Observer.html" class="btn btn-neutral float-right" title="Swarm_Observer package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Jamil Gafur.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
