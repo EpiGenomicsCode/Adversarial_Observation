@@ -12,6 +12,7 @@ Welcome to Adversarial_Observation's documentation!
 
    Adversarial_Observation
    Swarm_Observer
+   examples
 
 
 Indices and tables

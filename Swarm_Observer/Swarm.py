@@ -29,7 +29,7 @@ class PSO:
             self.swarm.append(BirdParticle(i, w=w, c1=c1, c2=c2))
         self.cost_func = cost_func
         self.model = model
-        self.pos_best_g = i[0].clone().detach()
+        self.pos_best_g = self.swarm[0].position_i.clone()
         self.cos_best_g = self.swarm[0].cost_i
 
     def step(self) -> tuple:

@@ -50,10 +50,10 @@ setup(
     url="https://github.com/EpiGenomicsCode/Adversarial_Observation",
      project_urls={
         'Bug Tracker': 'https://github.com/EpiGenomicsCode/Adversarial_Observation/issues',
-        'Documentation': 'https://example.com/documentation',
+        'Documentation': 'https://epigenomicscode.github.io/Adversarial_Observation/',
         'Source Code': 'https://github.com/EpiGenomicsCode/Adversarial_Observation',
-        'PyPI Page': 'https://pypi.org/project/Adversarial-Observation/',
-        'CI/CD Pipelines': 'https://example.com/ci-cd-pipelines'
+        # 'PyPI Page': 'https://pypi.org/project/Adversarial-Observation/',
+        'CI/CD Pipelines': 'https://github.com/EpiGenomicsCode/Adversarial_Observation/actions'
     },
     classifiers= [
         "Development Status :: 4 - Beta",
