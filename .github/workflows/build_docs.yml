@@ -44,18 +44,19 @@ jobs:
         run: |
           make clean
           make html
+          ls 
 
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
           name: html-artifact
-          path: ./docs/build/html
+          path: ./docs/_build/html
 
       - name: Deploy HTML artifact to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           personal_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./docs/build/html
+          publish_dir: ./docs/_build/html
         env:
           PUBLISH_BRANCH: gh-pages
-          PUBLISH_DIR: ./docs/build/html
+          PUBLISH_DIR: ./docs/_build/html
