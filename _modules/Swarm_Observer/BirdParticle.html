@@ -83,13 +83,13 @@
 <span class="sd">            c2 (float): The social weight.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">position_i</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">position</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">velocity_i</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">position_i</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">position_i</span> <span class="o">=</span> <span class="n">position</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">velocity_i</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">position</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> 
         <span class="c1"># copy the current position to the best position</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">history</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">position_i</span><span class="p">]</span>
         
-        <span class="bp">self</span><span class="o">.</span><span class="n">pos_best_i</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">position_i</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>   <span class="c1"># best position individual</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pos_best_i</span> <span class="o">=</span> <span class="n">position</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>   <span class="c1"># best position individual</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">cost_best_i</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>   <span class="c1"># best error individual</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">cost_i</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>   <span class="c1"># error individual</span>
 

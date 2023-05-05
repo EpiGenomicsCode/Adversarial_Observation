@@ -70,7 +70,7 @@
   <h1>Source code for Swarm_Observer.Swarm</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">Swarm_Observer</span> <span class="kn">import</span> <span class="n">BirdParticle</span>
+<span class="kn">from</span> <span class="nn">Swarm_Observer.BirdParticle</span> <span class="kn">import</span> <span class="n">BirdParticle</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 
 <div class="viewcode-block" id="PSO"><a class="viewcode-back" href="../../Swarm_Observer.html#Swarm_Observer.Swarm.PSO">[docs]</a><span class="k">class</span> <span class="nc">PSO</span><span class="p">:</span>
@@ -99,7 +99,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">swarm</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">BirdParticle</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">w</span><span class="o">=</span><span class="n">w</span><span class="p">,</span> <span class="n">c1</span><span class="o">=</span><span class="n">c1</span><span class="p">,</span> <span class="n">c2</span><span class="o">=</span><span class="n">c2</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">cost_func</span> <span class="o">=</span> <span class="n">cost_func</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">pos_best_g</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">swarm</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">position_i</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pos_best_g</span> <span class="o">=</span> <span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">cos_best_g</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">swarm</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">cost_i</span>
 
 <div class="viewcode-block" id="PSO.step"><a class="viewcode-back" href="../../Swarm_Observer.html#Swarm_Observer.Swarm.PSO.step">[docs]</a>    <span class="k">def</span> <span class="nf">step</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>
