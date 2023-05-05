@@ -4,30 +4,37 @@ import matplotlib.pyplot as plt
 
 def activation_map(input_data: torch.Tensor, model: torch.nn.Module) -> torch.Tensor:
     """
-    Generate an activation map for an input image given a pre-trained PyTorch model.
+    Generate an activation map for an input data given a pre-trained PyTorch model.
 
     Args:
-        input_data (torch.Tensor): Input image as a PyTorch tensor.
+        input_data (torch.Tensor): Input data as a PyTorch tensor.
         model (torch.nn.Module): Pre-trained PyTorch model used to generate the activation map.
 
     Returns:
-        activation_map (torch.Tensor): Activation map for the input image.
+        activation_map (torch.Tensor): Activation map for the input data based on the input model.
     """
-    # Set the model to evaluation mode and enable gradient computation for the input image
+    # Set the model to evaluation mode and enable gradient computation for the input data
     model.eval()
+
+    #  assert it has a batch dimension of 1 
+    assert input_data.shape[0] == 1, "Input data must have a batch dimension of 1"
+    
+    # make sure the input data is on the same device as the model
+    input_data.to(model.device)
+
+    # Enable gradient computation for the input data
     input_data.requires_grad = True
 
-    # Disable gradient computation for all model parameters
-    for param in model.parameters():
-        param.requires_grad = False
-
-    # Make a forward pass through the model and get the predicted class scores for the input image
+    # Make a forward pass through the model and get the predicted class scores for the input data
     preds = model(input_data)
 
-    # Compute the score
-    score = preds[0, torch.argmax(preds)].to(torch.float32)
+    # Get the index corresponding to the maximum predicted class score
+    pred_class_idx = torch.argmax(preds)
 
-    # Compute gradients of the score with respect to the input image pixels
+    # Get the predicted class score corresponding to the maximum predicted class score
+    score = preds[0, pred_class_idx]
+    
+    # Compute gradients of the score with respect to the input data pixels
     score.backward()
 
     # Compute the activation map as the absolute value of the gradients
@@ -36,19 +43,20 @@ def activation_map(input_data: torch.Tensor, model: torch.nn.Module) -> torch.Te
     # Return the activation map
     return activation_map
 
-def fgsm_attack(input_data: torch.Tensor, label: int, epsilon: float, model: torch.nn.Module, device: str = "cpu") -> torch.Tensor:
+def fgsm_Attack(input_data: torch.Tensor, label: int, epsilon: float, model: torch.nn.Module, device: str = "cpu") -> torch.Tensor:
     """
     Generates adversarial example using fast gradient sign method.
 
     Args:
         input_data (torch.Tensor): The input_data to be modified.
-        label (int): The true label of the input image.
-        epsilon (float): Magnitude of the perturbation added to the input image.
+        label (int): The true label of the input data.
+        epsilon (float): Magnitude of the perturbation added to the input data.
         model (torch.nn.Module): The neural network model.
-        device (str): Device to use for the computation. Defaults to "cpu".
+        device (str): Device to use for the computation. 
+            default: "cpu"
 
     Returns:
-        The modified image tensor.
+        perturbed (torch.Tensor): the updated input with the noise added.
     """
     model.eval()
     data = input_data.to(device)
@@ -64,10 +72,9 @@ def fgsm_attack(input_data: torch.Tensor, label: int, epsilon: float, model: tor
     model.zero_grad()
     loss.backward()
 
-    # Create the perturbed image by adjusting each pixel of the input image
+    # Create the perturbed data by adjusting each pixel of the input data
     with torch.no_grad():
         perturbed = data + epsilon * torch.sign(data.grad)
-        perturbed = torch.clamp(perturbed, 0, 1)
 
-    # Return the perturbed image
+    # Return the perturbed data
     return perturbed.detach()

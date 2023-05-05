@@ -1,15 +1,16 @@
 import torch
 import numpy as np
-import pdb
 
 class BirdParticle:
     def __init__(self, position, w=1.0, c1=0.8, c2=0.2, name=None):
         """
         Initializes a particle.
-        :param position: the initial position of the particle
-        :param w: the inertia weight
-        :param c1: the cognitive weight
-        :param c2: the social weight
+
+        Args:
+            position (torch.Tensor): The initial position of the particle.
+            w (float): The inertia weight.
+            c1 (float): The cognitive weight.
+            c2 (float): The social weight.
         """
 
         self.position_i = torch.tensor(position)
@@ -27,13 +28,16 @@ class BirdParticle:
         self.c2 = c2
         self.name = name
 
-    def evaluate(self, costFunc, model):
+    def evaluate(self, costFunc: callable, model: torch.nn.Module):
         """
         Evaluates the current fitness of the particle.
 
         Args:
-        - costFunc (function): a function that calculates the fitness value of the particle
-        - model: the PyTorch model to use for calculating the fitness value
+            costFunc (callable): The cost function to be maximized.
+                This should be a function that takes in a PyTorch model and a tensor of positions and returns a tensor of shape (n, 1) where n is the number of particles.
+
+            model (torch.nn.Module): The model to be used in the cost function.
+            
         """
         self.cost_i = costFunc(model, self.position_i)
 
@@ -45,12 +49,12 @@ class BirdParticle:
 
 
                     
-    def update_velocity(self, pos_best_g):
+    def update_velocity(self, pos_best_g: list):
         """
         Updates the particle velocity based on its own position and the global best position.
 
         Args:
-        - pos_best_g (list): the global best position
+            pos_best_g (list): the global best position
         """
         r1 = np.random.random()
         r2 = np.random.random()
@@ -62,8 +66,7 @@ class BirdParticle:
 
     def update_position(self):
         """
-        Updates the particle position based on its velocity.
--
+        Updates the particle position based on its velocity.-
         """
         # update position based on velocity
         self.position_i = self.position_i +  self.velocity_i

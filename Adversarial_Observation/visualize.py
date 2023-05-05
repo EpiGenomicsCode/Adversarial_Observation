@@ -1,18 +1,19 @@
 import imageio
 from typing import List
-import torch
-import numpy as np
-import os
 import matplotlib.pyplot as plt
-from sklearn.decomposition import PCA
 
 
 def visualizeGIF(filenames: List[str], output_file: str = 'output.gif') -> None:
     """
-    Visualizes the images in the folder as a GIF.
-    :param foldername: The folder where the images are stored.
-    :param epochs: A list of filenames of the images to include in the GIF.
-    :param output_file: The name of the output GIF file (default: 'output.gif').
+    Given a list of filenames, generate a GIF file in that order and save it to the specified output file.
+
+    Args:
+        filenames (List[str]): A list of filenames of the images to include in the GIF.
+        output_file (str): The name of the output GIF file (default: 'output.gif').
+
+    Returns:
+        None
+    
     """
     # Load the images from the file names.
     images = [imageio.imread(f'{filename}') for filename in filenames]
@@ -21,5 +22,7 @@ def visualizeGIF(filenames: List[str], output_file: str = 'output.gif') -> None:
     imageio.mimsave(output_file, images, duration=.5)
     #close the images
     plt.close('all')
+
+    return None
     
 

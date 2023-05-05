@@ -6,11 +6,11 @@ def buildCNN(output_size: int) -> nn.Sequential:
     """
     Builds a convolutional neural network model.
 
-    :param output_size: The number of output classes.
-    :type output_size: int
-
-    :return: The model.
-    :rtype: torch.nn.Sequential
+    Args:
+        output_size (int): The number of output classes.
+    
+    Returns:
+        model (torch.nn.Sequential): A convolutional neural network model with the specified output size.
     """
     # Create a sequential container for building the model
     return nn.Sequential(
@@ -40,11 +40,11 @@ def seedEverything(seed: int) -> None:
     """
     Seeds the random number generators for Python, PyTorch, and CUDA to make the results reproducible.
 
-    :param seed: The seed to use for random number generation.
-    :type seed: int
+    Args:
+        seed (int): The seed to use for random number generation.
 
-    :return: None
-    :rtype: None
+    Returns:
+        None
     """
     # Seed NumPy for random number generation.
     np.random.seed(seed)
@@ -52,3 +52,5 @@ def seedEverything(seed: int) -> None:
     torch.manual_seed(seed)
     # Seed CUDA for random number generation (if available).
     torch.cuda.manual_seed_all(seed)
+
+    return None
