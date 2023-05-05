@@ -1,6 +1,6 @@
 # Adversarial Observation
 ---
-[![Python Package using Conda](https://github.com/EpiGenomicsCode/Adversarial_Observation/actions/workflows/run_tests.yml/badge.svg)](https://github.com/EpiGenomicsCode/Adversarial_Observation/actions/workflows/run_tests.yml)
+[![Python Testing](https://github.com/EpiGenomicsCode/Adversarial_Observation/actions/workflows/run_tests.yml/badge.svg)](https://github.com/EpiGenomicsCode/Adversarial_Observation/actions/workflows/run_tests.yml)
 [![Upload to Github Pages](https://github.com/EpiGenomicsCode/Adversarial_Observation/actions/workflows/build_docs.yml/badge.svg)](https://github.com/EpiGenomicsCode/Adversarial_Observation/actions/workflows/build_docs.yml)
 
 
