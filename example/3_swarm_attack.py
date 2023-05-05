@@ -1,4 +1,4 @@
-from Adversarial_Observation.Swarm_Observer.Swarm import PSO
+from Swarm_Observer.Swarm import PSO
 from Adversarial_Observation.utils import seedEverything, buildCNN
 from Adversarial_Observation.visualize import visualizeGIF
 import matplotlib.pyplot as plt

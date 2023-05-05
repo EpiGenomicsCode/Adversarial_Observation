@@ -1,6 +1,6 @@
 import Adversarial_Observation
 from Adversarial_Observation.utils import seedEverything, buildCNN
-from Adversarial_Observation.Attacks import fgsm_attack, activation_map
+from Adversarial_Observation.Attacks import *
 import torch
 import torchvision
 import numpy as np

@@ -43,7 +43,7 @@ def activation_map(input_data: torch.Tensor, model: torch.nn.Module) -> torch.Te
     # Return the activation map
     return activation_map
 
-def fgsm_Attack(input_data: torch.Tensor, label: int, epsilon: float, model: torch.nn.Module, device: str = "cpu") -> torch.Tensor:
+def fgsm_attack(input_data: torch.Tensor, label: int, epsilon: float, model: torch.nn.Module, device: str = "cpu") -> torch.Tensor:
     """
     Generates adversarial example using fast gradient sign method.
 
