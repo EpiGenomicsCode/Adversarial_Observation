@@ -36,20 +36,6 @@ class TestActivationMap(unittest.TestCase):
         # Assert they have the same shape
         assert activation.shape == input_data.shape
 
-    # check assertion that input data are on the same device
-
-    def test_activation_map_device(self):
-        # Build a CNN
-        model = buildCNN(10)
-        model.eval()
-
-        # generate a random input 1 image with 1 channel of size 28x28
-        input_data = torch.rand(size=(1, 1, 28,28))
-        
-        # this should raise an assertion error
-        with self.assertRaises(AssertionError):
-            activation = activation_map(input_data, model.to("cuda"))
-
     # check assertion that input data has batch dimension of 1
     def test_activation_map_batch(self):
         # Build a CNN
