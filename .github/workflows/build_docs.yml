@@ -12,13 +12,12 @@ jobs:
         run: |
           pip install -r requirements.txt
           pip install sphinx sphinx_rtd_theme
-      - name: Sphinx build
+      - name: Build API documentation
         run: |
-          sphinx-build docs _build
-      - name: Deploy
-        uses: peaceiris/actions-gh-pages@v3
+          make html -C docs
+          touch docs/_build/html/.nojekyll
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
         with:
-          publish_branch: gh-pages
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: _build/
-          force_orphan: true
+          personal_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs/_build/html
