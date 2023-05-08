@@ -16,6 +16,10 @@ def activation_map(input_data: torch.Tensor, model: torch.nn.Module) -> torch.Te
     # Set the model to evaluation mode and enable gradient computation for the input data
     model.eval()
 
+    # send model to the same device as the input data
+    device = input_data.device
+    model.to(device)
+    
     #  assert it has a batch dimension of 1 
     assert input_data.shape[0] == 1, "Input data must have a batch dimension of 1"
     assert input_data.device == model.parameters().__next__().device, "Input data and model must be on the same device"

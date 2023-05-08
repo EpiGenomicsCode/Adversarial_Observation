@@ -92,24 +92,22 @@ def main():
         per = fgsm_attack(img, label, eps, model)
         
 
-        plt.imshow(img.reshape(28,28), cmap='gray')
+        plt.imshow(img.reshape(28,28).detach().numpy(), cmap='gray')
         condifence = model(img)[0].detach().numpy()[label]
         plt.title(f'Original\nConf.: {condifence:.4f}')
         plt.savefig(f'FGSM/original_eps_{eps}.png',bbox_inches='tight' )
         plt.clf()
         plt.close()
         
-        plt.imshow(per.reshape(28,28), cmap='gray')
-        condifence = model(img)[0].detach().numpy()[label]
-        plt.title(f'Original\nConf.: {condifence:.4f}')
+        noise = per - img
+        plt.imshow(noise.detach().numpy().reshape(28,28), cmap='gray')
+        plt.title(f'Noise\n')
         plt.savefig(f'FGSM/Perterbation_eps_{eps}.png',bbox_inches='tight' )
         plt.clf()
         plt.close()
         
-        # add the perturbation to the original image
-        per = per + img
 
-        plt.imshow(per.reshape(28,28), cmap='gray')
+        plt.imshow(per.detach().numpy().reshape(28,28), cmap='gray')
         condifence = model(torch.tensor(per).to(torch.float32).reshape(1,1, 28,28))[0].detach().numpy()[label]
         plt.title(f'Adversarial\nConf.: {condifence:.4f}')
         plt.savefig(f'FGSM/adver_eps_{eps}.png',bbox_inches='tight' )
