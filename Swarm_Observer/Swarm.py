@@ -29,7 +29,7 @@ class PSO:
             self.swarm.append(BirdParticle(i, w=w, c1=c1, c2=c2))
         self.cost_func = cost_func
         self.model = model
-        self.pos_best_g = self.swarm[0].position_i.clone()
+        self.pos_best_g = self.swarm[0].position_i
         self.cos_best_g = self.swarm[0].cost_i
 
     def step(self) -> tuple:
@@ -49,7 +49,7 @@ class PSO:
             # Determine if current particle is the best (globally)
             # best has the highest confidence
             if p.cost_i >= self.cos_best_g:
-                self.pos_best_g = p.position_i.clone().detach()
+                self.pos_best_g = p.position_i
                 self.cos_best_g = p.cost_i
 
         # Update velocities and positions.
@@ -59,7 +59,7 @@ class PSO:
 
         # Update history.
         for particle in self.swarm:
-            particle.history.append([self.epoch] + [i for i in particle.position_i.detach().numpy()]) 
+            particle.history.append(particle.position_i) 
 
     def run(self, epochs: int):
         """
@@ -74,7 +74,7 @@ class PSO:
         for i in range(epochs):
             self.step()
 
-    def get_swarm(self) -> pd.DataFrame:
+    def get_history(self) -> pd.DataFrame:
         """
         Returns the swarm with each particle's position history.
 
@@ -84,12 +84,14 @@ class PSO:
         Returns:
             pd.DataFrame: A dataframe with each particle's position history.
         """
-        df = pd.DataFrame(self.history,  columns=['Epoch']+['pos_'+str(i) for i in range(len(self.swarm[0].position_i))])
+        data = []
+        for particle in self.swarm:
+            for epoch in range(len(particle.history)):
+                history = particle.history[epoch]
+                data.append([epoch, history])
+        
+        return pd.DataFrame(data, columns=['epoch', 'position'])
 
-        # sort dataframe by epoch
-        df = df.sort_values(by=['Epoch'])
-
-        return df
     
     def save(self, filename: str):
         """

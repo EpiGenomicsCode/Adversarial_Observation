@@ -13,8 +13,8 @@ class BirdParticle:
             c2 (float): The social weight.
         """
 
-        self.position_i = position.clone()
-        self.velocity_i = torch.rand(position.shape) 
+        self.position_i = position.clone().detach().numpy()
+        self.velocity_i = np.random.random(position.shape)  # velocity
         # copy the current position to the best position
 
         self.history = [self.position_i]
@@ -39,12 +39,12 @@ class BirdParticle:
             model (torch.nn.Module): The model to be used in the cost function.
             
         """
-        self.cost_i = costFunc(model, self.position_i)
+        self.cost_i = costFunc(model, torch.tensor(self.position_i))
 
         # check to see if the current position is an individual best
         # best has the highest confidence
         if self.cost_i >= self.cost_best_i or self.cost_best_i == -1:
-            self.pos_best_i = self.position_i.clone().detach()
+            self.pos_best_i = self.position_i
             self.cost_best_i = self.cost_i
 
 
@@ -73,6 +73,6 @@ class BirdParticle:
         
 
         # clamp position to be within the bounds
-        self.position_i = torch.clamp(self.position_i, 0, 1)
+        self.position_i = np.clip(self.position_i, 0, 1)
 
         self.history.append(self.position_i)
