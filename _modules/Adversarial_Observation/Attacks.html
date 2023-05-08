@@ -86,9 +86,6 @@
     <span class="c1"># Set the model to evaluation mode and enable gradient computation for the input data</span>
     <span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
 
-    <span class="c1"># send model to the same device as the input data</span>
-    <span class="n">device</span> <span class="o">=</span> <span class="n">input_data</span><span class="o">.</span><span class="n">device</span>
-    <span class="n">model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
     
     <span class="c1">#  assert it has a batch dimension of 1 </span>
     <span class="k">assert</span> <span class="n">input_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;Input data must have a batch dimension of 1&quot;</span>
