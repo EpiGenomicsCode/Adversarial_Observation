@@ -111,7 +111,7 @@
     <span class="c1"># Return the activation map</span>
     <span class="k">return</span> <span class="n">activation_map</span></div>
 
-<div class="viewcode-block" id="fgsm_attack"><a class="viewcode-back" href="../../Adversarial_Observation.html#Adversarial_Observation.Attacks.fgsm_attack">[docs]</a><span class="k">def</span> <span class="nf">fgsm_attack</span><span class="p">(</span><span class="n">input_data</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">label</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">epsilon</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">device</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;cpu&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="fgsm_attack"><a class="viewcode-back" href="../../Adversarial_Observation.html#Adversarial_Observation.Attacks.fgsm_attack">[docs]</a><span class="k">def</span> <span class="nf">fgsm_attack</span><span class="p">(</span><span class="n">input_data</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">label</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">epsilon</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">loss</span><span class="p">:</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">functional</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">functional</span><span class="o">.</span><span class="n">nll_loss</span><span class="p">,</span>  <span class="n">device</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;cpu&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Generates adversarial example using fast gradient sign method.</span>
 
@@ -120,29 +120,45 @@
 <span class="sd">        label (int): The true label of the input data.</span>
 <span class="sd">        epsilon (float): Magnitude of the perturbation added to the input data.</span>
 <span class="sd">        model (torch.nn.Module): The neural network model.</span>
+<span class="sd">        loss (torch.nn.functional): The loss function to use for the computation.</span>
 <span class="sd">        device (str): Device to use for the computation. </span>
 <span class="sd">            default: &quot;cpu&quot;</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        perturbed (torch.Tensor): the updated input with the noise added.</span>
+<span class="sd">        perturbed (torch.Tensor): the noise to be added to the input data.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># assert that epsilon is a positive value</span>
+    <span class="k">assert</span> <span class="n">epsilon</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;Epsilon must be a positive value&quot;</span>
+
+
+    <span class="n">original_device</span> <span class="o">=</span> <span class="n">input_data</span><span class="o">.</span><span class="n">device</span>
     <span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
-    <span class="n">data</span> <span class="o">=</span> <span class="n">input_data</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+    
+    <span class="n">data</span> <span class="o">=</span> <span class="n">input_data</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
     <span class="n">data</span><span class="o">.</span><span class="n">requires_grad</span> <span class="o">=</span> <span class="kc">True</span>
 
     <span class="c1"># Forward pass to get the prediction</span>
     <span class="n">output</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
 
     <span class="c1"># Calculate the loss</span>
-    <span class="n">loss</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">cross_entropy</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="n">label</span><span class="p">])</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">))</span>
+    <span class="n">loss</span> <span class="o">=</span> <span class="n">loss</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="n">label</span><span class="p">])</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">))</span>
 
     <span class="c1"># Backward pass to get the gradient</span>
     <span class="n">model</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
     <span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
 
     <span class="c1"># Create the perturbed data by adjusting each pixel of the input data</span>
-    <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
-        <span class="n">perturbed</span> <span class="o">=</span> <span class="n">data</span> <span class="o">+</span> <span class="n">epsilon</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">grad</span><span class="p">)</span>
+    <span class="n">perturbed</span> <span class="o">=</span> <span class="n">epsilon</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">grad</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+    <span class="n">perturbed</span> <span class="o">=</span> <span class="n">input_data</span> <span class="o">+</span> <span class="n">perturbed</span>
+
+    <span class="c1"># copy the perturbed data back to the original device</span>
+    <span class="n">perturbed</span> <span class="o">=</span> <span class="n">perturbed</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">original_device</span><span class="p">)</span>
+
+    <span class="c1"># reshape perturbed data to match the input data shape</span>
+    <span class="n">perturbed</span> <span class="o">=</span> <span class="n">perturbed</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">input_data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+
+    <span class="c1"># Add the perturbation to the input data</span>
+    <span class="n">perturbed</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">clamp</span><span class="p">(</span><span class="n">perturbed</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
 
     <span class="c1"># Return the perturbed data</span>
     <span class="k">return</span> <span class="n">perturbed</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span></div>

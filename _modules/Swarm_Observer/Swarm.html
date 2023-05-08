@@ -99,7 +99,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">swarm</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">BirdParticle</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">w</span><span class="o">=</span><span class="n">w</span><span class="p">,</span> <span class="n">c1</span><span class="o">=</span><span class="n">c1</span><span class="p">,</span> <span class="n">c2</span><span class="o">=</span><span class="n">c2</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">cost_func</span> <span class="o">=</span> <span class="n">cost_func</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">pos_best_g</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">swarm</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">position_i</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pos_best_g</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">swarm</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">position_i</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">cos_best_g</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">swarm</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">cost_i</span>
 
 <div class="viewcode-block" id="PSO.step"><a class="viewcode-back" href="../../Swarm_Observer.html#Swarm_Observer.Swarm.PSO.step">[docs]</a>    <span class="k">def</span> <span class="nf">step</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>
@@ -119,7 +119,7 @@
             <span class="c1"># Determine if current particle is the best (globally)</span>
             <span class="c1"># best has the highest confidence</span>
             <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">cost_i</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cos_best_g</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">pos_best_g</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">position_i</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">pos_best_g</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">position_i</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">cos_best_g</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">cost_i</span>
 
         <span class="c1"># Update velocities and positions.</span>
@@ -129,7 +129,7 @@
 
         <span class="c1"># Update history.</span>
         <span class="k">for</span> <span class="n">particle</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">swarm</span><span class="p">:</span>
-            <span class="n">particle</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">epoch</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">particle</span><span class="o">.</span><span class="n">position_i</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()])</span> </div>
+            <span class="n">particle</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">particle</span><span class="o">.</span><span class="n">position_i</span><span class="p">)</span> </div>
 
 <div class="viewcode-block" id="PSO.run"><a class="viewcode-back" href="../../Swarm_Observer.html#Swarm_Observer.Swarm.PSO.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">epochs</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -144,7 +144,7 @@
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">epochs</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">step</span><span class="p">()</span></div>
 
-<div class="viewcode-block" id="PSO.get_swarm"><a class="viewcode-back" href="../../Swarm_Observer.html#Swarm_Observer.Swarm.PSO.get_swarm">[docs]</a>    <span class="k">def</span> <span class="nf">get_swarm</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<div class="viewcode-block" id="PSO.get_history"><a class="viewcode-back" href="../../Swarm_Observer.html#Swarm_Observer.Swarm.PSO.get_history">[docs]</a>    <span class="k">def</span> <span class="nf">get_history</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns the swarm with each particle&#39;s position history.</span>
 
@@ -154,12 +154,14 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            pd.DataFrame: A dataframe with each particle&#39;s position history.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="p">,</span>  <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Epoch&#39;</span><span class="p">]</span><span class="o">+</span><span class="p">[</span><span class="s1">&#39;pos_&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">swarm</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">position_i</span><span class="p">))])</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">particle</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">swarm</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">particle</span><span class="o">.</span><span class="n">history</span><span class="p">)):</span>
+                <span class="n">history</span> <span class="o">=</span> <span class="n">particle</span><span class="o">.</span><span class="n">history</span><span class="p">[</span><span class="n">epoch</span><span class="p">]</span>
+                <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">epoch</span><span class="p">,</span> <span class="n">history</span><span class="p">])</span>
+        
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;epoch&#39;</span><span class="p">,</span> <span class="s1">&#39;position&#39;</span><span class="p">])</span></div>
 
-        <span class="c1"># sort dataframe by epoch</span>
-        <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Epoch&#39;</span><span class="p">])</span>
-
-        <span class="k">return</span> <span class="n">df</span></div>
     
 <div class="viewcode-block" id="PSO.save"><a class="viewcode-back" href="../../Swarm_Observer.html#Swarm_Observer.Swarm.PSO.save">[docs]</a>    <span class="k">def</span> <span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
