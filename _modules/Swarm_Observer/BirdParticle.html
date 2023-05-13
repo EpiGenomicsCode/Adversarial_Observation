@@ -109,7 +109,7 @@
 <span class="sd">            model (torch.nn.Module): The model to be used in the cost function.</span>
 <span class="sd">            </span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">cost_i</span> <span class="o">=</span> <span class="n">costFunc</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">position_i</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cost_i</span> <span class="o">=</span> <span class="n">costFunc</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">position_i</span><span class="p">)</span>
 
         <span class="c1"># check to see if the current position is an individual best</span>
         <span class="c1"># best has the highest confidence</span>
@@ -140,12 +140,21 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># update position based on velocity</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">position_i</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">position_i</span> <span class="o">+</span>  <span class="bp">self</span><span class="o">.</span><span class="n">velocity_i</span>
-        
 
-        <span class="c1"># clamp position to be within the bounds</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">position_i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">position_i</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="c1"># add current position to history</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">position_i</span><span class="p">)</span></div>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">position_i</span><span class="p">)</span></div></div>
+<div class="viewcode-block" id="BirdParticle.get_history"><a class="viewcode-back" href="../../Swarm_Observer.html#Swarm_Observer.BirdParticle.BirdParticle.get_history">[docs]</a>    <span class="k">def</span> <span class="nf">get_history</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the history of the particle&#39;s positions.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            None</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: The history of the particle&#39;s positions.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">history</span></div></div>
 </pre></div>
 
            </div>

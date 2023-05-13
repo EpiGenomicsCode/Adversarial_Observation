@@ -47,6 +47,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#module-Swarm_Observer.BirdParticle">Swarm_Observer.BirdParticle module</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#Swarm_Observer.BirdParticle.BirdParticle"><code class="docutils literal notranslate"><span class="pre">BirdParticle</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#Swarm_Observer.BirdParticle.BirdParticle.evaluate"><code class="docutils literal notranslate"><span class="pre">BirdParticle.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Swarm_Observer.BirdParticle.BirdParticle.get_history"><code class="docutils literal notranslate"><span class="pre">BirdParticle.get_history()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#Swarm_Observer.BirdParticle.BirdParticle.update_position"><code class="docutils literal notranslate"><span class="pre">BirdParticle.update_position()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#Swarm_Observer.BirdParticle.BirdParticle.update_velocity"><code class="docutils literal notranslate"><span class="pre">BirdParticle.update_velocity()</span></code></a></li>
 </ul>
@@ -114,6 +115,23 @@
 This should be a function that takes in a PyTorch model and a tensor of positions and returns a tensor of shape (n, 1) where n is the number of particles.</p></li>
 <li><p><strong>model</strong> (<em>torch.nn.Module</em>) – The model to be used in the cost function.</p></li>
 </ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="Swarm_Observer.BirdParticle.BirdParticle.get_history">
+<span class="sig-name descname"><span class="pre">get_history</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/Swarm_Observer/BirdParticle.html#BirdParticle.get_history"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#Swarm_Observer.BirdParticle.BirdParticle.get_history" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the history of the particle’s positions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>None</strong> – </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The history of the particle’s positions.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list</p>
 </dd>
 </dl>
 </dd></dl>
