@@ -13,8 +13,8 @@ class BirdParticle:
             c2 (float): The social weight.
         """
 
-        self.position_i = position.clone()
-        self.velocity_i = torch.rand(position.shape) 
+        self.position_i = position.clone().detach().numpy()
+        self.velocity_i = np.random.random(position.shape)  # velocity
         # copy the current position to the best position
 
         self.history = [self.position_i]
@@ -44,7 +44,7 @@ class BirdParticle:
         # check to see if the current position is an individual best
         # best has the highest confidence
         if self.cost_i >= self.cost_best_i or self.cost_best_i == -1:
-            self.pos_best_i = self.position_i.clone().detach()
+            self.pos_best_i = self.position_i
             self.cost_best_i = self.cost_i
 
 
@@ -70,9 +70,18 @@ class BirdParticle:
         """
         # update position based on velocity
         self.position_i = self.position_i +  self.velocity_i
-        
 
-        # clamp position to be within the bounds
-        self.position_i = torch.clamp(self.position_i, 0, 1)
-
+        # add current position to history
         self.history.append(self.position_i)
+
+    def get_history(self):
+        """
+        Returns the history of the particle's positions.
+
+        Args:
+            None
+
+        Returns:
+            list: The history of the particle's positions.
+        """
+        return self.history

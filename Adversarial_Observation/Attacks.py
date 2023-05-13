@@ -18,6 +18,7 @@ def activation_map(input_data: torch.Tensor, model: torch.nn.Module) -> torch.Te
     model.eval()
     output_data = []
 
+    
     #  assert it has a batch dimension of 1 
     assert input_data.device == model.parameters().__next__().device, "Input data and model must be on the same device"
 
@@ -46,45 +47,56 @@ def activation_map(input_data: torch.Tensor, model: torch.nn.Module) -> torch.Te
     # Return the activation map
     return np.array(output_data)
 
-def fgsm_attack(input_data: torch.Tensor, labels: int, epsilon: float, model: torch.nn.Module, device: str = "cpu") -> torch.Tensor:
+
+def fgsm_attack(input_data: torch.Tensor, labels: torch.Tensor, epsilon: float, model: torch.nn.Module, loss: torch.nn.Module = torch.nn.CrossEntropyLoss(),  device: str = "cpu") -> np.ndarray:
     """
     Generates adversarial example using fast gradient sign method.
 
     Args:
         input_data (torch.Tensor): A list of input_data to be modified.
-        label (int): The true labels of the input data.
+        labels (torch.Tensor): The true labels of the input data.
         epsilon (float): Magnitude of the perturbation added to the input data.
         model (torch.nn.Module): The neural network model.
-        device (str): Device to use for the computation. 
+        loss (torch.nn.Module): The loss function to use for the computation.
+        device (str): Device to use for the computation.
             default: "cpu"
 
     Returns:
-        perturbed (torch.Tensor): the updated input with the noise added.
+        perturbed (np.ndarray): the noise to be added to the input data.
     """
+    # assert that epsilon is a positive value
+    assert epsilon >= 0, "Epsilon must be a positive value"
+
+    original_device = input_data.device
     model.eval()
-    model = model.to(device)
-    output_data = []
 
     assert len(input_data) == len(labels), "Input data and labels must have the same length"
-    
-    for input, label in zip(input_data, labels):
-        data = input.to(device)
+
+    output_data = []
+    for input_data, label in zip(input_data, labels):
+        data = input_data.to(device)
         data.requires_grad = True
 
-        # Forward pass to get the prediction
+        # Make a forward pass through the model and get the predicted class scores
         output = model(data.unsqueeze(0))
 
-        # Calculate the loss
-        loss = F.cross_entropy(output, torch.tensor([label]).to(device))
+        # Get the index corresponding to the maximum predicted class score
+        loss_value = loss(output, torch.tensor([label]).to(device))
 
-        # Backward pass to get the gradient
-        model.zero_grad()
-        loss.backward()
+        # Perform backpropagation to compute gradients
+        loss_value.backward()
 
         # Create the perturbed data by adjusting each pixel of the input data
-        with torch.no_grad():
-            perturbed = data + epsilon * torch.sign(data.grad)
+        perturbed = epsilon * torch.sign(data.grad.data)
+        perturbed = input_data + perturbed
 
+        # copy the perturbed data back to the original device
+        perturbed = perturbed.to(original_device)
+
+        # reshape perturbed data to match the input data shape
+        perturbed = perturbed.reshape(input_data.shape)
+
+        # save the perturbed data
         output_data.append(perturbed.detach().cpu().numpy())
 
     # Return the perturbed data

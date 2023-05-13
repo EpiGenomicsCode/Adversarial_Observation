@@ -12,7 +12,7 @@ class TestFGSMAttack(unittest.TestCase):
 
         # generate a random input 1 image with 1 channel of size 28x28
         points = 10
-        input_data = torch.rand(size=(points, 1 , 28,28))
+        input_data = torch.rand(size=(points, 1 , 28,28)).to(torch.float32)
         labels = torch.randint(low=0, high=10, size=(points,))
         
         # Get the activation map
