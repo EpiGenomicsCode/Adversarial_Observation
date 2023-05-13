@@ -11,10 +11,12 @@ class TestFGSMAttack(unittest.TestCase):
         model.eval()
 
         # generate a random input 1 image with 1 channel of size 28x28
-        input_data = torch.rand(size=(1, 1, 28,28))
+        points = 10
+        input_data = torch.rand(size=(points, 1 , 28,28))
+        labels = torch.randint(low=0, high=10, size=(points,))
         
         # Get the activation map
-        perturbed = fgsm_attack(input_data, 0, 0.1, model)
+        perturbed = fgsm_attack(input_data, labels, 0.1, model)
         
         # Assert they have the same shape
         assert perturbed.shape == input_data.shape
@@ -28,23 +30,11 @@ class TestActivationMap(unittest.TestCase):
         model.eval()
 
         # generate a random input 1 image with 1 channel of size 28x28
-        input_data = torch.rand(size=(1, 1, 28,28))
+        points = 10
+        input_data = torch.rand(size=(points, 1, 28,28))
         
         # Get the activation map
         activation = activation_map(input_data, model)
         
         # Assert they have the same shape
         assert activation.shape == input_data.shape
-
-    # check assertion that input data has batch dimension of 1
-    def test_activation_map_batch(self):
-        # Build a CNN
-        model = buildCNN(10)
-        model.eval()
-
-        # generate a random input 1 image with 1 channel of size 28x28
-        input_data = torch.rand(size=(2, 1, 28,28))
-        
-        # this should raise an assertion error
-        with self.assertRaises(AssertionError):
-            activation = activation_map(input_data, model)

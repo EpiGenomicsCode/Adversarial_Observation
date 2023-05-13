@@ -3,6 +3,7 @@ matplotlib
 numpy
 torch
 pandas
+typing_extensions
 torchvision; extra == 'examples_require'
 sklearn; extra == 'examples_require'
 tqdm; extra == 'examples_require'
