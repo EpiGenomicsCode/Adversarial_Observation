@@ -1,13 +1,23 @@
-# build a pytorch model that is trained on MNIST dataset
 import torch
 import torchvision
 import numpy as np
 import tqdm
 from util import *
 
-dataset = "MNIST"
-#  train the model saves data to log file
-def trainModel(model, train_loader, optimizer,loss, epoch, filename):
+
+def trainModel(model, train_loader, optimizer, loss, epoch, filename):
+    """
+    Trains the model using the provided data loader, optimizer, and loss function for one epoch.
+    Saves the training loss to the specified file.
+
+    Args:
+        model: The model to be trained.
+        train_loader: The data loader for the training data.
+        optimizer: The optimizer used for training.
+        loss: The loss function.
+        epoch: The current epoch number.
+        filename: The name of the file to save the training loss.
+    """
     model.train()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     for data, target in train_loader:
@@ -17,13 +27,21 @@ def trainModel(model, train_loader, optimizer,loss, epoch, filename):
         l = loss(output, target)
         l.backward()
         optimizer.step()
-    #  save the loss to a file
+    # Save the loss to a file
     with open(filename, 'a') as f:
         f.write(f'\nTrain Epoch: {epoch} Loss: {l.item():.6f}')
-        
 
-#  test the model saves data to log file
+
 def testModel(model, test_loader, filename):
+    """
+    Evaluates the model using the provided data loader and calculates the test loss and accuracy.
+    Saves the test loss to the specified file.
+
+    Args:
+        model: The model to be evaluated.
+        test_loader: The data loader for the test data.
+        filename: The name of the file to save the test loss.
+    """
     model.eval()
     test_loss = 0
     correct = 0
@@ -37,32 +55,33 @@ def testModel(model, test_loader, filename):
             pred = output.argmax(dim=1, keepdim=True)
             correct += pred.eq(target.view_as(pred)).sum().item()
     test_loss /= len(test_loader.dataset)
-    #  save the loss to a file
+    # Save the loss to a file
     with open(filename, 'a') as f:
         f.write(f'\nTest set: Average loss: {test_loss:.4f},')
 
 
-#  seed everything
 def seedEverything(seed):
+    """
+    Seeds all the random number generators to ensure reproducibility.
+
+    Args:
+        seed: The seed value for random number generators.
+    """
     torch.manual_seed(seed)
     np.random.seed(seed)
 
+
 def main():
-    #  seed everything
+    # Seed everything
     seedEverything(42)
-    #  get data
-    if dataset == "MNIST":
-        train_loader, test_loader = load_MNIST_data()
-    
-    if dataset == "CIFAR10":
-        train_loader, test_loader = load_CIFAR10_data()
+
+    train_loader, test_loader = load_CIFAR10_data()
+    model = build_CIFAR10_Model()
         
-    #  build model
-    model = buildModel()
-    #  train model
+    # Train model
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
     loss = torch.nn.CrossEntropyLoss()
-    
+
     epochs = 2
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model.to(device)
@@ -70,12 +89,11 @@ def main():
     for epoch in tqdm.tqdm(range(1, epochs + 1)):
         trainModel(model, train_loader, optimizer, loss, epoch, 'log.csv')
         testModel(model, test_loader, 'log.csv')
-    #  save model
-    torch.save(model.state_dict(), 'cnn.pt')
-    
-    
+
+    # Save model
+    torch.save(model.state_dict(), 'CIFAR10_cnn.pt')
+
+
 
 if __name__ == '__main__':
     main()
-
-

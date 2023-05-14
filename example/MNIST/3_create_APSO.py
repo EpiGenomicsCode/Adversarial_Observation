@@ -4,6 +4,7 @@ import torchvision
 import Swarm_Observer as SO 
 import Adversarial_Observation as AO
 import os
+from util import *
 from umap import UMAP
 import matplotlib.pyplot as plt
 from util import *
@@ -13,7 +14,6 @@ label = 3
 initial = 0
 epochs = 5
 points = 5
-dataset = "MNIST"
 
 def cost_func(model, x):
     global label
@@ -65,11 +65,6 @@ def plotData(data, umap, title, saveName):
     plt.savefig(saveName)
     plt.clf()
 
-def seedEverything(seed=42):
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed(seed)
-    
 def plotPSO(points, step, model):
     global label
     os.makedirs("PSO_images", exist_ok=True)
@@ -118,25 +113,20 @@ def main():
     global label
     global initial
     global points
-    seedEverything()
-    # load model
-    model = buildModel()
-    model.load_state_dict(torch.load('mnist_cnn.pt'))
-    
-    # get the umap of the data
-    if dataset == "MNIST":
-        train_loader, test_loader = load_MNIST_data()
 
-    if dataset == "CIFAR10":
-        train_loader, test_loader = load_CIFAR10_data()
+    seedEverything()
+    
+    train_loader, test_loader = load_MNIST_data()
+    model = build_MNIST_Model()
+    model.load_state_dict(torch.load('MNIST_cnn.pt'))
     
     umap, dataDic = umap_data(train_loader)
     os.makedirs("umap_images", exist_ok=True)
-    plotData(dataDic, umap, 'umap of MNIST Data', f'./umap_images/{dataset}_inital.png')
+    plotData(dataDic, umap, 'umap of MNIST Data', f'./umap_images/MNIST_inital.png')
     dataDic["Attack"] = dataDic[initial][:points]
 
     initalPoints = dataDic[initial][:points]
-    runAPSO(initalPoints, epochs, model, cost_func, dataDic, umap, f"{dataset}_{initial}_{label}")
+    runAPSO(initalPoints, epochs, model, cost_func, dataDic, umap, f"MNIST_{initial}_{label}")
     
 if __name__ == '__main__':
     main()
