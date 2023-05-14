@@ -10,10 +10,10 @@ import matplotlib.pyplot as plt
 from util import *
 
 # global variables
-label = 8
-initial = 0
-epochs = 100
-points = 200
+label = 0
+initial = 7
+epochs = 10
+points = 30
 
 def cost_func(model, x):
     global label
@@ -73,39 +73,38 @@ def plotPSO(points, step, model, filename):
     for index in range(len(points)):
         os.makedirs(f"PSO_images/{index}", exist_ok=True)
         img = points[index]
-        img = img.reshape(3,32,32).transpose(1,2,0)
-
-        img /= img.max()
-        plt.imshow(img)
-        confidence = model(torch.tensor(img.reshape(1,3,32,32)).to(torch.float32))[0][label].item()
+        plt.imshow(img.transpose(1,2,0)/img.max())
+        
+        confidence = cost_func(model, img)
         plt.title(f"Confidence of {label}: {np.round(confidence,3)}")
         plt.savefig(f"PSO_images/{index}/{filename}_{step}.png")
         plt.colorbar()
         plt.clf()
 
         act = AO.Attacks.activation_map(torch.tensor(img.reshape(1,3,32,32)).to(torch.float32), model)
-        act = img.reshape(3,32,32).transpose(1,2,0)
-        act /= act.max()
-        plt.imshow(act)
+        plt.imshow(act.reshape(3,32,32).transpose(1,2,0)/act.max(), cmap="jet")
         plt.colorbar()
         plt.savefig(f"PSO_images/{index}/{filename}_{step}_act.png")
         plt.clf()
 
 def runAPSO(points, epochs, model, cost_func, dataDic, umap, run):
-    APSO = SO.Swarm.PSO(torch.tensor(points).reshape(-1,3,32,32), cost_func, model, w=.9, c1=.5, c2=.5)
+    APSO = SO.Swarm.PSO(torch.tensor(points).reshape(-1,3,32,32), cost_func, model, w=.2, c1=.5, c2=.5)
     for epoch in range(epochs):
         APSO.step()
         positions = [i.position_i for i in APSO.swarm]
+
         plotPSO(positions, epoch, model, run)
         dataDic["Attack"] = positions
         plotData(dataDic, umap, 'umap of CIFAR10 Data with Attack', f'./umap_images/{run}_epoch_{epoch}.png')
+        #  update the swarm with the new positions
+
         
         
     # get the best point
     bestPoint = APSO.pos_best_g
     #  normalize the best point between 0 and 1
     bestPoint = bestPoint.reshape(3,32,32).transpose(1,2,0)
-    bestPoint /= bestPoint.max()
+  
     plt.imshow(bestPoint)
     conf = cost_func(model, torch.tensor(bestPoint).reshape(1,3,32,32))
     plt.title("Best Point with Confidence: " + str(np.round(conf,3)))
