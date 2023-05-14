@@ -1,5 +1,7 @@
 import torch
 import torchvision
+import gc 
+
 
 def buildModel():    
         #  build the model with a Softmax output layer
@@ -76,3 +78,9 @@ def load_MNIST_data():
                 batch_size=1000,
                 shuffle=True)
             )
+
+
+def clear_memory():
+    torch.cuda.empty_cache()
+    gc.collect()
+    return
