@@ -5,13 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from util import *
 import os
-dataset = "CIFAR10"
-
-
-import os
-import matplotlib.pyplot as plt
-import torch
-import shap
+from util import *
 
 def getData(dataloader):
     """ 
@@ -57,16 +51,23 @@ def save_and_plot_shap_values(dataloader, model):
     # iterate over the SHAP values and plot on the subplots
     for i in range(len(data)):
         shap_i = shap_values[i]
+        shap_i = np.array(shap_i)
+        shap_i = shap_i.transpose(0,2, 3, 1)
         label = target[i]
 
+
         # plot the original image
-        axes[i, 0].imshow(data[i].cpu().reshape(32,32))
+        data_i = np.array(data[i].cpu()).transpose(1,2,0)
+        
+        #  convert tensor to numpy
+        axes[i, 0].imshow(data_i)
         axes[i, 0].set_title(f'Label: {label}')
 
         # plot the SHAP values
         num_shap_values = min(10, len(shap_i))  # Adjust the number of SHAP values to fit within the grid
         for j in range(num_shap_values):
-            axes[i, j+1].imshow(shap_i[j].reshape(32, 32), cmap='jet')
+
+            axes[i, j+1].imshow(shap_i[j]/shap_i[j].max(), cmap='jet')
             axes[i, j+1].axis('off')
             axes[i, j+1].set_title(f'SHAP value: {j}')
 
@@ -77,10 +78,11 @@ def save_and_plot_shap_values(dataloader, model):
         # save the row individually
         row_fig = plt.figure(figsize=(10, 10))
         row_axes = row_fig.subplots(1, num_shap_values + 1)
-        row_axes[0].imshow(data[i].cpu().reshape(32, 32))
+        
+        row_axes[0].imshow(data[i].cpu().numpy().transpose(1,2,0))
         row_axes[0].set_title(f'Label: {label}')
         for j in range(num_shap_values):
-            row_axes[j+1].imshow(-shap_i[j].reshape(32, 32), cmap='jet')
+            row_axes[j+1].imshow(-shap_i[j]/shap_i[j].max(), cmap='jet')
             row_axes[j+1].axis('off')
             # row_axes[j+1].set_title(f'SHAP value: {j}')
         plt.tight_layout()
