@@ -2,9 +2,11 @@ imageio
 matplotlib
 numpy
 torch
+Pillow
+umap-learn
 pandas
 typing_extensions
-torchvision; extra == 'examples_require'
-sklearn; extra == 'examples_require'
-tqdm; extra == 'examples_require'
-pickle; extra == 'examples_require'
+torchvision
+scikit-learn
+tqdm
+shap

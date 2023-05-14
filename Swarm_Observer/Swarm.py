@@ -84,13 +84,15 @@ class PSO:
         Returns:
             pd.DataFrame: A dataframe with each particle's position history.
         """
-        data = []
+        df = {}
         for particle in self.swarm:
-            for epoch in range(len(particle.history)):
-                history = particle.history[epoch]
-                data.append([epoch, history])
+            history = pd.DataFrame(particle.history)
+            for epoch in range(len(history)):
+                df[f"{particle.name}_{epoch}"] = history[epoch]
+        df = pd.DataFrame(df)
+                        
+        return df
         
-        return pd.DataFrame(data, columns=['epoch', 'position'])
 
     
     def save(self, filename: str):
