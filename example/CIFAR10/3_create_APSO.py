@@ -76,7 +76,7 @@ def plotPSO(points, step, model, filename):
         plt.imshow(img.transpose(1,2,0)/img.max())
         
         confidence = cost_func(model, img)
-        plt.title(f"Confidence of {label}: {np.round(confidence,3)}")
+        plt.title(f"Confidence of {label}: {np.round(confidence,5)}")
         plt.savefig(f"PSO_images/{index}/{filename}_{step}.png")
         plt.colorbar()
         plt.clf()
@@ -107,7 +107,7 @@ def runAPSO(points, epochs, model, cost_func, dataDic, umap, run):
   
     plt.imshow(bestPoint)
     conf = cost_func(model, torch.tensor(bestPoint).reshape(1,3,32,32))
-    plt.title("Best Point with Confidence: " + str(np.round(conf,3)))
+    plt.title("Best Point with Confidence: " + str(np.round(conf,5)))
     plt.savefig(f"./umap_images/bestPoint{run}.png")
     plt.clf()
 
