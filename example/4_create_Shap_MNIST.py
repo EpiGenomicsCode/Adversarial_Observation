@@ -98,8 +98,6 @@ def save_and_plot_shap_values(dataloader, model):
     plt.close()
 
 
-
-
 def main():
     model = buildModel()
     model.load_state_dict(torch.load('mnist_cnn.pt'))
@@ -114,4 +112,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
