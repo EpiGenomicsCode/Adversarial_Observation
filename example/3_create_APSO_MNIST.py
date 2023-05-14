@@ -6,64 +6,14 @@ import Adversarial_Observation as AO
 import os
 from umap import UMAP
 import matplotlib.pyplot as plt
+from util import *
 
-
-
-
-
+# global variables
 label = 3
 initial = 0
-epochs = 50
-points = 50
-
-
-
-def buildModel():    
-        #  build the model with a Softmax output layer
-    return torch.nn.Sequential(
-        torch.nn.Conv2d(1, 32, kernel_size=3, padding=1),
-        torch.nn.ReLU(),
-        torch.nn.Conv2d(32, 64, kernel_size=3, padding=1),
-        torch.nn.ReLU(),
-        torch.nn.MaxPool2d(2),
-        torch.nn.Dropout2d(0.25),
-        torch.nn.Flatten(),
-        torch.nn.Linear(64 * 14 * 14, 128),
-        torch.nn.ReLU(),
-        torch.nn.Dropout2d(0.5),
-        torch.nn.Linear(128, 10),
-        torch.nn.Softmax(dim=1)
-    )
-
-# loads in the MNIST Data
-def load_data():
-    return (
-            torch.utils.data.DataLoader(
-                torchvision.datasets.MNIST(
-                    './data',
-                    train=True,
-                    download=True,
-                    transform=torchvision.transforms.Compose([
-                        torchvision.transforms.ToTensor(),
-                        torchvision.transforms.Normalize(
-                            (0.1307,), (0.3081,))
-                    ])),
-                batch_size=64,
-                shuffle=True),
-
-            torch.utils.data.DataLoader(
-                torchvision.datasets.MNIST(
-                    './data',
-                    train=False,
-                    download=True,
-                    transform=torchvision.transforms.Compose([
-                        torchvision.transforms.ToTensor(),
-                        torchvision.transforms.Normalize(
-                            (0.1307,), (0.3081,))
-                    ])),
-                batch_size=1000,
-                shuffle=True)
-            )
+epochs = 5
+points = 5
+dataset = "MNIST"
 
 def cost_func(model, x):
     global label
@@ -139,7 +89,6 @@ def plotPSO(points, step, model):
         plt.savefig(f"PSO_images/{index}/{step}_act.png")
         plt.clf()
 
-
 def runAPSO(points, epochs, model, cost_func, dataDic, umap, run):
     APSO = SO.Swarm.PSO(torch.tensor(points).reshape(-1,1,1,28,28), cost_func, model, w=.5, c1=.5, c2=.5)
     for epoch in range(epochs):
@@ -147,14 +96,13 @@ def runAPSO(points, epochs, model, cost_func, dataDic, umap, run):
         positions = [i.position_i for i in APSO.swarm]
         plotPSO(positions, epoch, model)
         dataDic["Attack"] = positions
-        plotData(dataDic, umap, 'umap of MNIST Data with Attack', f'umap_MNIST_attack_final_{epoch}.png')
+        plotData(dataDic, umap, 'umap of MNIST Data with Attack', f'./umap_images/umap_MNIST_attack_epoch_{epoch}.png')
         # normalize the positions 
         normPos = []
         for pos in positions:
             normPos.append((pos - pos.min()) / (pos.max() - pos.min()))
         for i in range(len(APSO.swarm)):
             APSO.swarm[i].position_i = normPos[i]
-        
 
     # get the best point
     bestPoint = APSO.pos_best_g
@@ -162,9 +110,8 @@ def runAPSO(points, epochs, model, cost_func, dataDic, umap, run):
     plt.imshow(bestPoint.reshape(28,28), cmap='gray')
     conf = cost_func(model, torch.tensor((bestPoint - bestPoint.min()) / (bestPoint.max() - bestPoint.min())).reshape(1,1,28,28))
     plt.title("Best Point with Confidence: " + str(np.round(conf,3)))
-    plt.savefig(f"bestPoint{run}.png")
+    plt.savefig(f"./umap_images/bestPoint{run}.png")
     plt.clf()
-
 
 def main():
 
@@ -177,15 +124,19 @@ def main():
     model.load_state_dict(torch.load('mnist_cnn.pt'))
     
     # get the umap of the data
-    umap, dataDic = umap_data(load_data()[0])
-    plotData(dataDic, umap, 'umap of MNIST Data', 'umap_MNIST_inital.png')
+    if dataset == "MNIST":
+        train_loader, test_loader = load_MNIST_data()
+
+    if dataset == "CIFAR10":
+        train_loader, test_loader = load_CIFAR10_data()
+    
+    umap, dataDic = umap_data(train_loader)
+    os.makedirs("umap_images", exist_ok=True)
+    plotData(dataDic, umap, 'umap of MNIST Data', f'./umap_images/{dataset}_inital.png')
     dataDic["Attack"] = dataDic[initial][:points]
-    plotData(dataDic, umap, 'umap of MNIST Data with Attack', 'umap_MNIST_attack.png')
-    dataDic["Attack"] = [] # reset attack points
 
     initalPoints = dataDic[initial][:points]
-    runAPSO(initalPoints, epochs, model, cost_func, dataDic, umap, f"MNIST_{initial}_{label}")
+    runAPSO(initalPoints, epochs, model, cost_func, dataDic, umap, f"{dataset}_{initial}_{label}")
     
-  
 if __name__ == '__main__':
     main()

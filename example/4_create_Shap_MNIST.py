@@ -3,75 +3,81 @@ import torchvision
 import shap
 import numpy as np
 import matplotlib.pyplot as plt
-#  load the data
-def loadData():
-    return (
-            torch.utils.data.DataLoader(
-                torchvision.datasets.MNIST(
-                    './data',
-                    train=True,
-                    download=True,
-                    transform=torchvision.transforms.Compose([
-                        torchvision.transforms.ToTensor(),
-                        torchvision.transforms.Normalize(
-                            (0.1307,), (0.3081,))
-                    ])),
-                batch_size=64,
-                shuffle=True),
+from util import *
+import os
+dataset = "MNIST"
 
-            torch.utils.data.DataLoader(
-                torchvision.datasets.MNIST(
-                    './data',
-                    train=False,
-                    download=True,
-                    transform=torchvision.transforms.Compose([
-                        torchvision.transforms.ToTensor(),
-                        torchvision.transforms.Normalize(
-                            (0.1307,), (0.3081,))
-                    ])),
-                batch_size=1000,
-                shuffle=True)
-            )
 
-def getmodel():
-    return torch.nn.Sequential(
-        torch.nn.Conv2d(1, 32, kernel_size=3, padding=1),
-        torch.nn.ReLU(),
-        torch.nn.Conv2d(32, 64, kernel_size=3, padding=1),
-        torch.nn.ReLU(),
-        torch.nn.MaxPool2d(2),
-        torch.nn.Dropout2d(0.25),
-        torch.nn.Flatten(),
-        torch.nn.Linear(64 * 14 * 14, 128),
-        torch.nn.ReLU(),
-        torch.nn.Dropout2d(0.5),
-        torch.nn.Linear(128, 10),
-        torch.nn.Softmax(dim=1)
-    )
+import os
+import matplotlib.pyplot as plt
+import torch
+import shap
+
+
+def save_and_plot_shap_values(dataloader, model):
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    # get the first batch of data
+    data, target = next(iter(dataloader))
+
+    # move data and target to device
+    data = data.to(device)
+    target = target.to(device)
+
+    # get only the first 10 samples
+    data = data[:10]
+    target = target[:10]
+
+    # move model to device
+    model = model.to(device)
+
+    # generate SHAP values
+    explainer = shap.DeepExplainer(model, data)
+    shap_values = explainer.shap_values(data)
+
+    os.makedirs('SHAP', exist_ok=True)
+
+    # create a 10x10 grid of subplots
+    fig, axes = plt.subplots(10, 11, figsize=(100, 100))
+
+    # iterate over the SHAP values and plot on the subplots
+    for i in range(len(data)):
+        shap_i = shap_values[i]
+        label = target[i]
+
+        # plot the original image
+        axes[i, 0].imshow(data[i].cpu().reshape(28, 28), cmap='gray')
+        axes[i, 0].set_title(f'Label: {label}')
+
+        # plot the SHAP values
+        num_shap_values = min(10, len(shap_i))  # Adjust the number of SHAP values to fit within the grid
+        for j in range(num_shap_values):
+            axes[i, j+1].imshow(shap_i[j].reshape(28, 28), cmap='jet')
+            axes[i, j+1].axis('off')
+            axes[i, j+1].set_title(f'SHAP value: {j}')
+
+    # remove empty rows
+    for i in range(len(data), 10):
+        for j in range(10):
+            axes[i, j].axis('off')
+
+    # save the figure
+    plt.tight_layout()
+    plt.savefig('SHAP/shap_values.png')
+    plt.close()
 
 
 def main():
-    model = getmodel()
+    model = buildModel()
     model.load_state_dict(torch.load('mnist_cnn.pt'))
 
-    train_loader, test_loader = loadData()
+    if dataset == "MNIST":
+        train_loader, test_loader = load_MNIST_data()
+    if dataset == "CIFAR10":
+        train_loader, test_loader = load_CIFAR10_data()
 
-
-    # Select a sample from the test set for explanation
-    sample_idx = 0  # Choose the index of the sample to explain
-    sample, _ = next(iter(test_loader))
-    sample = sample[sample_idx:10]
-    sample = torch.tensor(sample).to(torch.float32).reshape(-1,1,28,28)
-
-    # Initialize the SHAP explainer with the trained model
-    explainer = shap.DeepExplainer(model, sample)
-
-    # Generate SHAP values for the selected sample
-    shap_values = explainer.shap_values(sample)
-
-    # Visualize the SHAP values
-    shap.image_plot(shap_values, -sample.detach().numpy())
-
+    # Define the SHAP explainer
+    save_and_plot_shap_values(test_loader, model)
 
 if __name__ == '__main__':
     main()
