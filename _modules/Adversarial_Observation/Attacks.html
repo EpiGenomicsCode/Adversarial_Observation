@@ -154,11 +154,12 @@
         <span class="n">loss_value</span> <span class="o">=</span> <span class="n">loss</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="n">label</span><span class="p">])</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">))</span>
 
         <span class="c1"># Perform backpropagation to compute gradients</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
         <span class="n">loss_value</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
 
         <span class="c1"># Create the perturbed data by adjusting each pixel of the input data</span>
-        <span class="n">perturbed</span> <span class="o">=</span> <span class="n">epsilon</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">grad</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
-        <span class="n">perturbed</span> <span class="o">=</span> <span class="n">input_data</span> <span class="o">+</span> <span class="n">perturbed</span>
+        <span class="n">perturbed</span> <span class="o">=</span> <span class="n">epsilon</span> <span class="o">*</span> <span class="n">data</span><span class="o">.</span><span class="n">grad</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">sign</span><span class="p">()</span>
+        <span class="n">perturbed</span> <span class="o">=</span> <span class="n">data</span> <span class="o">+</span> <span class="n">perturbed</span>
 
         <span class="c1"># copy the perturbed data back to the original device</span>
         <span class="n">perturbed</span> <span class="o">=</span> <span class="n">perturbed</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">original_device</span><span class="p">)</span>
