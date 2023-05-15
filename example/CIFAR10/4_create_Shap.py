@@ -76,7 +76,7 @@ def save_and_plot_shap_values(dataloader, model):
             axes[i, j].axis('off')
 
         # save the row individually
-        row_fig = plt.figure(figsize=(10, 10))
+        row_fig = plt.figure(figsize=(8, 1))
         row_axes = row_fig.subplots(1, num_shap_values + 1)
         
         row_axes[0].imshow(data[i].cpu().numpy().transpose(1,2,0))

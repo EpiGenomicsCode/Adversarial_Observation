@@ -74,15 +74,15 @@ def save_and_plot_shap_values(dataloader, model):
         for j in range(num_shap_values + 1, 11):
             axes[i, j].axis('off')
 
-        # save the row individually
-        row_fig = plt.figure(figsize=(10, 10))
+        # save the row individually and remove the white space
+        row_fig = plt.figure(figsize=(10, 1))
         row_axes = row_fig.subplots(1, num_shap_values + 1)
         row_axes[0].imshow(data[i].cpu().reshape(28, 28), cmap='gray')
         row_axes[0].set_title(f'Label: {label}')
         for j in range(num_shap_values):
             row_axes[j+1].imshow(-shap_i[j].reshape(28, 28), cmap='jet')
             row_axes[j+1].axis('off')
-            # row_axes[j+1].set_title(f'SHAP value: {j}')
+            # row_axes[j+1].set_title(f'SHAP value: {j}'
         plt.tight_layout()
         row_fig.savefig(f'SHAP/row_{i}.png')
         plt.close(row_fig)

@@ -65,9 +65,9 @@ def main():
         per = torch.tensor(per)
         # Plot the adversarial image
         plt.imshow(per[0][0])
-        pred = model(per)
+        pred = model(per)[0]
         confidence = torch.argmax(pred)
-        confidence_score = pred[0][confidence]
+        confidence_score = pred[confidence]
         plt.colorbar()
         plt.title(f"FGSM\nconfidence {confidence_score}")
         plt.savefig(f'Noise/fgsm/{eps}.png')
@@ -82,7 +82,7 @@ def main():
 
         # Plot the activation
         activation = AO.Attacks.activation_map(per, model)
-        plt.imshow(activation[0][0])
+        plt.imshow(activation[0][0], cmap="jet")
         plt.colorbar()
         plt.title("Activation Map")
         plt.savefig(f'Noise/fgsm_activation/{eps}.png')

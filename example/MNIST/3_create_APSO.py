@@ -12,8 +12,8 @@ from util import *
 # global variables
 label = 3
 initial = 0
-epochs = 5
-points = 5
+epochs = 20
+points = 20
 
 def cost_func(model, x):
     global label
@@ -79,7 +79,7 @@ def plotPSO(points, step, model):
         plt.clf()
 
         act = AO.Attacks.activation_map(torch.tensor(img.reshape(1,1,28,28)).to(torch.float32), model)
-        plt.imshow(act.reshape(28,28), cmap='gray')
+        plt.imshow(act.reshape(28,28)/act.max(), cmap='jet')
         plt.colorbar()
         plt.savefig(f"PSO_images/{index}/{step}_act.png")
         plt.clf()
