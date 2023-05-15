@@ -84,11 +84,12 @@ def fgsm_attack(input_data: torch.Tensor, labels: torch.Tensor, epsilon: float, 
         loss_value = loss(output, torch.tensor([label]).to(device))
 
         # Perform backpropagation to compute gradients
+        model.zero_grad()
         loss_value.backward()
 
         # Create the perturbed data by adjusting each pixel of the input data
-        perturbed = epsilon * torch.sign(data.grad.data)
-        perturbed = input_data + perturbed
+        perturbed = epsilon * data.grad.data.sign()
+        perturbed = data + perturbed
 
         # copy the perturbed data back to the original device
         perturbed = perturbed.to(original_device)

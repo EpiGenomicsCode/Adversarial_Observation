@@ -8,6 +8,7 @@ from util import *
 from umap import UMAP
 import matplotlib.pyplot as plt
 from util import *
+from sklearn.cluster import KMeans
 
 # global variables
 label = 3
@@ -108,6 +109,8 @@ def runAPSO(points, epochs, model, cost_func, dataDic, umap, run):
     plt.savefig(f"./umap_images/bestPoint{run}.png")
     plt.clf()
 
+    positions = [i.position_i for i in APSO.swarm]
+
 def main():
 
     global label
@@ -126,7 +129,62 @@ def main():
     dataDic["Attack"] = dataDic[initial][:points]
 
     initalPoints = dataDic[initial][:points]
-    runAPSO(initalPoints, epochs, model, cost_func, dataDic, umap, f"MNIST_{initial}_{label}")
+    positions = runAPSO(initalPoints, epochs, model, cost_func, dataDic, umap, f"MNIST_{initial}_{label}")
+
+    positions = np.array(positions)
+    positions = positions.reshape(-1,3*32*32)
+    # cluster the positions using sklearn 
+    kmeans = KMeans(n_clusters=2, random_state=0).fit(positions)
+    
+    
+    os.makedirs("APSO_Cluster", exist_ok=True)
+    
+    # get the values of the clusters
+    cluster1 = []
+    cluster2 = []
+
+    for i in range(len(kmeans.labels_)):
+        if kmeans.labels_[i] == 0:
+            cluster1.append(positions[i])
+        else:
+            cluster2.append(positions[i])
+
+    # plot average of cluster 1
+    cluster1 = np.array(cluster1)
+    cluster1 = np.mean(cluster1, axis=0)
+    cluster1 = cluster1.reshape(3,32,32)
+    cluster1.transpose(1,2,0)/cluster1.max()
+    
+    plt.imshow(cluster1.transpose(1,2,0)/cluster1.max())
+    conf = cost_func(model, torch.tensor(cluster1.reshape(1,3,32,32)))
+    plt.title("Average of Cluster 1 with Confidence: " + str(np.round(conf,5)))
+    plt.savefig(f"./APSO_Cluster/cluster1.png")
+    plt.clf()
+
+    # plot average of cluster 2
+    cluster2 = np.array(cluster2)
+    cluster2 = np.mean(cluster2, axis=0)
+    cluster2 = cluster2.reshape(3,32,32)
+    cluster2.transpose(1,2,0)/cluster2.max()
+    plt.imshow(cluster2.transpose(1,2,0))
+    conf = cost_func(model, torch.tensor(cluster2.reshape(1,3,32,32)))
+    plt.title("Average of Cluster 2 with Confidence: " + str(np.round(conf,5)))
+    plt.savefig(f"./APSO_Cluster/cluster2.png")
+    plt.clf()
+
+    # plot the activation map of cluster 1
+    act = AO.Attacks.activation_map(torch.tensor(cluster1.reshape(1,3,32,32)).to(torch.float32), model)
+    plt.imshow(act.reshape(3,32,32).transpose(1,2,0)/act.max(), cmap="jet")
+    plt.colorbar()
+    plt.savefig(f"./APSO_Cluster/cluster1_act.png")
+    plt.clf()
+
+    # plot the activation map of cluster 2
+    act = AO.Attacks.activation_map(torch.tensor(cluster2.reshape(1,3,32,32)).to(torch.float32), model)
+    plt.imshow(act.reshape(3,32,32).transpose(1,2,0)/act.max(), cmap="jet")
+    plt.colorbar()
+    plt.savefig(f"./APSO_Cluster/cluster2_act.png")
+    plt.clf()
     
 if __name__ == '__main__':
     main()
