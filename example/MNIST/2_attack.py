@@ -37,7 +37,7 @@ def main():
         os.makedirs('Noise', exist_ok=True)
         os.makedirs(f'Noise/{label}', exist_ok=True)
         #  if the length of the subdirectory is 9 break
-        if len(os.listdir(f'Noise/')) >= 9:
+        if len(os.listdir(f'Noise/')) > 9:
             break
         
         plt.imshow(image[0], cmap='gray')

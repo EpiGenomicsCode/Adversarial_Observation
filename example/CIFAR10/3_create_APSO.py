@@ -24,7 +24,7 @@ labelDic ={ 0: 'airplane',
 # global variables
 label = 0
 initial = 7
-epochs = 10
+epochs = 20
 points = 30
 clusters = 3
 

@@ -74,6 +74,8 @@ def save_and_plot_shap_values(dataloader, model):
         
         #  convert tensor to numpy
         axes[i, 0].imshow(data_i)
+        # save the image as a numpy array
+        np.save(f'SHAP/data_{labelDic[i]}.npy', data_i)
         axes[i, 0].set_title(f'Label: {label}')
 
         # plot the SHAP values
@@ -81,7 +83,7 @@ def save_and_plot_shap_values(dataloader, model):
         for j in range(num_shap_values):
             axes[i, j+1].imshow(shap_i[j]/shap_i[j].max(), cmap='jet')
             #  save the shap value as a numpy array
-            np.save(f'SHAP/shap_{i}_{j}.npy', shap_i[j]/shap_i[j].max())
+            np.save(f'SHAP/shap_{labelDic[i]}_{labelDic[j]}.npy', shap_i[j]/shap_i[j].max())
             axes[i, j+1].imshow(data_i, alpha=0.1)
             axes[i, j+1].axis('off')
             axes[i, j+1].set_title(f'SHAP value: {j}')
