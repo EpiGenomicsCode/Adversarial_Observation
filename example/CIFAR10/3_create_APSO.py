@@ -86,9 +86,10 @@ def plotPSO(points, step, model, filename):
     for index in range(len(points)):
         os.makedirs(f"PSO_images/{index}", exist_ok=True)
         img = points[index]
+        
         plt.imshow(img.transpose(1,2,0)/img.max())
         
-        confidence = cost_func(model, img)
+        confidence =  model(torch.tensor(255*img).unsqueeze(0).to(torch.float32))[0][label].item()
         plt.title(f"Confidence of {labelDic[label]}: {np.round(confidence,5)}")
         plt.savefig(f"PSO_images/{index}/{filename}_{step}.png")
         plt.colorbar()
@@ -99,6 +100,11 @@ def plotPSO(points, step, model, filename):
         plt.colorbar()
         plt.savefig(f"PSO_images/{index}/{filename}_{step}_act.png")
         plt.clf()
+
+        # save img as numpy array
+        np.save(f"PSO_images/{index}/{filename}_{step}.npy", img)
+        # save activation map as numpy array
+        np.save(f"PSO_images/{index}/{filename}_{step}_act.npy", act)
 
 def runAPSO(points, epochs, model, cost_func, dataDic, umap, run):
     APSO = SO.Swarm.PSO(torch.tensor(points).reshape(-1,3,32,32), cost_func, model, w=.2, c1=.5, c2=.5)
@@ -155,6 +161,8 @@ def main():
     positions = runAPSO(initalPoints, epochs, model, cost_func, dataDic, umap, f"CIFAR10_{labelNames[initial]}_{labelNames[label]}")
     positions = np.array(positions)
     positions = positions.reshape(-1,3*32*32)
+    
+    os.makedirs("APSO_Cluster", exist_ok=True)
     # save the positions as a numpy array
     np.save(f"APSO_Cluster/{labelNames[initial]}_{labelNames[label]}.npy", positions)
     
@@ -162,7 +170,6 @@ def main():
     kmeans = KMeans(n_clusters=clusters, random_state=0).fit(positions)
     
     
-    os.makedirs("APSO_Cluster", exist_ok=True)
     
     # get the values of the clusters
     clusters = {}

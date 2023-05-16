@@ -85,6 +85,13 @@ def plotPSO(points, step, model):
         plt.savefig(f"PSO_images/{index}/{step}_act.png")
         plt.clf()
 
+        # save the activation map as numpy array
+        np.save(f"PSO_images/{index}/{step}_act.npy", act)
+
+        # save the image as numpy array
+        np.save(f"PSO_images/{index}/{step}.npy", img)
+
+
 def runAPSO(points, epochs, model, cost_func, dataDic, umap, run):
     APSO = SO.Swarm.PSO(torch.tensor(points).reshape(-1,1,1,28,28), cost_func, model, w=.5, c1=.5, c2=.5)
     for epoch in range(epochs):
