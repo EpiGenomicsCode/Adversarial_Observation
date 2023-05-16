@@ -133,6 +133,9 @@ def main():
 
     positions = np.array(positions)
     positions = positions.reshape(-1,3*32*32)
+    # save the positions
+    np.save(f"APSO_Cluster/{initial}_{label}.npy", positions)
+    
     # cluster the positions using sklearn 
     kmeans = KMeans(n_clusters=2, random_state=0).fit(positions)
     

@@ -58,6 +58,9 @@ def save_and_plot_shap_values(dataloader, model):
     for i in range(len(data)):
         shap_i = shap_values[i]
         label = target[i]
+        # save the original image as a numpy array
+        np.save(f'SHAP/{i}_original.npy', data[i].cpu().numpy())
+
 
         # plot the original image
         axes[i, 0].imshow(data[i].cpu().reshape(28, 28), cmap='gray')
@@ -66,6 +69,8 @@ def save_and_plot_shap_values(dataloader, model):
         # plot the SHAP values
         num_shap_values = min(10, len(shap_i))  # Adjust the number of SHAP values to fit within the grid
         for j in range(num_shap_values):
+            # save the SHAP value as a numpy array
+            np.save(f'SHAP/{i}_shap_{j}.npy', shap_i[j])
             axes[i, j+1].imshow(shap_i[j].reshape(28, 28), cmap='jet')
             axes[i, j+1].axis('off')
             axes[i, j+1].set_title(f'SHAP value: {j}')
@@ -82,7 +87,6 @@ def save_and_plot_shap_values(dataloader, model):
         for j in range(num_shap_values):
             row_axes[j+1].imshow(-shap_i[j].reshape(28, 28), cmap='jet')
             row_axes[j+1].axis('off')
-            # row_axes[j+1].set_title(f'SHAP value: {j}'
         plt.tight_layout()
         row_fig.savefig(f'SHAP/row_{i}.png')
         plt.close(row_fig)
