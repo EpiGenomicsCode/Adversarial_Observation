@@ -10,6 +10,8 @@
     <script src="../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
         <script src="../../_static/doctools.js"></script>
         <script src="../../_static/sphinx_highlight.js"></script>
@@ -78,7 +80,8 @@
 <span class="sd">    Generate an activation map for an input data given a pre-trained PyTorch model.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        input_data (torch.Tensor): Input data as a PyTorch tensor.</span>
+<span class="sd">        input_data (torch.Tensor): Input data as a PyTorch tensor. </span>
+<span class="sd">            EX. For 10 MNIST images, input_data.shape = (10, 1, 28, 28)</span>
 <span class="sd">        model (torch.nn.Module): Pre-trained PyTorch model used to generate the activation map.</span>
 
 <span class="sd">    Returns:</span>
@@ -86,45 +89,43 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># Set the model to evaluation mode and enable gradient computation for the input data</span>
     <span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
-    <span class="n">output_data</span> <span class="o">=</span> <span class="p">[]</span>
 
-    
-    <span class="c1">#  assert it has a batch dimension of 1 </span>
-    <span class="k">assert</span> <span class="n">input_data</span><span class="o">.</span><span class="n">device</span> <span class="o">==</span> <span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">()</span><span class="o">.</span><span class="fm">__next__</span><span class="p">()</span><span class="o">.</span><span class="n">device</span><span class="p">,</span> <span class="s2">&quot;Input data and model must be on the same device&quot;</span>
+    <span class="c1"># assert input data is a PyTorch tensor</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">input_data</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">),</span> <span class="s2">&quot;Input data must be a PyTorch tensor&quot;</span>
 
-    <span class="k">for</span> <span class="nb">input</span> <span class="ow">in</span> <span class="n">input_data</span><span class="p">:</span>
-        <span class="c1"># Enable gradient computation for the input data</span>
-        <span class="nb">input</span><span class="o">.</span><span class="n">requires_grad</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="c1"># assert that the input data and model are on the same device</span>
+    <span class="k">assert</span> <span class="n">input_data</span><span class="o">.</span><span class="n">device</span> <span class="o">==</span> <span class="nb">next</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">())</span><span class="o">.</span><span class="n">device</span><span class="p">,</span> <span class="s2">&quot;Input data and model must be on the same device&quot;</span>
 
-        <span class="c1"># Make a forward pass through the model and get the predicted class scores for the input data</span>
-        <span class="n">preds</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="nb">input</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+    <span class="c1"># Enable gradient computation for the input data</span>
+    <span class="n">input_data</span><span class="o">.</span><span class="n">requires_grad</span> <span class="o">=</span> <span class="kc">True</span>
 
-        <span class="c1"># Get the index corresponding to the maximum predicted class score</span>
-        <span class="n">pred_class_idx</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">preds</span><span class="p">)</span>
+    <span class="c1"># Make a forward pass through the model and get the predicted class scores for the input data</span>
+    <span class="n">preds</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">input_data</span><span class="p">)</span>
 
-        <span class="c1"># Get the predicted class score corresponding to the maximum predicted class score</span>
-        <span class="n">score</span> <span class="o">=</span> <span class="n">preds</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">pred_class_idx</span><span class="p">]</span>
-        
-        <span class="c1"># Compute gradients of the score with respect to the input data pixels</span>
-        <span class="n">score</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+    <span class="c1"># Get the indices corresponding to the maximum predicted class scores</span>
+    <span class="n">pred_class_idxs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">preds</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 
-        <span class="c1"># Compute the activation map as the absolute value of the gradients</span>
-        <span class="n">activation_map</span> <span class="o">=</span> <span class="nb">input</span><span class="o">.</span><span class="n">grad</span>
+    <span class="c1"># Compute gradients of the scores with respect to the input data pixels</span>
+    <span class="n">preds</span><span class="p">[:,</span> <span class="n">pred_class_idxs</span><span class="p">]</span><span class="o">.</span><span class="n">backward</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">preds</span><span class="p">[:,</span> <span class="n">pred_class_idxs</span><span class="p">]))</span>
 
-        <span class="c1"># save the activation map</span>
-        <span class="n">output_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">activation_map</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>
+    <span class="c1"># Compute the activation map as the absolute value of the gradients</span>
+    <span class="n">activation_map</span> <span class="o">=</span> <span class="n">input_data</span><span class="o">.</span><span class="n">grad</span>
+
+    <span class="c1"># Detach the activation map and move it to CPU as a numpy array</span>
+    <span class="n">activation_map</span> <span class="o">=</span> <span class="n">activation_map</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
 
     <span class="c1"># Return the activation map</span>
-    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">output_data</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">activation_map</span></div>
 
-
-<div class="viewcode-block" id="fgsm_attack"><a class="viewcode-back" href="../../Adversarial_Observation.html#Adversarial_Observation.Attacks.fgsm_attack">[docs]</a><span class="k">def</span> <span class="nf">fgsm_attack</span><span class="p">(</span><span class="n">input_data</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">labels</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">epsilon</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">loss</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">CrossEntropyLoss</span><span class="p">(),</span>  <span class="n">device</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;cpu&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<div class="viewcode-block" id="fgsm_attack"><a class="viewcode-back" href="../../Adversarial_Observation.html#Adversarial_Observation.Attacks.fgsm_attack">[docs]</a><span class="k">def</span> <span class="nf">fgsm_attack</span><span class="p">(</span><span class="n">input_data</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">labels</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">epsilon</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">loss</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">CrossEntropyLoss</span><span class="p">(),</span> <span class="n">device</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;cpu&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Generates adversarial example using fast gradient sign method.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        input_data (torch.Tensor): A list of input_data to be modified.</span>
+<span class="sd">            EX: For 10 MNIST images, input_data.shape = (10, 1, 28, 28)</span>
 <span class="sd">        labels (torch.Tensor): The true labels of the input data.</span>
+<span class="sd">            EX: For 10 MNIST images, labels.shape = (10,)</span>
 <span class="sd">        epsilon (float): Magnitude of the perturbation added to the input data.</span>
 <span class="sd">        model (torch.nn.Module): The neural network model.</span>
 <span class="sd">        loss (torch.nn.Module): The loss function to use for the computation.</span>
@@ -132,7 +133,7 @@
 <span class="sd">            default: &quot;cpu&quot;</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        perturbed (np.ndarray): the noise to be added to the input data.</span>
+<span class="sd">        perturbed (np.ndarray): The perturbed input data.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># assert that epsilon is a positive value</span>
     <span class="k">assert</span> <span class="n">epsilon</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;Epsilon must be a positive value&quot;</span>
@@ -140,38 +141,45 @@
     <span class="n">original_device</span> <span class="o">=</span> <span class="n">input_data</span><span class="o">.</span><span class="n">device</span>
     <span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
 
+    <span class="c1"># assert input data is a PyTorch tensor</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">input_data</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">),</span> <span class="s2">&quot;Input data must be a PyTorch tensor&quot;</span>
+
+    <span class="c1"># assert that the input data and model are on the same device</span>
     <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">input_data</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">labels</span><span class="p">),</span> <span class="s2">&quot;Input data and labels must have the same length&quot;</span>
 
-    <span class="n">output_data</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">for</span> <span class="n">input_data</span><span class="p">,</span> <span class="n">label</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">input_data</span><span class="p">,</span> <span class="n">labels</span><span class="p">):</span>
-        <span class="n">data</span> <span class="o">=</span> <span class="n">input_data</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
-        <span class="n">data</span><span class="o">.</span><span class="n">requires_grad</span> <span class="o">=</span> <span class="kc">True</span>
 
-        <span class="c1"># Make a forward pass through the model and get the predicted class scores</span>
-        <span class="n">output</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+    <span class="c1"># Enable gradient computation for the input data</span>
+    <span class="n">input_data</span><span class="o">.</span><span class="n">requires_grad</span> <span class="o">=</span> <span class="kc">True</span>
 
-        <span class="c1"># Get the index corresponding to the maximum predicted class score</span>
-        <span class="n">loss_value</span> <span class="o">=</span> <span class="n">loss</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="n">label</span><span class="p">])</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">))</span>
+    <span class="c1"># Make a forward pass through the model and get the predicted class scores</span>
+    <span class="n">output</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">input_data</span><span class="p">)</span>
 
-        <span class="c1"># Perform backpropagation to compute gradients</span>
-        <span class="n">model</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
-        <span class="n">loss_value</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+    <span class="c1"># Calculate the loss between the predicted output and the true labels</span>
+    <span class="n">loss_value</span> <span class="o">=</span> <span class="n">loss</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">labels</span><span class="p">)</span>
 
-        <span class="c1"># Create the perturbed data by adjusting each pixel of the input data</span>
-        <span class="n">perturbed</span> <span class="o">=</span> <span class="n">epsilon</span> <span class="o">*</span> <span class="n">data</span><span class="o">.</span><span class="n">grad</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">sign</span><span class="p">()</span>
-        <span class="n">perturbed</span> <span class="o">=</span> <span class="n">data</span> <span class="o">+</span> <span class="n">perturbed</span>
+    <span class="c1"># Zero the gradients</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
 
-        <span class="c1"># copy the perturbed data back to the original device</span>
-        <span class="n">perturbed</span> <span class="o">=</span> <span class="n">perturbed</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">original_device</span><span class="p">)</span>
+    <span class="c1"># Perform backpropagation to compute the gradients</span>
+    <span class="n">loss_value</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
 
-        <span class="c1"># reshape perturbed data to match the input data shape</span>
-        <span class="n">perturbed</span> <span class="o">=</span> <span class="n">perturbed</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">input_data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+    <span class="c1"># Get the gradients of the input data</span>
+    <span class="n">gradients</span> <span class="o">=</span> <span class="n">input_data</span><span class="o">.</span><span class="n">grad</span><span class="o">.</span><span class="n">data</span>
 
-        <span class="c1"># save the perturbed data</span>
-        <span class="n">output_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">perturbed</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>
+    <span class="c1"># Calculate the sign of the gradients</span>
+    <span class="n">sign_gradients</span> <span class="o">=</span> <span class="n">gradients</span><span class="o">.</span><span class="n">sign</span><span class="p">()</span>
 
-    <span class="c1"># Return the perturbed data</span>
-    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">output_data</span><span class="p">)</span></div>
+    <span class="c1"># Create the perturbation by scaling the sign of the gradients with epsilon</span>
+    <span class="n">perturbation</span> <span class="o">=</span> <span class="n">epsilon</span> <span class="o">*</span> <span class="n">sign_gradients</span>
+
+    <span class="c1"># Add the perturbation to the input data to generate the adversarial example</span>
+    <span class="n">perturbed</span> <span class="o">=</span> <span class="n">input_data</span> <span class="o">+</span> <span class="n">perturbation</span>
+
+    <span class="c1"># Move the perturbed data back to the original device</span>
+    <span class="n">perturbed</span> <span class="o">=</span> <span class="n">perturbed</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">original_device</span><span class="p">)</span>
+
+    <span class="c1"># Return the perturbed input data as a numpy array</span>
+    <span class="k">return</span> <span class="n">perturbed</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span></div>
 </pre></div>
 
            </div>

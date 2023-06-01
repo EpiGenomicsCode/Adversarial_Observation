@@ -11,6 +11,8 @@
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
+        <script src="_static/jquery.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/doctools.js"></script>
         <script src="_static/sphinx_highlight.js"></script>
@@ -102,7 +104,8 @@
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>input_data</strong> (<em>torch.Tensor</em>) – Input data as a PyTorch tensor.</p></li>
+<li><p><strong>input_data</strong> (<em>torch.Tensor</em>) – Input data as a PyTorch tensor.
+EX. For 10 MNIST images, input_data.shape = (10, 1, 28, 28)</p></li>
 <li><p><strong>model</strong> (<em>torch.nn.Module</em>) – Pre-trained PyTorch model used to generate the activation map.</p></li>
 </ul>
 </dd>
@@ -122,8 +125,10 @@
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>input_data</strong> (<em>torch.Tensor</em>) – A list of input_data to be modified.</p></li>
-<li><p><strong>labels</strong> (<em>torch.Tensor</em>) – The true labels of the input data.</p></li>
+<li><p><strong>input_data</strong> (<em>torch.Tensor</em>) – A list of input_data to be modified.
+EX: For 10 MNIST images, input_data.shape = (10, 1, 28, 28)</p></li>
+<li><p><strong>labels</strong> (<em>torch.Tensor</em>) – The true labels of the input data.
+EX: For 10 MNIST images, labels.shape = (10,)</p></li>
 <li><p><strong>epsilon</strong> (<em>float</em>) – Magnitude of the perturbation added to the input data.</p></li>
 <li><p><strong>model</strong> (<em>torch.nn.Module</em>) – The neural network model.</p></li>
 <li><p><strong>loss</strong> (<em>torch.nn.Module</em>) – The loss function to use for the computation.</p></li>
@@ -132,7 +137,7 @@ default: “cpu”</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>the noise to be added to the input data.</p>
+<dd class="field-even"><p>The perturbed input data.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>perturbed (np.ndarray)</p>
