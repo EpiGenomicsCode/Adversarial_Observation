@@ -17,37 +17,33 @@ def activation_map(input_data: torch.Tensor, model: torch.nn.Module) -> torch.Te
     """
     # Set the model to evaluation mode and enable gradient computation for the input data
     model.eval()
-    output_data = []
+
     # assert input data is a PyTorch tensor
     assert isinstance(input_data, torch.Tensor), "Input data must be a PyTorch tensor"
-    
+
     # assert that the input data and model are on the same device
-    assert input_data.device == model.parameters().__next__().device, "Input data and model must be on the same device"
-    
+    assert input_data.device == next(model.parameters()).device, "Input data and model must be on the same device"
+
     # Enable gradient computation for the input data
     input_data.requires_grad = True
 
     # Make a forward pass through the model and get the predicted class scores for the input data
     preds = model(input_data)
 
-    for pred in preds:
-        # Get the index corresponding to the maximum predicted class score
-        pred_class_idx = torch.argmax(pred)
+    # Get the indices corresponding to the maximum predicted class scores
+    pred_class_idxs = torch.argmax(preds, dim=1)
 
-        # Get the predicted class score corresponding to the maximum predicted class score
-        score = pred[pred_class_idx]
+    # Compute gradients of the scores with respect to the input data pixels
+    preds[:, pred_class_idxs].backward(torch.ones_like(preds[:, pred_class_idxs]))
 
-        # Compute gradients of the score with respect to the input data pixels
-        score.backward()
+    # Compute the activation map as the absolute value of the gradients
+    activation_map = input_data.grad
 
-        # Compute the activation map as the absolute value of the gradients
-        activation_map = input_data.grad
-
-        # save the activation map
-        output_data.append(activation_map.detach().cpu().numpy())
+    # Detach the activation map and move it to CPU as a numpy array
+    activation_map = activation_map.detach().cpu().numpy()
 
     # Return the activation map
-    return np.array(output_data)
+    return activation_map
 
 def fgsm_attack(input_data: torch.Tensor, labels: torch.Tensor, epsilon: float, model: torch.nn.Module, loss: torch.nn.Module = torch.nn.CrossEntropyLoss(), device: str = "cpu") -> np.ndarray:
     """
@@ -65,7 +61,7 @@ def fgsm_attack(input_data: torch.Tensor, labels: torch.Tensor, epsilon: float, 
             default: "cpu"
 
     Returns:
-        perturbed (np.ndarray): the noise to be added to the input data.
+        perturbed (np.ndarray): The perturbed input data.
     """
     # assert that epsilon is a positive value
     assert epsilon >= 0, "Epsilon must be a positive value"
@@ -79,8 +75,6 @@ def fgsm_attack(input_data: torch.Tensor, labels: torch.Tensor, epsilon: float, 
     # assert that the input data and model are on the same device
     assert len(input_data) == len(labels), "Input data and labels must have the same length"
 
-    # assert that the input data and model are on the same device
-    assert input_data.device == next(model.parameters()).device, "Input data and model must be on the same device"
 
     # Enable gradient computation for the input data
     input_data.requires_grad = True
@@ -109,12 +103,8 @@ def fgsm_attack(input_data: torch.Tensor, labels: torch.Tensor, epsilon: float, 
     # Add the perturbation to the input data to generate the adversarial example
     perturbed = input_data + perturbation
 
-    # Clamp the perturbed data to ensure it is within the valid range
-    perturbed = torch.clamp(perturbed, 0, 1)
-
     # Move the perturbed data back to the original device
     perturbed = perturbed.to(original_device)
 
-    # Return the perturbation as a numpy array
-    return perturbed.cpu().numpy()
-
+    # Return the perturbed input data as a numpy array
+    return perturbed.detach().cpu().numpy()

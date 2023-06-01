@@ -139,7 +139,7 @@ def main():
     positions = runAPSO(initalPoints, epochs, model, cost_func, dataDic, umap, f"MNIST_{initial}_{label}")
 
     positions = np.array(positions)
-    positions = positions.reshape(-1,3*32*32)
+    positions = positions.reshape(-1,1*28*28)
     # save the positions
     np.save(f"APSO_Cluster/{initial}_{label}.npy", positions)
     
