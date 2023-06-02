@@ -82,7 +82,7 @@ def main():
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
     loss = torch.nn.CrossEntropyLoss()
 
-    epochs = 20
+    epochs = 2
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model.to(device)
     print('Training model on {}'.format(device))
