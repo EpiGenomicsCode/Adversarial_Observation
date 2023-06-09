@@ -25,68 +25,68 @@ def main():
     train_loader, test_loader = load_MNIST_data()
     model = build_MNIST_Model()
     model.load_state_dict(torch.load('MNIST_cnn.pt'))
-    shape = (1, 1, 28, 28)
 
     # Set model to evaluation mode
     model.eval()  
 
-    data, target = next(iter(test_loader))
-
-    # Get the first image and label
-    image = torch.clamp(data[0], 0, 1)
-    label = target[0]
-
-    os.makedirs('Noise', exist_ok=True)
-    plt.imshow(image[0], cmap='gray')
-    pred = model(image.unsqueeze(0))
-    confidence = torch.argmax(pred)
-    confidence_score = pred[0][confidence]
-    plt.title(f"Original\nconfidence {confidence_score}")
-    plt.savefig('Noise/original.png')
-
-    # Plot the activation
-
-    activation = AO.Attacks.activation_map(image.reshape(shape), model)
-    plt.imshow(activation[0][0], cmap='gray')
-    plt.colorbar()
-    plt.title("Activation Map")
-    plt.savefig('Noise/activation.png')
-    plt.clf()
-
-    os.makedirs('Noise/fgsm', exist_ok=True)
-    os.makedirs('Noise/fgsm_noise', exist_ok=True)
-    os.makedirs('Noise/fgsm_activation', exist_ok=True)
-
     # Create the adversarial image
-    for eps in [0, .01, .05, .1, .2, .3, .4, .5, .6, .7, .8, .9]:
-        per = AO.Attacks.fgsm_attack(image.reshape(shape), [label], eps, model,
-                                    loss=torch.nn.CrossEntropyLoss())
-        per = np.clip(per, 0, 1)
-        per = torch.tensor(per)
-        # Plot the adversarial image
-        plt.imshow(per[0][0], cmap='gray')
-        pred = model(per)
-        confidence = torch.argmax(pred)
-        confidence_score = pred[0][confidence]
-        plt.colorbar()
-        plt.title(f"FGSM\nconfidence {confidence_score}")
-        plt.savefig(f'Noise/fgsm/{eps}.png')
-        plt.clf()
+    for data, target in train_loader:
+        # for every image in the batch
+        for i in range(len(data)):
+            image, imagelabel = data[i], target[i]
+            # if it is not misclassified
+            if torch.argmax(model(image.unsqueeze(0))) == imagelabel:
+                # attack it
+                attack_image(image, model, imagelabel)
+       
+def attack_image(image, model, label):
+        # if the folder already exists then skip
+        original_confidence = model(image.unsqueeze(0))[0]
+        for eps in [0, .05,.01, .1, .2, .3, .5][::-1]:
+            if not os.path.isfile(f'Noise/fgsm/{label.item()}/{eps}.png'):   
+                per = AO.Attacks.fgsm_attack(image.unsqueeze(0), label.unsqueeze(0), eps, model,
+                                            loss=torch.nn.CrossEntropyLoss())
+                per = per[0]
+                
+                noise = per - image.detach().numpy()
+                per = np.clip(per, 0, 1)
+                noise = noise[0] # 28,28
+                per = per[0] # 28,28
+                activation = AO.activation_map(torch.tensor(per).unsqueeze(0).unsqueeze(0), model)
+                confidence =model(torch.tensor(per).unsqueeze(0).unsqueeze(0))[0]
+                new_label = torch.argmax(confidence)
+                if new_label == label:
+                    continue
+                else:
+                    os.makedirs(f'Noise/fgsm/{label.item()}', exist_ok=True)
+                    score = confidence[new_label]
+                    score = score.detach().numpy().round(3)
 
-        # Plot the noise
-        plt.imshow(torch.clamp(per[0][0] - image[0], 0, 1), cmap='gray')
-        plt.colorbar()
-        plt.title(f"FGSM Noise\nconfidence {confidence_score}")
-        plt.savefig(f'Noise/fgsm_noise/{eps}.png')
-        plt.clf()
+                    #  plot as a 3x1 image
+                    fig, axs = plt.subplots(1, 3, figsize=(10, 10))
+                    axs[0].imshow(image[0], cmap='gray')
+                    axs[0].axis('off')
 
-        # Plot the activation
-        activation = AO.Attacks.activation_map(per, model)
-        plt.imshow(activation[0][0], cmap='gray')
-        plt.colorbar()
-        plt.title("Activation Map")
-        plt.savefig(f'Noise/fgsm_activation/{eps}.png')
-        plt.clf()
+                    axs[1].imshow(noise, cmap='gray')
+                    axs[1].set_title(f'Label: {label.item()}, New Label: {new_label.item()}, Score: {score.item()}')
+                    axs[1].axis('off')
+
+
+                    axs[2].imshow(per, cmap='gray')
+                    axs[2].axis('off')
+                    plt.savefig(f'Noise/fgsm/{label.item()}/{eps}.png', bbox_inches='tight', pad_inches=0)
+                    # save all 3 images for reference
+                    plt.clf()
+                    np.save(f'Noise/fgsm/{label.item()}/{eps}.npy', noise)
+                    np.save(f'Noise/fgsm/{label.item()}/{eps}_perturbed.npy', per)
+                    np.save(f'Noise/fgsm/{label.item()}/{eps}_activation.npy', activation)
+                    np.save(f'Noise/fgsm/{label.item()}/{eps}_original.npy', image.detach().numpy())
+                    plt.close()
+                    plt.clf()
+
+
+                            
+
 
 
 if __name__ == '__main__':
