@@ -43,11 +43,14 @@ def activation_map(input_data: torch.Tensor, model: torch.nn.Module) -> torch.Te
         # Compute the activation map as the absolute value of the gradients
         activation_map = input_data.grad
 
-        # save the activation map
-        output_data.append(activation_map.detach().cpu().numpy())
+    # Compute the activation map as the absolute value of the gradients
+    activation_map = input_data.grad
+
+    # Detach the activation map and move it to CPU as a numpy array
+    activation_map = activation_map.detach().cpu().numpy()
 
     # Return the activation map
-    return np.array(output_data)
+    return activation_map
 
 def fgsm_attack(input_batch_data: torch.Tensor, labels: torch.Tensor, epsilon: float, model: torch.nn.Module, loss: torch.nn.Module = torch.nn.CrossEntropyLoss(), device: str = "cpu") -> np.ndarray:
     """
@@ -65,7 +68,7 @@ def fgsm_attack(input_batch_data: torch.Tensor, labels: torch.Tensor, epsilon: f
             default: "cpu"
 
     Returns:
-        perturbed (np.ndarray): the noise to be added to the input data.
+        perturbed (np.ndarray): The perturbed input data.
     """
     # assert that epsilon is a positive value
     assert epsilon >= 0, "Epsilon must be a positive value"

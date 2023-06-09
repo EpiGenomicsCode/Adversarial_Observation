@@ -82,10 +82,7 @@ def attack_image(image, model, label):
                     np.save(f'Noise/fgsm/{label.item()}/{eps}_activation.npy', activation)
                     np.save(f'Noise/fgsm/{label.item()}/{eps}_original.npy', image.detach().numpy())
                     plt.close()
-                    plt.clf()
-
-
-                            
+                    plt.clf()                  
 
 
 

@@ -8,12 +8,13 @@ from util import *
 from umap import UMAP
 import matplotlib.pyplot as plt
 from util import *
+from sklearn.cluster import KMeans
 
 # global variables
 label = 3
 initial = 0
-epochs = 5
-points = 5
+epochs = 20
+points = 20
 
 def cost_func(model, x):
     global label
@@ -79,10 +80,16 @@ def plotPSO(points, step, model):
         plt.clf()
 
         act = AO.Attacks.activation_map(torch.tensor(img.reshape(1,1,28,28)).to(torch.float32), model)
-        plt.imshow(act.reshape(28,28), cmap='gray')
+        plt.imshow(act.reshape(28,28)/act.max(), cmap='jet')
         plt.colorbar()
         plt.savefig(f"PSO_images/{index}/{step}_act.png")
         plt.clf()
+
+        # save the activation map as numpy array
+        np.save(f"PSO_images/{index}/{step}_act.npy", act)
+
+        # save the image as numpy array
+        np.save(f"PSO_images/{index}/{step}.npy", img)
 
 def runAPSO(points, epochs, model, cost_func, dataDic, umap, run):
     APSO = SO.Swarm.PSO(torch.tensor(points).reshape(-1,1,1,28,28), cost_func, model, w=.5, c1=.5, c2=.5)
@@ -108,8 +115,10 @@ def runAPSO(points, epochs, model, cost_func, dataDic, umap, run):
     plt.savefig(f"./umap_images/bestPoint{run}.png")
     plt.clf()
 
-def main():
+    positions = [i.position_i for i in APSO.swarm]
+    return positions
 
+def main():
     global label
     global initial
     global points
@@ -126,7 +135,33 @@ def main():
     dataDic["Attack"] = dataDic[initial][:points]
 
     initalPoints = dataDic[initial][:points]
-    runAPSO(initalPoints, epochs, model, cost_func, dataDic, umap, f"MNIST_{initial}_{label}")
+    positions = runAPSO(initalPoints, epochs, model, cost_func, dataDic, umap, f"MNIST_{initial}_{label}")
+
+    positions = np.array(positions)
+    
+    positions = positions.reshape(-1,1*28*28)
+    # save the positions
+    os.makedirs(f"APSO_Cluster/", exist_ok=True)
+    np.save(f"APSO_Cluster/positions_{initial}_{label}.npy", positions)
+    
+    # cluster the positions using sklearn 
+    kmeans = KMeans(n_clusters=2, random_state=0).fit(positions)
+    
+    # for cluser in kmeans.cluster_centers_, plot the cluster average and the activation map
+    cluster_index = 0
+    for cluster in kmeans.cluster_centers_:
+        plt.imshow(cluster.reshape(28,28), cmap='gray')
+        conf = cost_func(model, torch.tensor(cluster.reshape(1,1,28,28)))
+        plt.title("Average of Cluster with Confidence: " + str(np.round(conf,5)))
+        plt.savefig(f"./APSO_Cluster/cluster{cluster_index}.png")
+        plt.clf()
+
+        act = AO.Attacks.activation_map(torch.tensor(cluster.reshape(1,1,28,28)).to(torch.float32), model)
+        plt.imshow(act.reshape(28,28)/act.max(), cmap='jet')
+        plt.colorbar()
+        plt.savefig(f"./APSO_Cluster/cluster{cluster_index}_act.png")
+        plt.clf()
+        cluster_index += 1
     
 if __name__ == '__main__':
     main()

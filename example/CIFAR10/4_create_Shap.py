@@ -7,6 +7,18 @@ from util import *
 import os
 from util import *
 
+labelDic ={ 0: 'airplane',
+            1: 'automobile',
+            2: 'bird',
+            3: 'cat',
+            4: 'deer',
+            5: 'dog',
+            6: 'frog',
+            7: 'horse',
+            8: 'ship',
+            9: 'truck'
+            }
+
 def getData(dataloader):
     """ 
     gets one sample of each class from the dataloader
@@ -53,6 +65,7 @@ def save_and_plot_shap_values(dataloader, model):
         shap_i = shap_values[i]
         shap_i = np.array(shap_i)
         shap_i = shap_i.transpose(0,2, 3, 1)
+        
         label = target[i]
 
 
@@ -61,13 +74,17 @@ def save_and_plot_shap_values(dataloader, model):
         
         #  convert tensor to numpy
         axes[i, 0].imshow(data_i)
+        # save the image as a numpy array
+        np.save(f'SHAP/data_{labelDic[i]}.npy', data_i)
         axes[i, 0].set_title(f'Label: {label}')
 
         # plot the SHAP values
         num_shap_values = min(10, len(shap_i))  # Adjust the number of SHAP values to fit within the grid
         for j in range(num_shap_values):
-
             axes[i, j+1].imshow(shap_i[j]/shap_i[j].max(), cmap='jet')
+            #  save the shap value as a numpy array
+            np.save(f'SHAP/shap_{labelDic[i]}_{labelDic[j]}.npy', shap_i[j]/shap_i[j].max())
+            axes[i, j+1].imshow(data_i, alpha=0.1)
             axes[i, j+1].axis('off')
             axes[i, j+1].set_title(f'SHAP value: {j}')
 
@@ -76,13 +93,14 @@ def save_and_plot_shap_values(dataloader, model):
             axes[i, j].axis('off')
 
         # save the row individually
-        row_fig = plt.figure(figsize=(10, 10))
+        row_fig = plt.figure(figsize=(8, 1))
         row_axes = row_fig.subplots(1, num_shap_values + 1)
         
         row_axes[0].imshow(data[i].cpu().numpy().transpose(1,2,0))
         row_axes[0].set_title(f'Label: {label}')
         for j in range(num_shap_values):
             row_axes[j+1].imshow(-shap_i[j]/shap_i[j].max(), cmap='jet')
+            axes[i, j+1].imshow(data_i, alpha=0.1)
             row_axes[j+1].axis('off')
             # row_axes[j+1].set_title(f'SHAP value: {j}')
         plt.tight_layout()

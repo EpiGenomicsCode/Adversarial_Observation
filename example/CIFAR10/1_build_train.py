@@ -70,7 +70,6 @@ def seedEverything(seed):
     torch.manual_seed(seed)
     np.random.seed(seed)
 
-
 def main():
     # Seed everything
     seedEverything(42)
@@ -82,7 +81,7 @@ def main():
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
     loss = torch.nn.CrossEntropyLoss()
 
-    epochs = 2
+    epochs = 20
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model.to(device)
     print('Training model on {}'.format(device))
@@ -92,7 +91,6 @@ def main():
 
     # Save model
     torch.save(model.state_dict(), 'CIFAR10_cnn.pt')
-
 
 
 if __name__ == '__main__':
