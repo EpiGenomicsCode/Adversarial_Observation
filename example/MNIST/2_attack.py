@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 import os
 from util import *
 
-
 def seedEverything(seed):
     """
     Seeds all the random number generators to ensure reproducibility.
@@ -16,7 +15,6 @@ def seedEverything(seed):
     """
     torch.manual_seed(seed)
     np.random.seed(seed)
-
 
 def main():
     # Seed everything
@@ -42,7 +40,7 @@ def main():
 def attack_image(image, model, label):
         # if the folder already exists then skip
         original_confidence = model(image.unsqueeze(0))[0]
-        for eps in [0, .05,.01, .1, .2, .3, .5][::-1]:
+        for eps in [.05,.01, .1, .2, .3, .5][::-1]:
             if not os.path.isfile(f'Noise/fgsm/{label.item()}/{eps}.png'):   
                 per = AO.Attacks.fgsm_attack(image.unsqueeze(0), label.unsqueeze(0), eps, model,
                                             loss=torch.nn.CrossEntropyLoss())
@@ -71,7 +69,6 @@ def attack_image(image, model, label):
                     axs[1].set_title(f'Label: {label.item()}, New Label: {new_label.item()}, Score: {score.item()}')
                     axs[1].axis('off')
 
-
                     axs[2].imshow(per, cmap='gray')
                     axs[2].axis('off')
                     plt.savefig(f'Noise/fgsm/{label.item()}/{eps}.png', bbox_inches='tight', pad_inches=0)
@@ -83,8 +80,6 @@ def attack_image(image, model, label):
                     np.save(f'Noise/fgsm/{label.item()}/{eps}_original.npy', image.detach().numpy())
                     plt.close()
                     plt.clf()                  
-
-
 
 if __name__ == '__main__':
     main()
