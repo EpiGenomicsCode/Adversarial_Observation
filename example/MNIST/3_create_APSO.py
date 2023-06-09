@@ -11,10 +11,10 @@ from util import *
 from sklearn.cluster import KMeans
 
 # global variables
-label = 3
-initial = 0
-epochs = 20
-points = 20
+label = 7
+initial = 1
+epochs = 50
+points = 50
 
 def cost_func(model, x):
     global label
@@ -64,56 +64,65 @@ def plotData(data, umap, title, saveName):
     plt.legend()
     plt.title(title)
     plt.savefig(saveName)
+    plt.close()
     plt.clf()
 
-def plotPSO(points, step, model):
+def plotPSO(points, step, model, runName):
     global label
-    os.makedirs("PSO_images", exist_ok=True)
+    
     for index in range(len(points)):
-        os.makedirs(f"PSO_images/{index}", exist_ok=True)
+        os.makedirs(f"APSO/{runName}/{index}", exist_ok=True)
+        fig, ax = plt.subplots(1,2)
         img = points[index]
-        plt.imshow(img.reshape(28,28), cmap='gray')
-        confidence = model(torch.tensor(img).to(torch.float32))[0][label].item()
-        plt.title(f"Confidence of {label}: {np.round(confidence,3)}")
-        plt.savefig(f"PSO_images/{index}/{step}.png")
-        plt.colorbar()
+        act = AO.Attacks.activation_map(torch.tensor(img.reshape(1,1,28,28)).to(torch.float32), model).reshape(28,28)
+
+        ax[0].imshow(img.reshape(28,28), cmap='gray')
+        ax[0].set_title(f"Confidence of {label}: {np.round(model(torch.tensor(img).to(torch.float32))[0][label].item(),3)}")
+        ax[0].axis('off')
+
+        ax[1].imshow(act, cmap='jet')
+        ax[1].axis('off')
+        ax[1].set_title("Activation Map")   
+
+
+        plt.savefig(f"./APSO/{runName}/{index}/{step}.png", bbox_inches='tight', pad_inches=0)
         plt.clf()
-
-        act = AO.Attacks.activation_map(torch.tensor(img.reshape(1,1,28,28)).to(torch.float32), model)
-        plt.imshow(act.reshape(28,28)/act.max(), cmap='jet')
-        plt.colorbar()
-        plt.savefig(f"PSO_images/{index}/{step}_act.png")
-        plt.clf()
-
-        # save the activation map as numpy array
-        np.save(f"PSO_images/{index}/{step}_act.npy", act)
-
-        # save the image as numpy array
-        np.save(f"PSO_images/{index}/{step}.npy", img)
-
-def runAPSO(points, epochs, model, cost_func, dataDic, umap, run):
+        os.makedirs(f"./APSO/{runName}/{index}/data", exist_ok=True)
+        np.save(f"./APSO/{runName}/{index}/data/{step}.npy", img)
+        np.save(f"./APSO/{runName}/{index}/data/{step}_act.npy", act)
+        plt.close()
+       
+def runAPSO(points, epochs, model, cost_func, dataDic, umap, runName):
+    os.makedirs(f"./APSO/{runName}", exist_ok=True)
+    # initialize the swarm
     APSO = SO.Swarm.PSO(torch.tensor(points).reshape(-1,1,1,28,28), cost_func, model, w=.5, c1=.5, c2=.5)
+    # run the swarm
     for epoch in range(epochs):
+        print(f"Epoch: {epoch}")
         APSO.step()
-        positions = [i.position_i for i in APSO.swarm]
-        plotPSO(positions, epoch, model)
-        dataDic["Attack"] = positions
-        plotData(dataDic, umap, 'umap of MNIST Data with Attack', f'./umap_images/umap_MNIST_attack_epoch_{epoch}.png')
-        # normalize the positions 
-        normPos = []
-        for pos in positions:
-            normPos.append((pos - pos.min()) / (pos.max() - pos.min()))
-        for i in range(len(APSO.swarm)):
-            APSO.swarm[i].position_i = normPos[i]
+        #  plot the swarm 
+        positions = [np.clip(i.position_i, 0,1) for i in APSO.swarm]
+        plotPSO(positions, epoch, model, runName)
 
-    # get the best point
-    bestPoint = APSO.pos_best_g
-    #  normalize the best point between 0 and 1
-    plt.imshow(bestPoint.reshape(28,28), cmap='gray')
-    conf = cost_func(model, torch.tensor((bestPoint - bestPoint.min()) / (bestPoint.max() - bestPoint.min())).reshape(1,1,28,28))
-    plt.title("Best Point with Confidence: " + str(np.round(conf,3)))
-    plt.savefig(f"./umap_images/bestPoint{run}.png")
-    plt.clf()
+        dataDic["Attack"] = positions
+        plotData(dataDic, umap, 'umap of MNIST Data with Attack', f'./APSO/{runName}/umap{epoch}.png')
+
+        # get the best point
+        bestPoint = np.clip(APSO.pos_best_g, 0,1)
+        fig, ax = plt.subplots(1,2)
+        ax[0].imshow(bestPoint.reshape(28,28), cmap='gray')
+        ax[0].axis('off')
+        ax[0].set_title(f"Confidence of {label}: {np.round(model(torch.tensor(bestPoint).to(torch.float32))[0][label].item(),3)}")
+        ax[1].imshow(AO.Attacks.activation_map(torch.tensor(bestPoint.reshape(1,1,28,28)).to(torch.float32), model).reshape(28,28), cmap='jet')
+        ax[1].axis('off')
+        ax[1].set_title("Activation Map")
+        plt.savefig(f"./APSO/{runName}/best_{epoch}.png", bbox_inches='tight', pad_inches=0)
+        plt.close()
+        plt.clf()
+        os.makedirs(f"./APSO/{runName}/bestData", exist_ok=True)
+        
+        np.save(f"./APSO/{runName}/bestData/{epoch}.npy", bestPoint)
+        np.save(f"./APSO/{runName}/bestData/{epoch}_act.npy", AO.Attacks.activation_map(torch.tensor(bestPoint.reshape(1,1,28,28)).to(torch.float32), model).reshape(28,28))
 
     positions = [i.position_i for i in APSO.swarm]
     return positions
@@ -124,28 +133,48 @@ def main():
     global points
 
     seedEverything()
-    
+    clusters = 2
     train_loader, test_loader = load_MNIST_data()
     model = build_MNIST_Model()
     model.load_state_dict(torch.load('MNIST_cnn.pt'))
     
     umap, dataDic = umap_data(train_loader)
-    os.makedirs("umap_images", exist_ok=True)
-    plotData(dataDic, umap, 'umap of MNIST Data', f'./umap_images/MNIST_inital.png')
-    dataDic["Attack"] = dataDic[initial][:points]
 
+    # APSO for one label to another
+    dataDic["Attack"] = dataDic[initial][:points]
     initalPoints = dataDic[initial][:points]
     positions = runAPSO(initalPoints, epochs, model, cost_func, dataDic, umap, f"MNIST_{initial}_{label}")
+    plot_clusters(positions, model, clusters,f"MNIST_{initial}_{label}")
 
+    # APSO for all labels to another
+    #  get the first 10 images of each label
+    dataDic["Attack"] = []
+    for key in dataDic.keys():
+        if key != "Attack" and label != key:
+            dataDic["Attack"] += dataDic[key][:points]
+    initalPoints = dataDic["Attack"]
+    positions = runAPSO(initalPoints, epochs, model, cost_func, dataDic, umap, f"MNIST_all_{label}")
+    plot_clusters(positions, model, clusters,f"MNIST_all_{label}")
+
+    # APSO for random noise to another
+    dataDic["Attack"] = []
+    for i in range(points):
+        dataDic["Attack"].append(np.random.rand(1,28,28))
+    initalPoints = dataDic["Attack"]
+    positions = runAPSO(initalPoints, epochs, model, cost_func, dataDic, umap, f"MNIST_noise_{label}")
+    plot_clusters(positions, model, clusters, f"MNIST_noise_{label}")
+
+
+def plot_clusters(positions, model, clusters, runName):
     positions = np.array(positions)
     
     positions = positions.reshape(-1,1*28*28)
+    os.makedirs(f"./APSO_Cluster/{runName}/umap", exist_ok=True)
     # save the positions
-    os.makedirs(f"APSO_Cluster/", exist_ok=True)
-    np.save(f"APSO_Cluster/positions_{initial}_{label}.npy", positions)
+    np.save(f"./APSO_Cluster/{runName}/positions.npy", positions)
     
     # cluster the positions using sklearn 
-    kmeans = KMeans(n_clusters=2, random_state=0).fit(positions)
+    kmeans = KMeans(n_clusters=clusters, random_state=0).fit(positions)
     
     # for cluser in kmeans.cluster_centers_, plot the cluster average and the activation map
     cluster_index = 0
@@ -153,13 +182,15 @@ def main():
         plt.imshow(cluster.reshape(28,28), cmap='gray')
         conf = cost_func(model, torch.tensor(cluster.reshape(1,1,28,28)))
         plt.title("Average of Cluster with Confidence: " + str(np.round(conf,5)))
-        plt.savefig(f"./APSO_Cluster/cluster{cluster_index}.png")
+        plt.savefig(f"./APSO_Cluster/{runName}/umap/cluster{cluster_index}.png")
+        plt.close()
         plt.clf()
 
         act = AO.Attacks.activation_map(torch.tensor(cluster.reshape(1,1,28,28)).to(torch.float32), model)
-        plt.imshow(act.reshape(28,28)/act.max(), cmap='jet')
+        plt.imshow(act.reshape(28,28), cmap='jet')
         plt.colorbar()
-        plt.savefig(f"./APSO_Cluster/cluster{cluster_index}_act.png")
+        plt.savefig(f"./APSO_Cluster/{runName}/umap/cluster{cluster_index}_act.png")
+        plt.close()
         plt.clf()
         cluster_index += 1
     
