@@ -14,7 +14,7 @@ from sklearn.cluster import KMeans
 label = 7
 initial = 1
 epochs = 50
-points = 50
+points = 100
 
 def cost_func(model, x):
     global label
@@ -139,19 +139,21 @@ def main():
     model.load_state_dict(torch.load('MNIST_cnn.pt'))
     
     umap, dataDic = umap_data(train_loader)
-
-    # APSO for one label to another
-    dataDic["Attack"] = dataDic[initial][:points]
-    initalPoints = dataDic[initial][:points]
-    positions = runAPSO(initalPoints, epochs, model, cost_func, dataDic, umap, f"MNIST_{initial}_{label}")
-    plot_clusters(positions, model, clusters,f"MNIST_{initial}_{label}")
+    
+    # APSO for random noise to another
+    dataDic["Attack"] = []
+    for i in range(points):
+        dataDic["Attack"].append(np.random.rand(1,28,28))
+    initalPoints = dataDic["Attack"]
+    positions = runAPSO(initalPoints, epochs, model, cost_func, dataDic, umap, f"MNIST_low_noise_{label}")
+    plot_clusters(positions, model, clusters, f"MNIST_low_noise_{label}")
 
     # APSO for all labels to another
     #  get the first 10 images of each label
     dataDic["Attack"] = []
     for key in dataDic.keys():
         if key != "Attack" and label != key:
-            dataDic["Attack"] += dataDic[key][:points]
+            dataDic["Attack"] += dataDic[key][:points//10]
     initalPoints = dataDic["Attack"]
     positions = runAPSO(initalPoints, epochs, model, cost_func, dataDic, umap, f"MNIST_all_{label}")
     plot_clusters(positions, model, clusters,f"MNIST_all_{label}")
@@ -163,6 +165,15 @@ def main():
     initalPoints = dataDic["Attack"]
     positions = runAPSO(initalPoints, epochs, model, cost_func, dataDic, umap, f"MNIST_noise_{label}")
     plot_clusters(positions, model, clusters, f"MNIST_noise_{label}")
+
+    
+    # APSO for one label to another
+    dataDic["Attack"] = dataDic[initial][:points]
+    initalPoints = dataDic[initial][:points]
+    positions = runAPSO(initalPoints, epochs, model, cost_func, dataDic, umap, f"MNIST_{initial}_{label}")
+    plot_clusters(positions, model, clusters,f"MNIST_{initial}_{label}")
+
+
 
 
 def plot_clusters(positions, model, clusters, runName):
