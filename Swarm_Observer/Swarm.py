@@ -43,23 +43,20 @@ class PSO:
             None
 
         """
-        # Evaluate fitness and update the best position and error for the group.
-        for p in self.swarm:
-            p.evaluate(self.cost_func, self.model)
-            # Determine if current particle is the best (globally)
-            # best has the highest confidence
-            if p.cost_i >= self.cos_best_g:
-                self.pos_best_g = p.position_i
-                self.cos_best_g = p.cost_i
-
         # Update velocities and positions.
         for p in self.swarm:
+            p.evaluate(self.cost_func, self.model)
             p.update_velocity(pos_best_g=self.pos_best_g)
             p.update_position()
+            p.evaluate(self.cost_func, self.model)
 
-        # Update history.
+        # Update history and global best.
         for particle in self.swarm:
+            if particle.cost_i > self.cos_best_g:
+                self.pos_best_g = particle.position_i
+                self.cos_best_g = particle.cost_i
             particle.history.append(particle.position_i) 
+        
 
     def run(self, epochs: int):
         """
@@ -76,34 +73,29 @@ class PSO:
 
     def get_history(self) -> pd.DataFrame:
         """
-        Returns the swarm with each particle's position history.
-
-        Args:
-            None
+        Returns the history of the swarm's positions for each epoch.
 
         Returns:
-            pd.DataFrame: A dataframe with each particle's position history.
+            pd.DataFrame: A dataframe containing the swarm's positions at each epoch.
         """
-        df = {}
+
+        history = []
         for particle in self.swarm:
-            history = pd.DataFrame(particle.history)
-            for epoch in range(len(history)):
-                df[f"{particle.name}_{epoch}"] = history[epoch]
-        df = pd.DataFrame(df)
-                        
-        return df
-        
+            particle_history = [np.array(i) for i in particle.history]
+            history.append(particle_history)
 
+        return pd.DataFrame(history)
     
-    def save(self, filename: str):
+    def save_history(self, filename):
         """
-        Saves the each particle's position history to a csv file.
+        Saves the history of the swarm's positions for each epoch.
 
         Args:
-            filename (str): The name of the file to save the swarm to.
+            filename (str): The filename to save the history to.
 
         Returns:
             None
         """
-        df = self.get_swarm()
-        df.to_csv(filename, index=False)
+        history = self.get_history()
+        history.to_csv(filename, index=False)
+        
