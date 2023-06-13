@@ -43,7 +43,7 @@ class BirdParticle:
 
         # check to see if the current position is an individual best
         # best has the highest confidence
-        if self.cost_i >= self.cost_best_i or self.cost_best_i == -1:
+        if self.cost_i >= self.cost_best_i:
             self.pos_best_i = self.position_i
             self.cost_best_i = self.cost_i
 
