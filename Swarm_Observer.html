@@ -60,7 +60,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#Swarm_Observer.Swarm.PSO"><code class="docutils literal notranslate"><span class="pre">PSO</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#Swarm_Observer.Swarm.PSO.get_history"><code class="docutils literal notranslate"><span class="pre">PSO.get_history()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#Swarm_Observer.Swarm.PSO.run"><code class="docutils literal notranslate"><span class="pre">PSO.run()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#Swarm_Observer.Swarm.PSO.save"><code class="docutils literal notranslate"><span class="pre">PSO.save()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Swarm_Observer.Swarm.PSO.save_history"><code class="docutils literal notranslate"><span class="pre">PSO.save_history()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#Swarm_Observer.Swarm.PSO.step"><code class="docutils literal notranslate"><span class="pre">PSO.step()</span></code></a></li>
 </ul>
 </li>
@@ -167,16 +167,13 @@ This should be a function that takes in a PyTorch model and a tensor of position
 <dl class="py method">
 <dt class="sig sig-object py" id="Swarm_Observer.Swarm.PSO.get_history">
 <span class="sig-name descname"><span class="pre">get_history</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="reference internal" href="_modules/Swarm_Observer/Swarm.html#PSO.get_history"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#Swarm_Observer.Swarm.PSO.get_history" title="Permalink to this definition"></a></dt>
-<dd><p>Returns the swarm with each particle’s position history.</p>
+<dd><p>Returns the history of the swarm’s positions for each epoch.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>None</strong> – </p>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A dataframe containing the swarm’s positions at each epoch.</p>
 </dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A dataframe with each particle’s position history.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>pd.DataFrame</p>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>pd.DataFrame</p>
 </dd>
 </dl>
 </dd></dl>
@@ -196,12 +193,12 @@ This should be a function that takes in a PyTorch model and a tensor of position
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="Swarm_Observer.Swarm.PSO.save">
-<span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/Swarm_Observer/Swarm.html#PSO.save"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#Swarm_Observer.Swarm.PSO.save" title="Permalink to this definition"></a></dt>
-<dd><p>Saves the each particle’s position history to a csv file.</p>
+<dt class="sig sig-object py" id="Swarm_Observer.Swarm.PSO.save_history">
+<span class="sig-name descname"><span class="pre">save_history</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/Swarm_Observer/Swarm.html#PSO.save_history"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#Swarm_Observer.Swarm.PSO.save_history" title="Permalink to this definition"></a></dt>
+<dd><p>Saves the history of the swarm’s positions for each epoch.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>filename</strong> (<em>str</em>) – The name of the file to save the swarm to.</p>
+<dd class="field-odd"><p><strong>filename</strong> (<em>str</em>) – The filename to save the history to.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>None</p>
