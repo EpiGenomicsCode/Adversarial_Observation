@@ -3,54 +3,41 @@ import torch
 import torch.nn.functional as F
 import matplotlib.pyplot as plt
 
-def activation_map(input_data: torch.Tensor, model: torch.nn.Module) -> torch.Tensor:
+def activation_map(input_data: torch.Tensor, model: torch.nn.Module, normalize: bool = True) -> np.ndarray:
     """
-    Generate an activation map for an input data given a pre-trained PyTorch model.
+    Generate an activation map for input data given a pre-trained PyTorch model.
 
     Args:
-        input_data (torch.Tensor): Input data as a PyTorch tensor. 
-            EX. For 10 MNIST images, input_data.shape = (10, 1, 28, 28)
+        input_data (torch.Tensor): Input data as a PyTorch tensor.
+            Shape: (batch_size, channels, height, width)
         model (torch.nn.Module): Pre-trained PyTorch model used to generate the activation map.
+        normalize (bool, optional): Flag to normalize the activation map. Default is True.
 
     Returns:
-        activation_map (numpy.array): Activation map for the input data based on the input model.
+        activation_map (np.ndarray): Activation map for the input data based on the input model.
+            Shape: (batch_size, height, width)
     """
-    # Set the model to evaluation mode and enable gradient computation for the input data
-    model.eval()
-    output_data = []
-    # assert input data is a PyTorch tensor
+    model.eval()  # Set the model to evaluation mode
     assert isinstance(input_data, torch.Tensor), "Input data must be a PyTorch tensor"
-    
-    # assert that the input data and model are on the same device
-    assert input_data.device == model.parameters().__next__().device, "Input data and model must be on the same device"
-    
-    # Enable gradient computation for the input data
-    input_data.requires_grad = True
+    assert input_data.device == next(model.parameters()).device, "Input data and model must be on the same device"
 
-    # Make a forward pass through the model and get the predicted class scores for the input data
-    preds = model(input_data)
+    with torch.enable_grad():
+        input_data.requires_grad_(True)  # Enable gradient computation for the input data
 
-    for pred in preds:
-        # Get the index corresponding to the maximum predicted class score
-        pred_class_idx = torch.argmax(pred)
+        output = model(input_data)  # Forward pass the input data through the model
 
-        # Get the predicted class score corresponding to the maximum predicted class score
-        score = pred[pred_class_idx]
+        gradients = torch.autograd.grad(output.sum(), input_data)[0]  # Compute the gradients
 
-        # Compute gradients of the score with respect to the input data pixels
-        score.backward()
+    activation_map = gradients.detach().cpu().numpy()  # Convert the activation map to a numpy array
 
-        # Compute the activation map as the absolute value of the gradients
-        activation_map = input_data.grad
+    if normalize:
+        min_vals = np.min(activation_map, axis=(1, 2), keepdims=True)
+        max_vals = np.max(activation_map, axis=(1, 2), keepdims=True)
+        activation_map = (activation_map - min_vals) / (max_vals - min_vals + 1e-8)
 
-    # Compute the activation map as the absolute value of the gradients
-    activation_map = input_data.grad
 
-    # Detach the activation map and move it to CPU as a numpy array
-    activation_map = activation_map.detach().cpu().numpy()
-
-    # Return the activation map
     return activation_map
+
 
 def fgsm_attack(input_batch_data: torch.Tensor, labels: torch.Tensor, epsilon: float, model: torch.nn.Module, loss: torch.nn.Module = torch.nn.CrossEntropyLoss(), device: str = "cpu") -> np.ndarray:
     """
