@@ -1,53 +1,46 @@
-import os
-import pandas as pd
+import glob
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.signal import convolve2d
+from tqdm import tqdm
+from multiprocessing import Pool
 
 def main():
-    #  load in all directories from APSO directory
-    APSO_dir = os.path.join(os.getcwd(), 'APSO')
-    APSO_dirs = [os.path.join(APSO_dir, d) for d in os.listdir(APSO_dir) if os.path.isdir(os.path.join(APSO_dir, d))]
+    images = glob.glob('APSO/*/*/*.npy')
+    filter_size = 5
+    filter_sigma = 1
 
-    for APSO_dir in APSO_dirs:
-        # get the csv file
-        csv_file = [os.path.join(APSO_dir, f) for f in os.listdir(APSO_dir) if f.endswith('.csv')][0]
-        print(csv_file)
-        diff = science(csv_file)
-        #  make a new directory for the diff
-        os.makedirs(os.path.join(APSO_dir, 'diff'), exist_ok=True)
-        for index in range(diff.shape[0]):
-            plt.imshow(diff[index].reshape(28,28), cmap='gray')
-            plt.savefig(os.path.join(APSO_dir, 'diff', f'{index}.png'))
-            plt.close()
-            plt.clf()
-            
-
-
-
-def science(csv_file):
-    data = pd.read_csv(csv_file)
-
-    #  convert the string representation of the array to an array
-    for row in range(data.shape[0]):
-        for col in range(data.shape[1]):
-            string_representation = data.iloc[row, col]
-            cleaned_string = string_representation.replace('[', '').replace(']', '').replace('\n', '').replace('  ', ' ')
-            values = cleaned_string.split()
-            array = np.array(values, dtype=np.float32)
-            #  replace the string with the array
-            data.iloc[row, col] = array
-
-    #  get the initial and final values
-    initial = data.iloc[0, :]
-    final = data.iloc[-1, :]
-
-    #  get the difference
-    diff = np.subtract(final , initial)
-    return diff
-
+    with Pool() as pool:
+        results = list(tqdm(pool.imap(smooth_and_save, images), total=len(images)))
     
+    print("Smoothing completed.")
 
+def smooth_and_save(img_path):
+    convl_filename = img_path.split('.')[0] + '_convl.png'
+    img = np.load(img_path)
+    smoothed_img = smooth_array(img)
+    
+    # Set the figure size to match the image size
+    fig, ax = plt.subplots(figsize=(img.shape[1] / 80, img.shape[0] / 80), dpi=80)
+    ax.imshow(smoothed_img, cmap='gray')
+    
+    # Remove the axis labels and ticks
+    ax.axis('off')
+    
+    plt.savefig(convl_filename, bbox_inches='tight', pad_inches=0)
+    plt.close(fig)
 
+def smooth_array(img, filter_size=5, filter_sigma=1):
+    # Define a smoothing filter
+    filter_values = np.fromfunction(
+        lambda x, y: (1 / (2 * np.pi * filter_sigma**2)) * np.exp(
+            -((x - filter_size//2)**2 + (y - filter_size//2)**2) / (2 * filter_sigma**2)
+        ),
+        (filter_size, filter_size)
+    )
+    filter_values /= np.sum(filter_values)  # Normalize the filter
 
-if __name__ == '__main__':
-    main()
+    # Perform convolution to smooth the array
+    smoothed_array = convolve2d(img, filter_values, mode='same')
+
+    return smoothed_array
