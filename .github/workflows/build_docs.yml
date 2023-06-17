@@ -1,0 +1,23 @@
+name: Docs
+on: [push, pull_request, workflow_dispatch]
+permissions:
+    contents: write
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v3
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install sphinx sphinx_rtd_theme
+      - name: Build API documentation
+        run: |
+          make html -C docs
+          touch docs/_build/html/.nojekyll
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          personal_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs/_build/html

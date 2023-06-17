@@ -1,75 +1,91 @@
+import numpy as np
 import torch
 import torch.nn.functional as F
 import matplotlib.pyplot as plt
 
-def saliency_map(img: torch.Tensor, model: torch.nn.Module) -> torch.Tensor:
+def activation_map(input_data: torch.Tensor, model: torch.nn.Module, normalize: bool = True) -> np.ndarray:
     """
-    Generate a saliency map for an input image given a pre-trained PyTorch model.
+    Generate an activation map for input data given a pre-trained PyTorch model.
 
     Args:
-        img (ndarray): Input image as a 3D numpy array.
-        model (nn.Module): Pre-trained PyTorch model used to generate the saliency map.
+        input_data (torch.Tensor): Input data as a PyTorch tensor.
+            Shape: (batch_size, channels, height, width)
+        model (torch.nn.Module): Pre-trained PyTorch model used to generate the activation map.
+        normalize (bool, optional): Flag to normalize the activation map. Default is True.
 
     Returns:
-        saliency map (ndarray): Saliency map for the input image.
+        activation_map (np.ndarray): Activation map for the input data based on the input model.
+            Shape: (batch_size, height, width)
     """
-    # Convert the input image to a PyTorch tensor with dtype=torch.float32 and enable gradient computation
-    img = img.clone().detach().requires_grad_(True)
-    model.eval()
+    model.eval()  # Set the model to evaluation mode
+    assert isinstance(input_data, torch.Tensor), "Input data must be a PyTorch tensor"
+    assert input_data.device == next(model.parameters()).device, "Input data and model must be on the same device"
 
-    # Disable gradient computation for all model parameters
-    for param in model.parameters():
-        param.requires_grad = False
+    with torch.enable_grad():
+        input_data.requires_grad_(True)  # Enable gradient computation for the input data
 
-    # Make a forward pass through the model and get the predicted class scores for the input image
-    preds = model(img)
+        output = model(input_data)  # Forward pass the input data through the model
 
-    # Compute the score and index of the class with the highest predicted score
-    score, _ = torch.max(preds, 1)
+        gradients = torch.autograd.grad(output.sum(), input_data)[0]  # Compute the gradients
 
-    # Compute gradients of the score with respect to the input image pixels
-    score.backward()
+    activation_map = gradients.detach().cpu().numpy()  # Convert the activation map to a numpy array
 
-    # Compute the saliency map by taking the maximum absolute gradient across color channels and normalize the values
-    slc = torch.max(torch.abs(img.grad), dim=0)[0]
-    slc = (slc - slc.min()) / (slc.max() - slc.min())
-
-    # return the saliency map as a numpy array
-    return slc.detach().numpy()
+    if normalize:
+        min_vals = np.min(activation_map, axis=(1, 2), keepdims=True)
+        max_vals = np.max(activation_map, axis=(1, 2), keepdims=True)
+        activation_map = (activation_map - min_vals) / (max_vals - min_vals + 1e-8)
 
 
-def fgsm_attack(input_data: torch.Tensor, label: int, epsilon: float, model: torch.nn.Module, device: str ="cpu") -> torch.Tensor:
+    return activation_map
+
+
+import torch
+import numpy as np
+
+def fgsm_attack(input_batch_data: torch.Tensor, labels: torch.Tensor, epsilon: float, model: torch.nn.Module, loss: torch.nn.Module = torch.nn.CrossEntropyLoss(), device: str = "cpu") -> np.ndarray:
     """
-    Generates adversarial example using fast gradient sign method.
+    Generates adversarial examples using the Fast Gradient Sign Method (FGSM).
 
     Args:
-        input_data (torch.Tensor): The input_data to be modified.
-        label (int): The true label of the input image.
-        epsilon (float): Magnitude of the perturbation added to the input image.
+        input_batch_data (torch.Tensor): Input data to be modified. Shape: (batch_size, channels, height, width)
+        labels (torch.Tensor): The true labels of the input data. Shape: (batch_size,)
+        epsilon (float): Magnitude of the perturbation added to the input data.
         model (torch.nn.Module): The neural network model.
+        loss (torch.nn.Module): The loss function to use for the computation. Default: torch.nn.CrossEntropyLoss()
+        device (str): Device to use for the computation. Default: "cpu"
 
     Returns:
-        The modified image tensor.
+        np.ndarray: The perturbed input data.
     """
- 
-    data = torch.tensor(input_data).to(torch.float32).to(device)
-    model = model.to(device)
-    data.requires_grad = True
-   
-    # Forward pass to get the prediction
-    output = model(data)
+    assert epsilon >= 0, "Epsilon must be a non-negative value"
+    assert isinstance(input_batch_data, torch.Tensor), "Input data must be a PyTorch tensor"
+    assert len(input_batch_data) == len(labels), "Input data and labels must have the same length"
+    assert input_batch_data.device == next(model.parameters()).device, "Input data and model must be on the same device"
 
-    # Calculate the loss
-    loss = F.cross_entropy(output, torch.tensor([label]).to(device))
+    model.eval()
+    original_device = input_batch_data.device
 
-    # Backward pass to get the gradient
-    loss.backward()
-    model.zero_grad()
+    new_input_data = []
+    for input_data, label in zip(input_batch_data, labels):
+        input_data = input_data.to(device)
+        input_data.requires_grad = True
+
+        output = model(input_data.unsqueeze(0))
+        loss_value = loss(output, label.unsqueeze(0))
+
+        model.zero_grad()
+        loss_value.backward()
+
+        gradients = input_data.grad.data
+        sign_gradients = torch.sign(gradients)
+
+        perturbation = epsilon * sign_gradients
+        perturbed = input_data + perturbation
+
+        perturbed = perturbed.to(original_device)
+
+        new_input_data.append(perturbed.cpu().detach().numpy())
+
+    return np.array(new_input_data)
 
 
-    # Create the perturbed image by adjusting each pixel of the input image
-    perturbed = data + epsilon * data.grad.sign() 
-    perturbed = torch.clamp(perturbed, 0, 1)
-    
-    # Return the perturbed image
-    return perturbed.cpu().detach().numpy()
