@@ -39,9 +39,6 @@ def activation_map(input_data: torch.Tensor, model: torch.nn.Module, normalize: 
     return activation_map
 
 
-import torch
-import numpy as np
-
 def fgsm_attack(input_batch_data: torch.Tensor, labels: torch.Tensor, epsilon: float, model: torch.nn.Module, loss: torch.nn.Module = torch.nn.CrossEntropyLoss(), device: str = "cpu") -> np.ndarray:
     """
     Generates adversarial examples using the Fast Gradient Sign Method (FGSM).
