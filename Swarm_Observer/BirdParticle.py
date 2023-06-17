@@ -59,9 +59,14 @@ class BirdParticle:
         r1 = np.random.random()
         r2 = np.random.random()
 
+        # update velocity
         vel_cognitive = self.c1 * r1 * (self.pos_best_i - self.position_i)
         vel_social = self.c2 * r2 * (pos_best_g - self.position_i)
+
         self.velocity_i = self.w * self.velocity_i + vel_cognitive + vel_social
+
+        # normalize velocity to be between 0 and 1
+        self.velocity_i = (self.velocity_i - self.velocity_i.min()) / (self.velocity_i.max() - self.velocity_i.min())
 
 
     def update_position(self):
@@ -70,6 +75,9 @@ class BirdParticle:
         """
         # update position based on velocity
         self.position_i = self.position_i +  self.velocity_i
+
+        # normalize position to be between 0 and 1
+        self.position_i = (self.position_i - self.position_i.min()) / (self.position_i.max() - self.position_i.min())
 
         # add current position to history
         self.history.append(self.position_i)
