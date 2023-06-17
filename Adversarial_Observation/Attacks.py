@@ -39,76 +39,53 @@ def activation_map(input_data: torch.Tensor, model: torch.nn.Module, normalize: 
     return activation_map
 
 
+import torch
+import numpy as np
+
 def fgsm_attack(input_batch_data: torch.Tensor, labels: torch.Tensor, epsilon: float, model: torch.nn.Module, loss: torch.nn.Module = torch.nn.CrossEntropyLoss(), device: str = "cpu") -> np.ndarray:
     """
-    Generates adversarial example using fast gradient sign method.
+    Generates adversarial examples using the Fast Gradient Sign Method (FGSM).
 
     Args:
-        input_batch_data (torch.Tensor): A list of input_data to be modified.
-            EX: For 10 MNIST images, input_data.shape = (10, 1, 28, 28)
-        labels (torch.Tensor): The true labels of the input data.
-            EX: For 10 MNIST images, labels.shape = (10,)
+        input_batch_data (torch.Tensor): Input data to be modified. Shape: (batch_size, channels, height, width)
+        labels (torch.Tensor): The true labels of the input data. Shape: (batch_size,)
         epsilon (float): Magnitude of the perturbation added to the input data.
         model (torch.nn.Module): The neural network model.
-        loss (torch.nn.Module): The loss function to use for the computation.
-        device (str): Device to use for the computation.
-            default: "cpu"
+        loss (torch.nn.Module): The loss function to use for the computation. Default: torch.nn.CrossEntropyLoss()
+        device (str): Device to use for the computation. Default: "cpu"
 
     Returns:
-        perturbed (np.ndarray): The perturbed input data.
+        np.ndarray: The perturbed input data.
     """
-    # assert that epsilon is a positive value
-    assert epsilon >= 0, "Epsilon must be a positive value"
-
-    original_device = input_batch_data.device
-    model.eval()
-
-    # assert input data is a PyTorch tensor
+    assert epsilon >= 0, "Epsilon must be a non-negative value"
     assert isinstance(input_batch_data, torch.Tensor), "Input data must be a PyTorch tensor"
-
-    # assert that the input data and model are on the same device
     assert len(input_batch_data) == len(labels), "Input data and labels must have the same length"
-
-    # assert epsilon is a positive value
-    assert epsilon >= 0, "Epsilon must be a positive value"
-
-    # assert that the input data and model are on the same device
     assert input_batch_data.device == next(model.parameters()).device, "Input data and model must be on the same device"
 
+    model.eval()
+    original_device = input_batch_data.device
+
     new_input_data = []
-    for input_data in input_batch_data:
-        # Enable gradient computation for the input data
+    for input_data, label in zip(input_batch_data, labels):
+        input_data = input_data.to(device)
         input_data.requires_grad = True
 
-        # Make a forward pass through the model and get the predicted class scores
         output = model(input_data.unsqueeze(0))
+        loss_value = loss(output, label.unsqueeze(0))
 
-        # Calculate the loss between the predicted output and the true labels
-        loss_value = loss(output, labels)
-
-        # Zero the gradients
         model.zero_grad()
-
-        # Perform backpropagation to compute the gradients
         loss_value.backward()
 
-        # Get the gradients of the input data
         gradients = input_data.grad.data
-
-        # Calculate the sign of the gradients
         sign_gradients = torch.sign(gradients)
 
-        # Create the perturbation by scaling the sign of the gradients with epsilon
         perturbation = epsilon * sign_gradients
-
-        # Add the perturbation to the input data to generate the adversarial example
         perturbed = input_data + perturbation
 
-        # Move the perturbed data back to the original device
         perturbed = perturbed.to(original_device)
 
-        # Return the perturbation as a numpy array
         new_input_data.append(perturbed.cpu().detach().numpy())
 
     return np.array(new_input_data)
+
 
