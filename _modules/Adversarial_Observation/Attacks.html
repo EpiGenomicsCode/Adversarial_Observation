@@ -97,9 +97,10 @@
         <span class="n">input_data</span><span class="o">.</span><span class="n">requires_grad_</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># Enable gradient computation for the input data</span>
 
         <span class="n">output</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">input_data</span><span class="p">)</span>  <span class="c1"># Forward pass the input data through the model</span>
+        <span class="c1">#  for each input in the batch, compute the gradient of the output with respect to the input</span>
+        <span class="n">gradients</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">grad</span><span class="p">(</span><span class="n">outputs</span><span class="o">=</span><span class="n">output</span><span class="p">,</span> <span class="n">inputs</span><span class="o">=</span><span class="n">input_data</span><span class="p">,</span> <span class="n">grad_outputs</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">output</span><span class="p">),</span> <span class="n">create_graph</span><span class="o">=</span><span class="kc">True</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
 
-        <span class="n">gradients</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">grad</span><span class="p">(</span><span class="n">output</span><span class="o">.</span><span class="n">sum</span><span class="p">(),</span> <span class="n">input_data</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># Compute the gradients</span>
-
+    
     <span class="n">activation_map</span> <span class="o">=</span> <span class="n">gradients</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>  <span class="c1"># Convert the activation map to a numpy array</span>
 
     <span class="k">if</span> <span class="n">normalize</span><span class="p">:</span>
