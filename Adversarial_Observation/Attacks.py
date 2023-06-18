@@ -25,9 +25,10 @@ def activation_map(input_data: torch.Tensor, model: torch.nn.Module, normalize: 
         input_data.requires_grad_(True)  # Enable gradient computation for the input data
 
         output = model(input_data)  # Forward pass the input data through the model
+        #  for each input in the batch, compute the gradient of the output with respect to the input
+        gradients = torch.autograd.grad(outputs=output, inputs=input_data, grad_outputs=torch.ones_like(output), create_graph=True)[0]
 
-        gradients = torch.autograd.grad(output.sum(), input_data)[0]  # Compute the gradients
-
+    
     activation_map = gradients.detach().cpu().numpy()  # Convert the activation map to a numpy array
 
     if normalize:
