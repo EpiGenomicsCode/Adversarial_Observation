@@ -5,6 +5,60 @@ import matplotlib.pyplot as plt
 
 
 
+def gradient_map(input_batch_data, model: torch.nn.Module, input_shape: tuple) -> torch.Tensor:
+    """
+    Generate a gradient map for an input image given a pre-trained PyTorch model.
+
+    Args:
+        input_batch_data (ndarray): Batch of input images as a 4D numpy array.
+        model (nn.Module): Pre-trained PyTorch model used to generate the gradient map.
+        input_shape (tuple): Shape of the input array.
+
+    Returns:
+        gradient_maps (ndarray): Gradient map for the input images.
+    """
+    # Set the model to evaluation mode
+    model.eval()
+    
+    # Check if GPU is available
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    # Move the model and input batch data to the appropriate device
+    model.to(device)
+    input_batch_data = torch.tensor(input_batch_data).to(device)
+
+    # Disable gradient computation for all model parameters
+    for param in model.parameters():
+        param.requires_grad = False
+
+    gradient_maps = []
+    for img in input_batch_data:
+        # Convert the input image to a PyTorch tensor with dtype=torch.float32 and enable gradient computation
+        img = img.clone().detach().to(torch.float32).requires_grad_(True)
+        
+        # Move the input image tensor to the same device as the model
+        img = img.to(device)
+
+        # Make a forward pass through the model and get the predicted class scores for the input image
+        preds = model(img.reshape(input_shape))
+        
+        # Compute the score and index of the class with the highest predicted score
+        score, _ = torch.max(preds, 1)
+        
+        # Reset gradients from previous iterations
+        model.zero_grad()
+        
+        # Compute gradients of the score with respect to the model parameters
+        score.backward()
+        
+        # Compute the gradient map by taking the norm of the gradients with respect to the input image pixels
+        gradient_map = img.grad.norm(dim=0)
+        
+        gradient_maps.append(gradient_map.cpu().detach().numpy())
+
+    return gradient_maps
+
+
 def saliency_map(input_batch_data, model: torch.nn.Module, input_shape: tuple) -> torch.Tensor:
     """
     Generate a saliency map for an input image given a pre-trained PyTorch model.
