@@ -47,8 +47,8 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Adversarial_Observation package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#submodules">Submodules</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#module-Adversarial_Observation.Attacks">Adversarial_Observation.Attacks module</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#Adversarial_Observation.Attacks.activation_map"><code class="docutils literal notranslate"><span class="pre">activation_map()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#Adversarial_Observation.Attacks.fgsm_attack"><code class="docutils literal notranslate"><span class="pre">fgsm_attack()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Adversarial_Observation.Attacks.gradient_map"><code class="docutils literal notranslate"><span class="pre">gradient_map()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Adversarial_Observation.Attacks.saliency_map"><code class="docutils literal notranslate"><span class="pre">saliency_map()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#module-Adversarial_Observation.utils">Adversarial_Observation.utils module</a><ul>
@@ -98,51 +98,43 @@
 <section id="module-Adversarial_Observation.Attacks">
 <span id="adversarial-observation-attacks-module"></span><h2>Adversarial_Observation.Attacks module<a class="headerlink" href="#module-Adversarial_Observation.Attacks" title="Permalink to this heading"></a></h2>
 <dl class="py function">
-<dt class="sig sig-object py" id="Adversarial_Observation.Attacks.activation_map">
-<span class="sig-prename descclassname"><span class="pre">Adversarial_Observation.Attacks.</span></span><span class="sig-name descname"><span class="pre">activation_map</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="_modules/Adversarial_Observation/Attacks.html#activation_map"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#Adversarial_Observation.Attacks.activation_map" title="Permalink to this definition"></a></dt>
-<dd><p>Generate an activation map for input data given a pre-trained PyTorch model.</p>
+<dt class="sig sig-object py" id="Adversarial_Observation.Attacks.gradient_map">
+<span class="sig-prename descclassname"><span class="pre">Adversarial_Observation.Attacks.</span></span><span class="sig-name descname"><span class="pre">gradient_map</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_batch_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_shape</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="_modules/Adversarial_Observation/Attacks.html#gradient_map"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#Adversarial_Observation.Attacks.gradient_map" title="Permalink to this definition"></a></dt>
+<dd><p>Generate a gradient map for an input image given a pre-trained PyTorch model.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>input_data</strong> (<em>torch.Tensor</em>) – Input data as a PyTorch tensor.
-Shape: (batch_size, channels, height, width)</p></li>
-<li><p><strong>model</strong> (<em>torch.nn.Module</em>) – Pre-trained PyTorch model used to generate the activation map.</p></li>
-<li><p><strong>normalize</strong> (<em>bool</em><em>, </em><em>optional</em>) – Flag to normalize the activation map. Default is True.</p></li>
+<li><p><strong>input_batch_data</strong> (<em>ndarray</em>) – Batch of input images as a 4D numpy array.</p></li>
+<li><p><strong>model</strong> (<em>nn.Module</em>) – Pre-trained PyTorch model used to generate the gradient map.</p></li>
+<li><p><strong>input_shape</strong> (<em>tuple</em>) – Shape of the input array.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><dl class="simple">
-<dt>Activation map for the input data based on the input model.</dt><dd><p>Shape: (batch_size, height, width)</p>
-</dd>
-</dl>
-</p>
+<dd class="field-even"><p>Gradient map for the input images.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>activation_map (np.ndarray)</p>
+<dd class="field-odd"><p>gradient_maps (ndarray)</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="Adversarial_Observation.Attacks.fgsm_attack">
-<span class="sig-prename descclassname"><span class="pre">Adversarial_Observation.Attacks.</span></span><span class="sig-name descname"><span class="pre">fgsm_attack</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_batch_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epsilon</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loss</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Module</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">CrossEntropyLoss()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'cpu'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="_modules/Adversarial_Observation/Attacks.html#fgsm_attack"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#Adversarial_Observation.Attacks.fgsm_attack" title="Permalink to this definition"></a></dt>
-<dd><p>Generates adversarial examples using the Fast Gradient Sign Method (FGSM).</p>
+<dt class="sig sig-object py" id="Adversarial_Observation.Attacks.saliency_map">
+<span class="sig-prename descclassname"><span class="pre">Adversarial_Observation.Attacks.</span></span><span class="sig-name descname"><span class="pre">saliency_map</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_batch_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_shape</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="_modules/Adversarial_Observation/Attacks.html#saliency_map"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#Adversarial_Observation.Attacks.saliency_map" title="Permalink to this definition"></a></dt>
+<dd><p>Generate a saliency map for an input image given a pre-trained PyTorch model.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>input_batch_data</strong> (<em>torch.Tensor</em>) – Input data to be modified. Shape: (batch_size, channels, height, width)</p></li>
-<li><p><strong>labels</strong> (<em>torch.Tensor</em>) – The true labels of the input data. Shape: (batch_size,)</p></li>
-<li><p><strong>epsilon</strong> (<em>float</em>) – Magnitude of the perturbation added to the input data.</p></li>
-<li><p><strong>model</strong> (<em>torch.nn.Module</em>) – The neural network model.</p></li>
-<li><p><strong>loss</strong> (<em>torch.nn.Module</em>) – The loss function to use for the computation. Default: torch.nn.CrossEntropyLoss()</p></li>
-<li><p><strong>device</strong> (<em>str</em>) – Device to use for the computation. Default: “cpu”</p></li>
+<li><p><strong>input_batch_data</strong> (<em>ndarray</em>) – Batch of input images as a 4D numpy array.</p></li>
+<li><p><strong>model</strong> (<em>nn.Module</em>) – Pre-trained PyTorch model used to generate the saliency map.</p></li>
+<li><p><strong>input_shape</strong> (<em>tuple</em>) – Shape of the input array.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The perturbed input data.</p>
+<dd class="field-even"><p>Saliency map for the input images.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>np.ndarray</p>
+<dd class="field-odd"><p>saliency_map (ndarray)</p>
 </dd>
 </dl>
 </dd></dl>

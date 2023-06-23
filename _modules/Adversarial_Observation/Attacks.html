@@ -75,90 +75,112 @@
 <span class="kn">import</span> <span class="nn">torch.nn.functional</span> <span class="k">as</span> <span class="nn">F</span>
 <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
 
-<div class="viewcode-block" id="activation_map"><a class="viewcode-back" href="../../Adversarial_Observation.html#Adversarial_Observation.Attacks.activation_map">[docs]</a><span class="k">def</span> <span class="nf">activation_map</span><span class="p">(</span><span class="n">input_data</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">normalize</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+
+
+<div class="viewcode-block" id="gradient_map"><a class="viewcode-back" href="../../Adversarial_Observation.html#Adversarial_Observation.Attacks.gradient_map">[docs]</a><span class="k">def</span> <span class="nf">gradient_map</span><span class="p">(</span><span class="n">input_batch_data</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">input_shape</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Generate an activation map for input data given a pre-trained PyTorch model.</span>
+<span class="sd">    Generate a gradient map for an input image given a pre-trained PyTorch model.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        input_data (torch.Tensor): Input data as a PyTorch tensor.</span>
-<span class="sd">            Shape: (batch_size, channels, height, width)</span>
-<span class="sd">        model (torch.nn.Module): Pre-trained PyTorch model used to generate the activation map.</span>
-<span class="sd">        normalize (bool, optional): Flag to normalize the activation map. Default is True.</span>
+<span class="sd">        input_batch_data (ndarray): Batch of input images as a 4D numpy array.</span>
+<span class="sd">        model (nn.Module): Pre-trained PyTorch model used to generate the gradient map.</span>
+<span class="sd">        input_shape (tuple): Shape of the input array.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        activation_map (np.ndarray): Activation map for the input data based on the input model.</span>
-<span class="sd">            Shape: (batch_size, height, width)</span>
+<span class="sd">        gradient_maps (ndarray): Gradient map for the input images.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>  <span class="c1"># Set the model to evaluation mode</span>
-    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">input_data</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">),</span> <span class="s2">&quot;Input data must be a PyTorch tensor&quot;</span>
-    <span class="k">assert</span> <span class="n">input_data</span><span class="o">.</span><span class="n">device</span> <span class="o">==</span> <span class="nb">next</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">())</span><span class="o">.</span><span class="n">device</span><span class="p">,</span> <span class="s2">&quot;Input data and model must be on the same device&quot;</span>
-
-    <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">enable_grad</span><span class="p">():</span>
-        <span class="n">input_data</span><span class="o">.</span><span class="n">requires_grad_</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># Enable gradient computation for the input data</span>
-
-        <span class="n">output</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">input_data</span><span class="p">)</span>  <span class="c1"># Forward pass the input data through the model</span>
-        <span class="c1">#  for each input in the batch, compute the gradient of the output with respect to the input</span>
-        <span class="n">gradients</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">grad</span><span class="p">(</span><span class="n">outputs</span><span class="o">=</span><span class="n">output</span><span class="p">,</span> <span class="n">inputs</span><span class="o">=</span><span class="n">input_data</span><span class="p">,</span> <span class="n">grad_outputs</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">output</span><span class="p">),</span> <span class="n">create_graph</span><span class="o">=</span><span class="kc">True</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-
-    
-    <span class="n">activation_map</span> <span class="o">=</span> <span class="n">gradients</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>  <span class="c1"># Convert the activation map to a numpy array</span>
-
-    <span class="k">if</span> <span class="n">normalize</span><span class="p">:</span>
-        <span class="n">min_vals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">activation_map</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="n">max_vals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">activation_map</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="n">activation_map</span> <span class="o">=</span> <span class="p">(</span><span class="n">activation_map</span> <span class="o">-</span> <span class="n">min_vals</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">max_vals</span> <span class="o">-</span> <span class="n">min_vals</span> <span class="o">+</span> <span class="mf">1e-8</span><span class="p">)</span>
-
-
-    <span class="k">return</span> <span class="n">activation_map</span></div>
-
-
-<div class="viewcode-block" id="fgsm_attack"><a class="viewcode-back" href="../../Adversarial_Observation.html#Adversarial_Observation.Attacks.fgsm_attack">[docs]</a><span class="k">def</span> <span class="nf">fgsm_attack</span><span class="p">(</span><span class="n">input_batch_data</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">labels</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">epsilon</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">loss</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">CrossEntropyLoss</span><span class="p">(),</span> <span class="n">device</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;cpu&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Generates adversarial examples using the Fast Gradient Sign Method (FGSM).</span>
-
-<span class="sd">    Args:</span>
-<span class="sd">        input_batch_data (torch.Tensor): Input data to be modified. Shape: (batch_size, channels, height, width)</span>
-<span class="sd">        labels (torch.Tensor): The true labels of the input data. Shape: (batch_size,)</span>
-<span class="sd">        epsilon (float): Magnitude of the perturbation added to the input data.</span>
-<span class="sd">        model (torch.nn.Module): The neural network model.</span>
-<span class="sd">        loss (torch.nn.Module): The loss function to use for the computation. Default: torch.nn.CrossEntropyLoss()</span>
-<span class="sd">        device (str): Device to use for the computation. Default: &quot;cpu&quot;</span>
-
-<span class="sd">    Returns:</span>
-<span class="sd">        np.ndarray: The perturbed input data.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">assert</span> <span class="n">epsilon</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;Epsilon must be a non-negative value&quot;</span>
-    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">input_batch_data</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">),</span> <span class="s2">&quot;Input data must be a PyTorch tensor&quot;</span>
-    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">input_batch_data</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">labels</span><span class="p">),</span> <span class="s2">&quot;Input data and labels must have the same length&quot;</span>
-    <span class="k">assert</span> <span class="n">input_batch_data</span><span class="o">.</span><span class="n">device</span> <span class="o">==</span> <span class="nb">next</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">())</span><span class="o">.</span><span class="n">device</span><span class="p">,</span> <span class="s2">&quot;Input data and model must be on the same device&quot;</span>
-
+    <span class="c1"># Set the model to evaluation mode</span>
     <span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
-    <span class="n">original_device</span> <span class="o">=</span> <span class="n">input_batch_data</span><span class="o">.</span><span class="n">device</span>
+    
+    <span class="c1"># Check if GPU is available</span>
+    <span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;cuda&quot;</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
 
-    <span class="n">new_input_data</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">for</span> <span class="n">input_data</span><span class="p">,</span> <span class="n">label</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">input_batch_data</span><span class="p">,</span> <span class="n">labels</span><span class="p">):</span>
-        <span class="n">input_data</span> <span class="o">=</span> <span class="n">input_data</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
-        <span class="n">input_data</span><span class="o">.</span><span class="n">requires_grad</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="c1"># Move the model and input batch data to the appropriate device</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+    <span class="n">input_batch_data</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">input_batch_data</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
 
-        <span class="n">output</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">input_data</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
-        <span class="n">loss_value</span> <span class="o">=</span> <span class="n">loss</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">label</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+    <span class="c1"># Disable gradient computation for all model parameters</span>
+    <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">():</span>
+        <span class="n">param</span><span class="o">.</span><span class="n">requires_grad</span> <span class="o">=</span> <span class="kc">False</span>
 
+    <span class="n">gradient_maps</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">img</span> <span class="ow">in</span> <span class="n">input_batch_data</span><span class="p">:</span>
+        <span class="c1"># Convert the input image to a PyTorch tensor with dtype=torch.float32 and enable gradient computation</span>
+        <span class="n">img</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span><span class="o">.</span><span class="n">requires_grad_</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+        
+        <span class="c1"># Move the input image tensor to the same device as the model</span>
+        <span class="n">img</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+
+        <span class="c1"># Make a forward pass through the model and get the predicted class scores for the input image</span>
+        <span class="n">preds</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">input_shape</span><span class="p">))</span>
+        
+        <span class="c1"># Compute the score and index of the class with the highest predicted score</span>
+        <span class="n">score</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">preds</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        
+        <span class="c1"># Reset gradients from previous iterations</span>
         <span class="n">model</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
-        <span class="n">loss_value</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+        
+        <span class="c1"># Compute gradients of the score with respect to the model parameters</span>
+        <span class="n">score</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+        
+        <span class="c1"># Compute the gradient map by taking the norm of the gradients with respect to the input image pixels</span>
+        <span class="n">gradient_map</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">grad</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        
+        <span class="n">gradient_maps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">gradient_map</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>
 
-        <span class="n">gradients</span> <span class="o">=</span> <span class="n">input_data</span><span class="o">.</span><span class="n">grad</span><span class="o">.</span><span class="n">data</span>
-        <span class="n">sign_gradients</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">gradients</span><span class="p">)</span>
-
-        <span class="n">perturbation</span> <span class="o">=</span> <span class="n">epsilon</span> <span class="o">*</span> <span class="n">sign_gradients</span>
-        <span class="n">perturbed</span> <span class="o">=</span> <span class="n">input_data</span> <span class="o">+</span> <span class="n">perturbation</span>
-
-        <span class="n">perturbed</span> <span class="o">=</span> <span class="n">perturbed</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">original_device</span><span class="p">)</span>
-
-        <span class="n">new_input_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">perturbed</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>
-
-    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">new_input_data</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">gradient_maps</span></div>
 
 
+<div class="viewcode-block" id="saliency_map"><a class="viewcode-back" href="../../Adversarial_Observation.html#Adversarial_Observation.Attacks.saliency_map">[docs]</a><span class="k">def</span> <span class="nf">saliency_map</span><span class="p">(</span><span class="n">input_batch_data</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">input_shape</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generate a saliency map for an input image given a pre-trained PyTorch model.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        input_batch_data (ndarray): Batch of input images as a 4D numpy array.</span>
+<span class="sd">        model (nn.Module): Pre-trained PyTorch model used to generate the saliency map.</span>
+<span class="sd">        input_shape (tuple): Shape of the input array.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        saliency_map (ndarray): Saliency map for the input images.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Set the model to evaluation mode</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+    
+    <span class="c1"># Check if GPU is available</span>
+    <span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;cuda&quot;</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Move the model and input batch data to the appropriate device</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+    <span class="n">input_batch_data</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">input_batch_data</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+
+    <span class="c1"># Disable gradient computation for all model parameters</span>
+    <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">():</span>
+        <span class="n">param</span><span class="o">.</span><span class="n">requires_grad</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="n">saliency_maps</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">img</span> <span class="ow">in</span> <span class="n">input_batch_data</span><span class="p">:</span>
+        <span class="c1"># Convert the input image to a PyTorch tensor with dtype=torch.float32 and enable gradient computation</span>
+        <span class="n">img</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span><span class="o">.</span><span class="n">requires_grad_</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+        
+        <span class="c1"># Move the input image tensor to the same device as the model</span>
+        <span class="n">img</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+
+        <span class="c1"># Make a forward pass through the model and get the predicted class scores for the input image</span>
+        <span class="n">preds</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">input_shape</span><span class="p">))</span>
+        
+        <span class="c1"># Compute the score and index of the class with the highest predicted score</span>
+        <span class="n">score</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">preds</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        
+        <span class="c1"># Compute gradients of the score with respect to the input image pixels</span>
+        <span class="n">score</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+        
+        <span class="c1"># Compute the saliency map by taking the maximum absolute gradient across color channels and normalize the values</span>
+        <span class="n">saliency_map</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">grad</span><span class="o">.</span><span class="n">abs</span><span class="p">()</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">saliency_map</span> <span class="o">=</span> <span class="p">(</span><span class="n">saliency_map</span> <span class="o">-</span> <span class="n">saliency_map</span><span class="o">.</span><span class="n">min</span><span class="p">())</span> <span class="o">/</span> <span class="p">(</span><span class="n">saliency_map</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">-</span> <span class="n">saliency_map</span><span class="o">.</span><span class="n">min</span><span class="p">())</span>
+        
+        <span class="n">saliency_maps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">saliency_map</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>
+
+    <span class="k">return</span> <span class="n">saliency_maps</span></div>
 </pre></div>
 
            </div>
