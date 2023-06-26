@@ -129,7 +129,12 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">cos_best_g</span> <span class="o">=</span> <span class="n">particle</span><span class="o">.</span><span class="n">cost_i</span>
             <span class="n">particle</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">particle</span><span class="o">.</span><span class="n">position_i</span><span class="p">)</span> </div>
         
-
+<div class="viewcode-block" id="PSO.getPoints"><a class="viewcode-back" href="../../Swarm_Observer.html#Swarm_Observer.Swarm.PSO.getPoints">[docs]</a>    <span class="k">def</span> <span class="nf">getPoints</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">vstack</span><span class="p">([</span><span class="n">particle</span><span class="o">.</span><span class="n">position_i</span> <span class="k">for</span> <span class="n">particle</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">swarm</span><span class="p">])</span></div>
+    
+<div class="viewcode-block" id="PSO.getBest"><a class="viewcode-back" href="../../Swarm_Observer.html#Swarm_Observer.Swarm.PSO.getBest">[docs]</a>    <span class="k">def</span> <span class="nf">getBest</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos_best_g</span></div>
+    
 <div class="viewcode-block" id="PSO.run"><a class="viewcode-back" href="../../Swarm_Observer.html#Swarm_Observer.Swarm.PSO.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">epochs</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Runs the Adversarial Particle Swarm Optimization algorithm for the specified number of epochs.</span>
