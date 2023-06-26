@@ -57,7 +57,12 @@ class PSO:
                 self.cos_best_g = particle.cost_i
             particle.history.append(particle.position_i) 
         
-
+    def getPoints(self):
+        return torch.vstack([particle.position_i for particle in self.swarm])
+    
+    def getBest(self):
+        return self.pos_best_g
+    
     def run(self, epochs: int):
         """
         Runs the Adversarial Particle Swarm Optimization algorithm for the specified number of epochs.

@@ -1,8 +1,9 @@
 import torch
 import torch.nn as nn
 import numpy as np
+import torchvision
 
-def buildCNN(output_size: int) -> nn.Sequential:
+def load_MNIST_model() -> nn.Sequential:
     """
     Builds a convolutional neural network model.
 
@@ -31,7 +32,7 @@ def buildCNN(output_size: int) -> nn.Sequential:
         # Add a flattening layer to convert the 2D feature maps to a 1D vector.
         nn.Flatten(),
         # Add a fully connected layer with 7x7x16 input features and output_size output features.
-        nn.Linear(7*7*16, output_size),
+        nn.Linear(7*7*16, 10),
         # Add a softmax activation layer to convert the outputs to probabilities.
         nn.Softmax(dim=1)
     )
@@ -54,3 +55,14 @@ def seedEverything(seed: int) -> None:
     torch.cuda.manual_seed_all(seed)
 
     return None
+
+def load_MNIST_data():
+    # read in the MNIST data from torchvision.datasets
+    train_data = torchvision.datasets.MNIST(root='./data', train=True, download=True, transform=torchvision.transforms.ToTensor())
+    test_data = torchvision.datasets.MNIST(root='./data', train=False, download=True, transform=torchvision.transforms.ToTensor())
+
+    # create data loaders for the training and test data
+    train_loader = torch.utils.data.DataLoader(train_data, batch_size=64, shuffle=True)
+    test_loader = torch.utils.data.DataLoader(test_data, batch_size=64, shuffle=True)
+
+    return train_loader, test_loader
