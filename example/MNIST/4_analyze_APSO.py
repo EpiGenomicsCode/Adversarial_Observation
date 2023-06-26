@@ -4,19 +4,21 @@ import matplotlib.pyplot as plt
 from scipy.signal import convolve2d
 from tqdm import tqdm
 from multiprocessing import Pool
+import os
 
 def main():
-    images = glob.glob('APSO/*/*/*.npy')
+    images =  glob.glob("./APSO/images/*/*npy")
     filter_size = 5
     filter_sigma = 1
-
+    print(images)
     with Pool() as pool:
         results = list(tqdm(pool.imap(smooth_and_save, images), total=len(images)))
     
     print("Smoothing completed.")
 
 def smooth_and_save(img_path):
-    convl_filename = img_path.split('.')[0] + '_convl.png'
+    convl_filename = img_path[:-4]+ '_convl.png'
+    print(convl_filename)
     img = np.load(img_path)
     smoothed_img = smooth_array(img)
     
@@ -29,6 +31,7 @@ def smooth_and_save(img_path):
     
     plt.savefig(convl_filename, bbox_inches='tight', pad_inches=0)
     plt.close(fig)
+    print(f"Saved {convl_filename}")
 
 def smooth_array(img, filter_size=5, filter_sigma=1):
     # Define a smoothing filter
@@ -44,3 +47,7 @@ def smooth_array(img, filter_size=5, filter_sigma=1):
     smoothed_array = convolve2d(img, filter_values, mode='same')
 
     return smoothed_array
+
+
+if __name__ == '__main__':
+    main()

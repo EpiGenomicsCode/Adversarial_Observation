@@ -3,8 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import torch
 import shap
-from util import load_MNIST_data, build_MNIST_Model, clear_memory
-
+import  Adversarial_Observation as AO
 def getData(dataloader):
     """ 
     Get one sample of each class from the dataloader.
@@ -31,7 +30,6 @@ def save_and_plot_shap_values(dataloader, model):
     Generate and save SHAP values for the given model and dataloader.
     """
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    clear_memory()
 
     data, target = getData(dataloader)
     data = data.to(device)
@@ -102,8 +100,8 @@ def save_and_plot_shap_values(dataloader, model):
     plt.close()
 
 def main():
-    train_loader, test_loader = load_MNIST_data()
-    model = build_MNIST_Model()
+    train_loader, test_loader = AO.utils.load_MNIST_data()
+    model = AO.load_MNIST_model()
     model.load_state_dict(torch.load('MNIST_cnn.pt'))
 
     # Define the SHAP explainer
