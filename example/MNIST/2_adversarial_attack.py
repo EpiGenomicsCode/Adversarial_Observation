@@ -4,6 +4,7 @@ import Adversarial_Observation as AO
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+import tqdm 
 
 def main():
     # Seed everything
@@ -29,7 +30,20 @@ def main():
     data, target = data.to(device), target.to(device)
     model = model.to(device)
 
+    grad_ascent(model, device)
     fgsm(data, target, model, device)
+
+def grad_ascent(model, device):
+    #  get the gradient ascent
+    os.makedirs('./gradient_Ascent', exist_ok=True)
+    for i in tqdm.tqdm(range(10), desc='Gradient Ascent'):
+        ga = AO.Attacks.gradient_ascent(torch.tensor(np.random.random((1,1,28,28))), model, (1,1,28,28), i, 1000, 10)
+        plt.imshow(ga[0].reshape(28,28), cmap='jet')
+        plt.colorbar()
+        confidence =  model(torch.tensor(ga[0].reshape(1,1,28,28)).to(device))[0][i].item()
+        plt.title(f"Gradient Ascent: label {i}, confidence {confidence}")
+        plt.savefig(f'./gradient_Ascent/ga_{i}.png')
+        plt.close()
 
 def fgsm(imgs, labels, model, device):
     epsilons = [0, .1, .2, .3, .4, .5]
