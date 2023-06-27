@@ -29,9 +29,14 @@ def main():
 
     accumulated_data = []  # Accumulate data samples
     targets = []  # Accumulate targets
-
+    global optimize
+    anchor = None
     for idx, (data, target) in tqdm.tqdm(enumerate(test_loader), total=len(test_loader), desc='Training UMAP'):
+        if idx > 10:
+            break
         for img, label in zip(data, target):
+            if label == optimize:
+                anchor = img
             img = img.reshape(1, 28*28)
             img = img.detach().numpy()
             accumulated_data.append(img)  # Accumulate data samples
@@ -61,13 +66,15 @@ def main():
     mask = np.random.choice([0, 1], size=initial_points.shape, p=[0.99, 0.01])
     initial_points = initial_points * mask
     initial_points = torch.tensor(initial_points).to(torch.float32)
+    #  add anchor to initial points
+    initial_points = torch.cat((initial_points, anchor.reshape(1, 28*28)), dim=0)
 
     #  create the swarm
     runSwarm(initial_points, model, device, umap_model, epochs, otherpoints)
 
-label = 3
+optimize = 3
 def cost_func(model: torch.nn.Sequential, point: torch.tensor):
-    global label
+    global optimize
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
     point = point.to(device)
@@ -76,7 +83,7 @@ def cost_func(model: torch.nn.Sequential, point: torch.tensor):
 
     grad = np.abs(AO.Attacks.gradient_map(point, model, (1,1,28,28))[0].reshape(-1))
     maxgrad = np.max(grad)
-    return .7*(output[0][label].item()) + .3*(np.sum(grad)/(maxgrad*len(grad)))
+    return .7*(output[0][optimize].item()) + .3*(np.sum(grad)/(maxgrad*len(grad)))
 
 def plotSwarm(swarm, umap_model, epoch, otherpoints):
     # Plot the points
@@ -95,8 +102,8 @@ def plotSwarm(swarm, umap_model, epoch, otherpoints):
     ax.scatter(points[:, 0], points[:, 1], c='black', label='Swarm')                
     ax.legend()
     ax.set_title(f'Epoch: {epoch}')
-    os.makedirs('./APSO/points', exist_ok=True)
-    plt.savefig(f'./APSO/points/epoch_{epoch}.png')
+    os.makedirs('./APSO_A/points', exist_ok=True)
+    plt.savefig(f'./APSO_A/points/epoch_{epoch}.png')
     plt.close()
     plotImages(swarm, epoch)
 
@@ -111,8 +118,8 @@ def plotImages(swarm, epoch):
     fig, ax = plt.subplots(figsize=(6, 6))
     ax.imshow(best, cmap='gray')
     ax.axis('off')
-    global label
-    ax.set_title(f'Confidence of {label}: {swarm.model(best.reshape(1,1,28,28).to(torch.float32).to(device))[0][label].item()}')
+    global optimize
+    ax.set_title(f'Confidence of {optimize}: {swarm.model(best.reshape(1,1,28,28).to(torch.float32).to(device))[0][optimize].item()}')
 
     grad = AO.Attacks.gradient_map(best.reshape(1,1,28,28), swarm.model, (1,1, 28, 28))[0].reshape(28,28)
     grad = np.abs(grad)  # Make the gradients absolute for better visualization
@@ -123,8 +130,8 @@ def plotImages(swarm, epoch):
     grad_rgba[..., 3] = 0.7  # Set alpha channel to control transparency
 
     ax.imshow(grad_rgba, cmap='jet', interpolation='bilinear')
-    os.makedirs(f'./APSO/images/epoch_{epoch}', exist_ok=True)
-    plt.savefig(f'./APSO/images/epoch_{epoch}/best.png')
+    os.makedirs(f'./APSO_A/images/epoch_{epoch}', exist_ok=True)
+    plt.savefig(f'./APSO_A/images/epoch_{epoch}/best.png')
     plt.close()
     # plot the rest
     for idx, point in enumerate(points):
@@ -132,7 +139,7 @@ def plotImages(swarm, epoch):
         fig, ax = plt.subplots(figsize=(6, 6))
         ax.imshow(point, cmap='gray')
         ax.axis('off')
-        ax.set_title(f'Confidence of {label}: {swarm.model(point.reshape(1,1,28,28).to(torch.float32).to(device))[0][label].item()}')
+        ax.set_title(f'Confidence of {optimize}: {swarm.model(point.reshape(1,1,28,28).to(torch.float32).to(device))[0][optimize].item()}')
 
         grad = AO.Attacks.gradient_map(point.reshape(1,1,28,28), swarm.model, (1,1, 28, 28))[0].reshape(28,28)
         grad = np.abs(grad)  # Make the gradients absolute for better visualization
@@ -145,11 +152,11 @@ def plotImages(swarm, epoch):
         ax.imshow(grad_rgba, cmap='jet', interpolation='bilinear')
 
         plt.tight_layout()
-        plt.savefig(f'./APSO/images/epoch_{epoch}/point_{idx}.png')
+        plt.savefig(f'./APSO_A/images/epoch_{epoch}/point_{idx}.png')
         plt.close()
 
 def runSwarm(inital_points, model, device, umap_model, epochs, otherpoints):
-    APSO = Swarm.PSO(inital_points, cost_func, model, 1, .5, .5)
+    APSO = Swarm.PSO(inital_points, cost_func, model)
     plotSwarm(APSO, umap_model, 0, otherpoints)
     for i in tqdm.tqdm(range(1, 1+epochs), desc='Running Swarm', total=epochs):
         APSO.step()

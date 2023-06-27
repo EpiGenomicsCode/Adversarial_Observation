@@ -13,13 +13,13 @@ class BirdParticle:
             c2 (float): The social weight.
         """
 
-        self.position_i = position.clone().detach().numpy()
-        self.velocity_i = np.random.random(position.shape)  # velocity
+        self.position_i = position.clone().detach()
+        self.velocity_i = torch.rand(position.shape)  # velocity
         # copy the current position to the best position
 
         self.history = [self.position_i]
         
-        self.pos_best_i = position.clone()   # best position individual
+        self.pos_best_i = position.clone().detach()   # best position individual
         self.cost_best_i = -1   # best error individual
         self.cost_i = -1   # error individual
 
@@ -56,8 +56,8 @@ class BirdParticle:
         Args:
             pos_best_g (list): the global best position
         """
-        r1 = np.random.random()
-        r2 = np.random.random()
+        r1 = torch.rand(1)
+        r2 = torch.rand(1)
 
         vel_cognitive = self.c1 * r1 * (self.pos_best_i - self.position_i)
         vel_social = self.c2 * r2 * (pos_best_g - self.position_i)

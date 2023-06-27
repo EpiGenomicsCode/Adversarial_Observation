@@ -2,8 +2,7 @@ import torch
 import torchvision
 import numpy as np
 import tqdm
-from util import *
-
+import Adversarial_Observation as AO
 
 def trainModel(model, train_loader, optimizer, loss, epoch, filename):
     """
@@ -60,29 +59,19 @@ def testModel(model, test_loader, filename):
         f.write(f'\nTest set: Average loss: {test_loss:.4f},')
 
 
-def seedEverything(seed):
-    """
-    Seeds all the random number generators to ensure reproducibility.
-
-    Args:
-        seed: The seed value for random number generators.
-    """
-    torch.manual_seed(seed)
-    np.random.seed(seed)
-
 
 def main():
     # Seed everything
-    seedEverything(42)
+    AO.utils.seedEverything(42)
 
-    train_loader, test_loader = load_MNIST_data()
-    model = build_MNIST_Model()
+    train_loader, test_loader = AO.utils.load_MNIST_data()
+    model = AO.utils.load_MNIST_model()
         
     # Train model
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
     loss = torch.nn.CrossEntropyLoss()
 
-    epochs = 20
+    epochs = 2
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model.to(device)
     print('Training model on {}'.format(device))
