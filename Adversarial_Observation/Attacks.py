@@ -3,7 +3,7 @@ import torch
 import torch.nn.functional as F
 import matplotlib.pyplot as plt
 
-def fgsm_attack(input_batch_data, model: torch.nn.Module, input_shape: tuple, epsilon: float) -> torch.Tensor:
+def fgsm_attack(input_batch_data: torch.tensor, model: torch.nn.Module, input_shape: tuple, epsilon: float) -> torch.Tensor:
     """
     Apply the FGSM attack to input images given a pre-trained PyTorch model.
 
@@ -63,7 +63,7 @@ def fgsm_attack(input_batch_data, model: torch.nn.Module, input_shape: tuple, ep
     return adversarial_batch_data
 
 
-def gradient_map(input_batch_data, model: torch.nn.Module, input_shape: tuple) -> torch.Tensor:
+def gradient_map(input_batch_data: torch.tensor, model: torch.nn.Module, input_shape: tuple, backprop_type: str = 'guided') -> torch.Tensor:
     """
     Generate a gradient map for an input image given a pre-trained PyTorch model.
 
@@ -71,13 +71,15 @@ def gradient_map(input_batch_data, model: torch.nn.Module, input_shape: tuple) -
         input_batch_data (ndarray): Batch of input images as a 4D numpy array.
         model (nn.Module): Pre-trained PyTorch model used to generate the gradient map.
         input_shape (tuple): Shape of the input array.
+        backprop_type (str, optional): Type of backpropagation. Supported values: 'vanilla', 'guided', 'relu'.
+            Defaults to 'vanilla'.
 
     Returns:
         gradient_maps (ndarray): Gradient map for the input images.
     """
     # Set the model to evaluation mode
     model.eval()
-    
+
     # Check if GPU is available
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -93,77 +95,95 @@ def gradient_map(input_batch_data, model: torch.nn.Module, input_shape: tuple) -
     for img in input_batch_data:
         # Convert the input image to a PyTorch tensor with dtype=torch.float32 and enable gradient computation
         img = img.clone().detach().to(torch.float32).requires_grad_(True)
-        
+
         # Move the input image tensor to the same device as the model
         img = img.to(device)
 
         # Make a forward pass through the model and get the predicted class scores for the input image
         preds = model(img.reshape(input_shape))
-        
+
         # Compute the score and index of the class with the highest predicted score
         score, _ = torch.max(preds, 1)
-        
+
         # Reset gradients from previous iterations
         model.zero_grad()
-        
+
         # Compute gradients of the score with respect to the model parameters
         score.backward()
-        
-        # Compute the gradient map by taking the norm of the gradients with respect to the input image pixels
-        gradient_map = img.grad.norm(dim=0)
-        
+
+        if backprop_type == 'guided':
+            # Apply guided backpropagation
+            gradients = img.grad
+            gradients = gradients * (gradients > 0).float()  # ReLU-like operation
+            gradient_map = gradients.norm(dim=0)
+        elif backprop_type == 'relu':
+            # Apply ReLU backpropagation
+            gradients = img.grad
+            gradients = (gradients > 0).float()  # ReLU operation
+            gradient_map = gradients.norm(dim=0)
+        else:
+            # Default to vanilla backpropagation
+            gradient_map = img.grad.norm(dim=0)
+
         gradient_maps.append(gradient_map.cpu().detach().numpy())
 
     return gradient_maps
 
 
-# def saliency_map(input_batch_data, model: torch.nn.Module, input_shape: tuple) -> torch.Tensor:
+
+
+def gradient_ascent(input_batch_data: torch.tensor, model: torch.nn.Module, input_shape: tuple, target_neuron: int, num_iterations: int = 100, step_size: float = 1.0) -> torch.Tensor:
     """
-    Generate a saliency map for an input image given a pre-trained PyTorch model.
+    Perform gradient ascent to generate an image that maximizes the activation of a target neuron given a pre-trained PyTorch model.
 
     Args:
         input_batch_data (ndarray): Batch of input images as a 4D numpy array.
-        model (nn.Module): Pre-trained PyTorch model used to generate the saliency map.
+        model (nn.Module): Pre-trained PyTorch model used for gradient ascent.
         input_shape (tuple): Shape of the input array.
+        target_neuron (int): Index of the target neuron to maximize activation.
+        num_iterations (int, optional): Number of gradient ascent iterations. Defaults to 100.
+        step_size (float, optional): Step size for each iteration. Defaults to 1.0.
 
     Returns:
-        saliency_map (ndarray): Saliency map for the input images.
+        generated_images (ndarray): Generated images that maximize the activation of the target neuron.
     """
     # Set the model to evaluation mode
     model.eval()
-    
+
     # Check if GPU is available
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    # Move the model and input batch data to the appropriate device
+    # Move the model to the appropriate device
     model.to(device)
-    input_batch_data = torch.tensor(input_batch_data).to(device)
 
-    # Disable gradient computation for all model parameters
-    for param in model.parameters():
-        param.requires_grad = False
-
-    saliency_maps = []
+    # Initialize the generated images
+    generated_images = []
     for img in input_batch_data:
         # Convert the input image to a PyTorch tensor with dtype=torch.float32 and enable gradient computation
         img = img.clone().detach().to(torch.float32).requires_grad_(True)
-        
+
         # Move the input image tensor to the same device as the model
         img = img.to(device)
 
-        # Make a forward pass through the model and get the predicted class scores for the input image
-        preds = model(img.reshape(input_shape))
-        
-        # Compute the score and index of the class with the highest predicted score
-        score, _ = torch.max(preds, 1)
-        
-        # Compute gradients of the score with respect to the input image pixels
-        score.backward()
-        
-        # Compute the saliency map by taking the maximum absolute gradient across color channels and normalize the values
-        saliency_map = img.grad.abs().max(dim=0)[0]
-        saliency_map = (saliency_map - saliency_map.min()) / (saliency_map.max() - saliency_map.min())
-        
-        saliency_maps.append(saliency_map.cpu().detach().numpy())
+        # Perform gradient ascent
+        for _ in range(num_iterations):
+            # Make a forward pass through the model and get the activation of the target neuron
+            activation = model(img.reshape(input_shape))[:, target_neuron]
 
-    return saliency_maps
+            # Reset gradients from previous iterations
+            model.zero_grad()
+
+            # Compute gradients of the target neuron activation with respect to the input image using torch.autograd.grad
+            gradients = torch.autograd.grad(activation, img)[0]
+
+            # Normalize the gradients
+            gradients = F.normalize(gradients, dim=0)
+
+            # Update the input image using the gradients and step size
+            img.data += step_size * gradients
+
+        # Append the generated image to the list
+        generated_images.append(img.cpu().detach().numpy())
+
+    return generated_images
+
