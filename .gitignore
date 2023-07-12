@@ -9,6 +9,7 @@ tests/image*
 *.so
 *pt
 *csv
+*npy
 # Distribution / packaging
 .Python
 build/
