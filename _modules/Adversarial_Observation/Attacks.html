@@ -135,72 +135,69 @@
     <span class="k">return</span> <span class="n">adversarial_batch_data</span></div>
 
 
+
 <div class="viewcode-block" id="gradient_map"><a class="viewcode-back" href="../../Adversarial_Observation.html#Adversarial_Observation.Attacks.gradient_map">[docs]</a><span class="k">def</span> <span class="nf">gradient_map</span><span class="p">(</span><span class="n">input_batch_data</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">input_shape</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span> <span class="n">backprop_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;guided&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Generate a gradient map for an input image given a pre-trained PyTorch model.</span>
+<span class="sd">    Generate a gradient map for a batch of input images given a pre-trained PyTorch model.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        input_batch_data (ndarray): Batch of input images as a 4D numpy array.</span>
 <span class="sd">        model (nn.Module): Pre-trained PyTorch model used to generate the gradient map.</span>
 <span class="sd">        input_shape (tuple): Shape of the input array.</span>
-<span class="sd">        backprop_type (str, optional): Type of backpropagation. Supported values: &#39;vanilla&#39;, &#39;guided&#39;, &#39;relu&#39;.</span>
-<span class="sd">            Defaults to &#39;vanilla&#39;.</span>
+<span class="sd">        backprop_type (str, optional): Type of backpropagation. Supported values: &#39;guided&#39;, &#39;relu&#39;.</span>
+<span class="sd">            Defaults to &#39;guided&#39;.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        gradient_maps (ndarray): Gradient map for the input images.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c1"># Set the model to evaluation mode</span>
-    <span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+    <span class="c1"># Switch to training mode only if the model contains RNN layers</span>
+    <span class="n">has_rnn_layers</span> <span class="o">=</span> <span class="nb">any</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">layer</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">RNNBase</span><span class="p">)</span> <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">children</span><span class="p">())</span>
+    <span class="k">if</span> <span class="n">has_rnn_layers</span><span class="p">:</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
 
     <span class="c1"># Check if GPU is available</span>
     <span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;cuda&quot;</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
 
-    <span class="c1"># Move the model and input batch data to the appropriate device</span>
+    <span class="c1"># Move the model to the appropriate device</span>
     <span class="n">model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
-    <span class="n">input_batch_data</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">input_batch_data</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
 
-    <span class="c1"># Disable gradient computation for all model parameters</span>
-    <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">():</span>
-        <span class="n">param</span><span class="o">.</span><span class="n">requires_grad</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="c1"># Convert the input batch to PyTorch tensor with dtype=torch.float32</span>
+    <span class="n">input_batch_data</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">input_batch_data</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="n">requires_grad</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-    <span class="n">gradient_maps</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">for</span> <span class="n">img</span> <span class="ow">in</span> <span class="n">input_batch_data</span><span class="p">:</span>
-        <span class="c1"># Convert the input image to a PyTorch tensor with dtype=torch.float32 and enable gradient computation</span>
-        <span class="n">img</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span><span class="o">.</span><span class="n">requires_grad_</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+    <span class="c1"># Make a forward pass through the model and get the predicted class scores for the input images</span>
+    <span class="n">preds</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">input_batch_data</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">*</span><span class="n">input_shape</span><span class="p">))</span>
 
-        <span class="c1"># Move the input image tensor to the same device as the model</span>
-        <span class="n">img</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+    <span class="c1"># Compute the scores and indices of the class with the highest predicted scores</span>
+    <span class="n">scores</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">preds</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
 
-        <span class="c1"># Make a forward pass through the model and get the predicted class scores for the input image</span>
-        <span class="n">preds</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">input_shape</span><span class="p">))</span>
+    <span class="c1"># Zero out any existing gradients</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
 
-        <span class="c1"># Compute the score and index of the class with the highest predicted score</span>
-        <span class="n">score</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">preds</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="c1"># Ensure that the score tensor requires gradients</span>
+    <span class="n">scores</span> <span class="o">=</span> <span class="n">scores</span><span class="o">.</span><span class="n">requires_grad_</span><span class="p">()</span>
 
-        <span class="c1"># Reset gradients from previous iterations</span>
-        <span class="n">model</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
+    <span class="c1"># Compute gradients of the scores with respect to the input images</span>
+    <span class="n">grad_scores</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">grad</span><span class="p">(</span><span class="n">outputs</span><span class="o">=</span><span class="n">scores</span><span class="p">,</span> <span class="n">inputs</span><span class="o">=</span><span class="n">input_batch_data</span><span class="p">,</span> <span class="n">grad_outputs</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">scores</span><span class="p">),</span> <span class="n">create_graph</span><span class="o">=</span><span class="kc">True</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
 
-        <span class="c1"># Compute gradients of the score with respect to the model parameters</span>
-        <span class="n">score</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+    <span class="c1"># Switch back to evaluation mode if necessary</span>
+    <span class="k">if</span> <span class="n">has_rnn_layers</span><span class="p">:</span>
+       <span class="n">model</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
 
-        <span class="k">if</span> <span class="n">backprop_type</span> <span class="o">==</span> <span class="s1">&#39;guided&#39;</span><span class="p">:</span>
-            <span class="c1"># Apply guided backpropagation</span>
-            <span class="n">gradients</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">grad</span>
-            <span class="n">gradients</span> <span class="o">=</span> <span class="n">gradients</span> <span class="o">*</span> <span class="p">(</span><span class="n">gradients</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>  <span class="c1"># ReLU-like operation</span>
-            <span class="n">gradient_map</span> <span class="o">=</span> <span class="n">gradients</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="n">backprop_type</span> <span class="o">==</span> <span class="s1">&#39;relu&#39;</span><span class="p">:</span>
-            <span class="c1"># Apply ReLU backpropagation</span>
-            <span class="n">gradients</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">grad</span>
-            <span class="n">gradients</span> <span class="o">=</span> <span class="p">(</span><span class="n">gradients</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>  <span class="c1"># ReLU operation</span>
-            <span class="n">gradient_map</span> <span class="o">=</span> <span class="n">gradients</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="c1"># Default to vanilla backpropagation</span>
-            <span class="n">gradient_map</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">grad</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">backprop_type</span> <span class="o">==</span> <span class="s1">&#39;guided&#39;</span><span class="p">:</span>
+        <span class="c1"># Apply guided backpropagation</span>
+        <span class="n">gradients</span> <span class="o">=</span> <span class="n">grad_scores</span> <span class="o">*</span> <span class="p">(</span><span class="n">grad_scores</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>  <span class="c1"># ReLU-like operation</span>
+        <span class="n">gradient_maps</span> <span class="o">=</span> <span class="n">gradients</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">backprop_type</span> <span class="o">==</span> <span class="s1">&#39;relu&#39;</span><span class="p">:</span>
+        <span class="c1"># Apply ReLU backpropagation</span>
+        <span class="n">gradients</span> <span class="o">=</span> <span class="p">(</span><span class="n">grad_scores</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>  <span class="c1"># ReLU operation</span>
+        <span class="n">gradient_maps</span> <span class="o">=</span> <span class="n">gradients</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Default to vanilla backpropagation</span>
+        <span class="n">gradient_maps</span> <span class="o">=</span> <span class="n">grad_scores</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 
-        <span class="n">gradient_maps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">gradient_map</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>
-
-    <span class="k">return</span> <span class="n">gradient_maps</span></div>
-
+    <span class="k">return</span> <span class="n">gradient_maps</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span></div>
 
 
 
