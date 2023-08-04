@@ -64,7 +64,7 @@ def fgsm_attack(input_batch_data: torch.tensor, model: torch.nn.Module, input_sh
 
 
 
-    def gradient_map(input_batch_data: torch.tensor, model: torch.nn.Module, input_shape: tuple, backprop_type: str = 'guided') -> torch.Tensor:
+def gradient_map(input_batch_data: torch.tensor, model: torch.nn.Module, input_shape: tuple, backprop_type: str = 'guided') -> torch.Tensor:
     """
     Generate a gradient map for a batch of input images given a pre-trained PyTorch model.
 
