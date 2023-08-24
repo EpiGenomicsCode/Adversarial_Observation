@@ -30,7 +30,6 @@ def main():
     data, target = data.to(device), target.to(device)
     model = model.to(device)
 
-<<<<<<< HEAD
     # grad_ascent(model, device)
     fgsm(data, target, model, device)
 
@@ -83,29 +82,6 @@ def plot_perterbed(perterbed, eps, imgs, labels, model):
             plt.close()
 
 
-=======
-    grad_ascent(model, device)
-    fgsm(data, target, model, device)
-
-def grad_ascent(model, device):
-    #  get the gradient ascent
-    os.makedirs('./gradient_Ascent', exist_ok=True)
-    for i in tqdm.tqdm(range(10), desc='Gradient Ascent'):
-        ga = AO.Attacks.gradient_ascent(torch.tensor(np.random.random((1,1,28,28))), model, (1,1,28,28), i, 1000, 10)
-        plt.imshow(ga[0].reshape(28,28), cmap='jet')
-        plt.colorbar()
-        confidence =  model(torch.tensor(ga[0].reshape(1,1,28,28)).to(device))[0][i].item()
-        plt.title(f"Gradient Ascent: label {i}, confidence {confidence}")
-        plt.savefig(f'./gradient_Ascent/ga_{i}.png')
-        plt.close()
-
-def fgsm(imgs, labels, model, device):
-    epsilons = [0, .1, .2, .3, .4, .5]
-    # Run test for each epsilon
-    for eps in epsilons:
-        perterbed = AO.Attacks.fgsm_attack(imgs, model, (1,1,28,28), eps)
-        plot_perterbed(perterbed, eps, imgs, labels, model)
->>>>>>> 8f0834909dfca238b88ce6296712862ccd07bea7
 
 def plot_perterbed(perterbed, eps, imgs, labels, model):
     for img, pert, label in zip(imgs, perterbed, labels):

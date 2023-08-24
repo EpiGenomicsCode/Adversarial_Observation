@@ -130,8 +130,6 @@ def gradient_map(input_batch_data: torch.tensor, model: torch.nn.Module, input_s
     return gradient_maps
 
 
-
-
 def gradient_ascent(input_batch_data: torch.tensor, model: torch.nn.Module, input_shape: tuple, target_neuron: int, num_iterations: int = 100, step_size: float = 1.0) -> torch.Tensor:
     """
     Perform gradient ascent to generate an image that maximizes the activation of a target neuron given a pre-trained PyTorch model.
