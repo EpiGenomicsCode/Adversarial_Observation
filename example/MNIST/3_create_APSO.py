@@ -22,6 +22,7 @@ plt.rcParams['figure.figsize'] = [12, 12]
 # default dpi
 plt.rcParams['figure.dpi'] = 500
 
+label = 3
 def main():
     #  load the model
     model = AO.utils.load_MNIST_model()
@@ -65,9 +66,9 @@ def main():
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
     # parameters 
-    points = 300
+    points = 50
     shape = 28*28
-    epochs = 22
+    epochs = 20
 
     #  get initial 
     initial_points = np.random.rand(points, shape)
@@ -78,7 +79,6 @@ def main():
     #  create the swarm
     runSwarm(initial_points, model, device, umap_model, epochs, otherpoints)
 
-label = 3
 def cost_func(model: torch.nn.Sequential, point: torch.tensor):
     global label
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -89,10 +89,13 @@ def cost_func(model: torch.nn.Sequential, point: torch.tensor):
 
     grad = np.abs(AO.Attacks.gradient_map(point, model, (1,1,28,28))[0].reshape(-1))
     maxgrad = np.max(grad)
-    return (output[0][label].item()) * (np.sum(grad)/(maxgrad*len(grad)))
+    return (output[0][label].item()) * (np.sum(grad)/(maxgrad*len(grad))) 
 
 def plotSwarm(swarm, umap_model, epoch, otherpoints):
-    # Plot the points
+
+    if epoch > 2 and epoch < 18:
+        return
+   
     fig, ax = plt.subplots(figsize=(12, 12))
 
     # Plot otherpoints 
@@ -138,6 +141,8 @@ def plotImages(swarm, epoch):
     grad_rgba[..., 3] = 0.7  # Set alpha channel to control transparency
 
     ax.imshow(grad_rgba, cmap='jet', interpolation='bilinear')
+    fig.colorbar(ax.imshow(grad_rgba, cmap='jet', interpolation='bilinear'), ax=ax, shrink=0.5, orientation='horizontal', pad=0.05)
+
     os.makedirs(f'./APSO/images/epoch_{epoch}', exist_ok=True)
     plt.savefig(f'./APSO/images/epoch_{epoch}/best.png')
     plt.close()
@@ -147,7 +152,7 @@ def plotImages(swarm, epoch):
         fig, ax = plt.subplots(figsize=(6, 6))
         ax.imshow(point, cmap='gray')
         ax.axis('off')
-        ax.set_title(f'Confidence of {label}: {swarm.model(point.reshape(1,1,28,28).to(torch.float32).to(device))[0][label].item()}')
+        ax.set_title(f'Confidence of {label}: {round(swarm.model(point.reshape(1,1,28,28).to(torch.float32).to(device))[0][label].item(),3)}')
 
         grad = AO.Attacks.gradient_map(point.reshape(1,1,28,28), swarm.model, (1,1, 28, 28))[0].reshape(28,28)
         grad = np.abs(grad)  # Make the gradients absolute for better visualization
@@ -158,7 +163,8 @@ def plotImages(swarm, epoch):
         grad_rgba[..., 3] = 0.7  # Set alpha channel to control transparency
 
         ax.imshow(grad_rgba, cmap='jet', interpolation='bilinear')
-
+        # colorbar based on axis resized to be smaller shown horizontally at the bottom close to the image
+        fig.colorbar(ax.imshow(grad_rgba, cmap='jet', interpolation='bilinear'), ax=ax, shrink=0.5, orientation='horizontal', pad=0.05)
         plt.tight_layout()
         plt.savefig(f'./APSO/images/epoch_{epoch}/point_{idx}.png')
         plt.close()
@@ -198,6 +204,7 @@ def runSwarm(inital_points, model, device, umap_model, epochs, otherpoints):
     ax[1].imshow(grad_normalized, cmap='jet', interpolation='bilinear')
     ax[1].axis('off')
     plt.tight_layout()
+    os.makedirs('./APSO', exist_ok=True)
     plt.savefig(f'./APSO/avg_final.png')
 
 if __name__ == '__main__':

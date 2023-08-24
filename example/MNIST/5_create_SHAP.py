@@ -67,7 +67,7 @@ def save_and_plot_shap_values(dataloader, model):
             np.save(f'{save_dir}/{i}_shap_{j}.npy', shap_i[j])
             img = axes[i, j+1].imshow(shap_i[j].reshape(28, 28), cmap='jet')
             axes[i, j+1].axis('off')
-            axes[i, j+1].set_title(f'SHAP value {j+1}')
+            # axes[i, j+1].set_title(f'SHAP value {j+1}')
 
         # Remove empty cells in the row
         for j in range(num_shap_values + 1, 11):

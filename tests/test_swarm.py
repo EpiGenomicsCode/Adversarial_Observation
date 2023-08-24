@@ -24,4 +24,8 @@ class TestSwarm(unittest.TestCase):
         self.assertEqual(len(swarm.swarm), 10)
         print(swarm.pos_best_g)
         print(swarm.cos_best_g)
-        assert np.isclose(swarm.cos_best_g, 0, atol=1)
+        # tolerance of .001 
+        assert np.isclose(swarm.cos_best_g, 0, atol=.001)
+
+if __name__ == '__main__':
+    unittest.main()
