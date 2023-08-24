@@ -4,10 +4,12 @@ data*
 tests/image*
 *.py[cod]
 *$py.class
-
+*png
 # C extensions
 *.so
-
+*pt
+*csv
+*npy
 # Distribution / packaging
 .Python
 build/

@@ -30,7 +30,7 @@ def main():
     data, target = data.to(device), target.to(device)
     model = model.to(device)
 
-    grad_ascent(model, device)
+    # grad_ascent(model, device)
     fgsm(data, target, model, device)
 
 def grad_ascent(model, device):
@@ -46,11 +46,42 @@ def grad_ascent(model, device):
         plt.close()
 
 def fgsm(imgs, labels, model, device):
-    epsilons = [0, .1, .2, .3, .4, .5]
+    epsilons = [.001, .01, .1, .2]
     # Run test for each epsilon
     for eps in epsilons:
         perterbed = AO.Attacks.fgsm_attack(imgs, model, (1,1,28,28), eps)
         plot_perterbed(perterbed, eps, imgs, labels, model)
+
+def plot_perterbed(perterbed, eps, imgs, labels, model):
+    for img, pert, label in zip(imgs, perterbed, labels):
+        pert = torch.tensor(pert).to(torch.float32).to(img.device)
+        per_conf = round(model(pert.unsqueeze(0))[0][label].item(), 2)
+
+        if per_conf < .9:
+            fig, axs = plt.subplots(1, 3, figsize=(12, 4))
+            axs[0].imshow(img.cpu().numpy().squeeze(), cmap="gray")
+            axs[0].set_title(f'Original')
+            axs[1].imshow(pert.cpu().numpy().squeeze(), cmap="gray")
+            axs[1].set_title(f'Perturbed Confidence: {per_conf}')
+            axs[2].imshow((pert-img).cpu().numpy().squeeze(), cmap="gray")
+            axs[2].set_title('Noise')
+            plt.suptitle(f'Epsilon: {eps} Label: {label}')
+            os.makedirs('./attack_results', exist_ok=True)
+            plt.savefig(f'./attack_results/fgsm_{eps}_{label}.png')
+            # save perturbed image as npy
+            np.save(f'./attack_results/fgsm_{eps}_{label}.npy', pert.cpu().numpy().squeeze())
+            plt.close()
+            #  make a 2x1 plot of the activation of the original and perturbed image
+            fig, axs = plt.subplots(1, 2, figsize=(12, 4))
+            axs[0].imshow( AO.Attacks.gradient_map(img.reshape(1,1,28,28), model, (1,1,28,28))[0], cmap="jet")
+            axs[0].set_title(f'Original Confidence: {1}')
+            axs[1].imshow( AO.Attacks.gradient_map(pert.reshape(1,1,28,28), model, (1,1,28,28))[0], cmap="jet")
+            axs[1].set_title(f'Perturbed')
+            plt.suptitle(f'Epsilon: {eps} Label: {label}')
+            plt.savefig(f'./attack_results/fgsm_{eps}_{label}_grad.png')
+            plt.close()
+
+
 
 def plot_perterbed(perterbed, eps, imgs, labels, model):
     for img, pert, label in zip(imgs, perterbed, labels):
