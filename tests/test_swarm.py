@@ -17,6 +17,7 @@ class TestSwarm(unittest.TestCase):
         starting_positions = torch.rand(size=(points, 2)).to(torch.float32)
 
         func = lambda x: x**2
+
         swarm = PSO(starting_positions, costFunc, func)
 
         swarm.run(10)
@@ -27,7 +28,7 @@ class TestSwarm(unittest.TestCase):
         # tolerance of .001 
         print("cos_best_g: ", swarm.cos_best_g)
         print("pos_best_g: ", swarm.pos_best_g)
-        assert np.isclose(swarm.cos_best_g, 0, atol=1)
+        assert np.isclose(swarm.cos_best_g.item(), 1, atol=.1)
 
 if __name__ == '__main__':
     unittest.main()
