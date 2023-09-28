@@ -46,23 +46,24 @@
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Adversarial_Observation package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#submodules">Submodules</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#adversarial-observation-attacks-module">Adversarial_Observation.Attacks module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#module-Adversarial_Observation.Attacks">Adversarial_Observation.Attacks module</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#Adversarial_Observation.Attacks.fgsm_attack"><code class="docutils literal notranslate"><span class="pre">fgsm_attack()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#Adversarial_Observation.Attacks.gradient_ascent"><code class="docutils literal notranslate"><span class="pre">gradient_ascent()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#Adversarial_Observation.Attacks.gradient_map"><code class="docutils literal notranslate"><span class="pre">gradient_map()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Adversarial_Observation.Attacks.saliency_map"><code class="docutils literal notranslate"><span class="pre">saliency_map()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#adversarial-observation-utils-module">Adversarial_Observation.utils module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#module-Adversarial_Observation.utils">Adversarial_Observation.utils module</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#Adversarial_Observation.utils.load_MNIST_data"><code class="docutils literal notranslate"><span class="pre">load_MNIST_data()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#Adversarial_Observation.utils.load_MNIST_model"><code class="docutils literal notranslate"><span class="pre">load_MNIST_model()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#Adversarial_Observation.utils.seedEverything"><code class="docutils literal notranslate"><span class="pre">seedEverything()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#adversarial-observation-visualize-module">Adversarial_Observation.visualize module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#module-Adversarial_Observation.visualize">Adversarial_Observation.visualize module</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#Adversarial_Observation.visualize.visualizeGIF"><code class="docutils literal notranslate"><span class="pre">visualizeGIF()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#module-contents">Module contents</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-Adversarial_Observation">Module contents</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="Swarm_Observer.html">Swarm_Observer package</a></li>
@@ -97,9 +98,9 @@
 <section id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
 </section>
-<section id="adversarial-observation-attacks-module">
-<h2>Adversarial_Observation.Attacks module<a class="headerlink" href="#adversarial-observation-attacks-module" title="Link to this heading"></a></h2>
-<dl class="py function" id="module-Adversarial_Observation.Attacks">
+<section id="module-Adversarial_Observation.Attacks">
+<span id="adversarial-observation-attacks-module"></span><h2>Adversarial_Observation.Attacks module<a class="headerlink" href="#module-Adversarial_Observation.Attacks" title="Link to this heading"></a></h2>
+<dl class="py function">
 <dt class="sig sig-object py" id="Adversarial_Observation.Attacks.fgsm_attack">
 <span class="sig-prename descclassname"><span class="pre">Adversarial_Observation.Attacks.</span></span><span class="sig-name descname"><span class="pre">fgsm_attack</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_batch_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_shape</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epsilon</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="_modules/Adversarial_Observation/Attacks.html#fgsm_attack"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#Adversarial_Observation.Attacks.fgsm_attack" title="Link to this definition"></a></dt>
 <dd><p>Apply the FGSM attack to input images given a pre-trained PyTorch model.</p>
@@ -168,10 +169,32 @@ Defaults to ‘vanilla’.</p></li>
 </dl>
 </dd></dl>
 
+<dl class="py function">
+<dt class="sig sig-object py" id="Adversarial_Observation.Attacks.saliency_map">
+<span class="sig-prename descclassname"><span class="pre">Adversarial_Observation.Attacks.</span></span><span class="sig-name descname"><span class="pre">saliency_map</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_image</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_class</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/Adversarial_Observation/Attacks.html#saliency_map"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#Adversarial_Observation.Attacks.saliency_map" title="Link to this definition"></a></dt>
+<dd><p>Generate a saliency map for an input image given a pre-trained PyTorch model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_image</strong> (<em>torch.Tensor</em>) – Input image as a 3D torch.Tensor.</p></li>
+<li><p><strong>model</strong> (<em>torch.nn.Module</em>) – Pre-trained PyTorch model used to generate the saliency map.</p></li>
+<li><p><strong>target_class</strong> (<em>int</em><em>, </em><em>optional</em>) – Index of the target class for saliency computation.
+If None, the class with the highest predicted score will be used.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Saliency map for the input image.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>saliency_map (torch.Tensor)</p>
+</dd>
+</dl>
+</dd></dl>
+
 </section>
-<section id="adversarial-observation-utils-module">
-<h2>Adversarial_Observation.utils module<a class="headerlink" href="#adversarial-observation-utils-module" title="Link to this heading"></a></h2>
-<dl class="py function" id="module-Adversarial_Observation.utils">
+<section id="module-Adversarial_Observation.utils">
+<span id="adversarial-observation-utils-module"></span><h2>Adversarial_Observation.utils module<a class="headerlink" href="#module-Adversarial_Observation.utils" title="Link to this heading"></a></h2>
+<dl class="py function">
 <dt class="sig sig-object py" id="Adversarial_Observation.utils.load_MNIST_data">
 <span class="sig-prename descclassname"><span class="pre">Adversarial_Observation.utils.</span></span><span class="sig-name descname"><span class="pre">load_MNIST_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/Adversarial_Observation/utils.html#load_MNIST_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#Adversarial_Observation.utils.load_MNIST_data" title="Link to this definition"></a></dt>
 <dd></dd></dl>
@@ -208,9 +231,9 @@ Defaults to ‘vanilla’.</p></li>
 </dd></dl>
 
 </section>
-<section id="adversarial-observation-visualize-module">
-<h2>Adversarial_Observation.visualize module<a class="headerlink" href="#adversarial-observation-visualize-module" title="Link to this heading"></a></h2>
-<dl class="py function" id="module-Adversarial_Observation.visualize">
+<section id="module-Adversarial_Observation.visualize">
+<span id="adversarial-observation-visualize-module"></span><h2>Adversarial_Observation.visualize module<a class="headerlink" href="#module-Adversarial_Observation.visualize" title="Link to this heading"></a></h2>
+<dl class="py function">
 <dt class="sig sig-object py" id="Adversarial_Observation.visualize.visualizeGIF">
 <span class="sig-prename descclassname"><span class="pre">Adversarial_Observation.visualize.</span></span><span class="sig-name descname"><span class="pre">visualizeGIF</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filenames</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'output.gif'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/Adversarial_Observation/visualize.html#visualizeGIF"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#Adversarial_Observation.visualize.visualizeGIF" title="Link to this definition"></a></dt>
 <dd><p>Given a list of filenames, generate a GIF file in that order and save it to the specified output file.</p>
@@ -228,9 +251,9 @@ Defaults to ‘vanilla’.</p></li>
 </dd></dl>
 
 </section>
-<section id="module-contents">
-<h2>Module contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
-<span class="target" id="module-Adversarial_Observation"></span></section>
+<section id="module-Adversarial_Observation">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-Adversarial_Observation" title="Link to this heading"></a></h2>
+</section>
 </section>
 
 

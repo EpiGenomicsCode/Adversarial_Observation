@@ -266,6 +266,48 @@
     <span class="k">return</span> <span class="n">generated_images</span></div>
 
 
+<div class="viewcode-block" id="saliency_map">
+<a class="viewcode-back" href="../../Adversarial_Observation.html#Adversarial_Observation.Attacks.saliency_map">[docs]</a>
+<span class="k">def</span> <span class="nf">saliency_map</span><span class="p">(</span><span class="n">input_image</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">target_class</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generate a saliency map for an input image given a pre-trained PyTorch model.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        input_image (torch.Tensor): Input image as a 3D torch.Tensor.</span>
+<span class="sd">        model (torch.nn.Module): Pre-trained PyTorch model used to generate the saliency map.</span>
+<span class="sd">        target_class (int, optional): Index of the target class for saliency computation.</span>
+<span class="sd">            If None, the class with the highest predicted score will be used.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        saliency_map (torch.Tensor): Saliency map for the input image.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Set the model to evaluation mode</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+
+    <span class="c1"># Check if GPU is available</span>
+    <span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;cuda&quot;</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Move the model and input image to the appropriate device</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+    <span class="n">input_image</span> <span class="o">=</span> <span class="n">input_image</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span><span class="o">.</span><span class="n">requires_grad_</span><span class="p">()</span>
+
+    <span class="c1"># Make a forward pass through the model and get the predicted class scores for the input image</span>
+    <span class="n">logits</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">input_image</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>  <span class="c1"># Add a batch dimension</span>
+    <span class="k">if</span> <span class="n">target_class</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># If target class is not specified, use the class with the highest predicted score</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">target_class</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">logits</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># Compute the score for the target class</span>
+    <span class="n">target_score</span> <span class="o">=</span> <span class="n">logits</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">target_class</span><span class="p">]</span>
+
+    <span class="c1"># Compute gradients of the target class score with respect to the input image</span>
+    <span class="n">target_score</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+
+    <span class="c1"># Calculate the absolute gradients as the saliency map</span>
+    <span class="n">saliency_map</span> <span class="o">=</span> <span class="n">input_image</span><span class="o">.</span><span class="n">grad</span><span class="o">.</span><span class="n">abs</span><span class="p">()</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">saliency_map</span></div>
+
 </pre></div>
 
            </div>

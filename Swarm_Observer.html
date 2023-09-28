@@ -46,7 +46,7 @@
 <li class="toctree-l1"><a class="reference internal" href="Adversarial_Observation.html">Adversarial_Observation package</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Swarm_Observer package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#submodules">Submodules</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#swarm-observer-birdparticle-module">Swarm_Observer.BirdParticle module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#module-Swarm_Observer.BirdParticle">Swarm_Observer.BirdParticle module</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#Swarm_Observer.BirdParticle.BirdParticle"><code class="docutils literal notranslate"><span class="pre">BirdParticle</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#Swarm_Observer.BirdParticle.BirdParticle.evaluate"><code class="docutils literal notranslate"><span class="pre">BirdParticle.evaluate()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#Swarm_Observer.BirdParticle.BirdParticle.get_history"><code class="docutils literal notranslate"><span class="pre">BirdParticle.get_history()</span></code></a></li>
@@ -56,7 +56,7 @@
 </li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#swarm-observer-swarm-module">Swarm_Observer.Swarm module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#module-Swarm_Observer.Swarm">Swarm_Observer.Swarm module</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#Swarm_Observer.Swarm.PSO"><code class="docutils literal notranslate"><span class="pre">PSO</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#Swarm_Observer.Swarm.PSO.getBest"><code class="docutils literal notranslate"><span class="pre">PSO.getBest()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#Swarm_Observer.Swarm.PSO.getPoints"><code class="docutils literal notranslate"><span class="pre">PSO.getPoints()</span></code></a></li>
@@ -68,7 +68,7 @@
 </li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#module-contents">Module contents</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-Swarm_Observer">Module contents</a></li>
 </ul>
 </li>
 </ul>
@@ -102,9 +102,9 @@
 <section id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
 </section>
-<section id="swarm-observer-birdparticle-module">
-<h2>Swarm_Observer.BirdParticle module<a class="headerlink" href="#swarm-observer-birdparticle-module" title="Link to this heading"></a></h2>
-<dl class="py class" id="module-Swarm_Observer.BirdParticle">
+<section id="module-Swarm_Observer.BirdParticle">
+<span id="swarm-observer-birdparticle-module"></span><h2>Swarm_Observer.BirdParticle module<a class="headerlink" href="#module-Swarm_Observer.BirdParticle" title="Link to this heading"></a></h2>
+<dl class="py class">
 <dt class="sig sig-object py" id="Swarm_Observer.BirdParticle.BirdParticle">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">Swarm_Observer.BirdParticle.</span></span><span class="sig-name descname"><span class="pre">BirdParticle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">position</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">c1</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.8</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">c2</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/Swarm_Observer/BirdParticle.html#BirdParticle"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#Swarm_Observer.BirdParticle.BirdParticle" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
@@ -160,9 +160,9 @@ This should be a function that takes in a PyTorch model and a tensor of position
 </dd></dl>
 
 </section>
-<section id="swarm-observer-swarm-module">
-<h2>Swarm_Observer.Swarm module<a class="headerlink" href="#swarm-observer-swarm-module" title="Link to this heading"></a></h2>
-<dl class="py class" id="module-Swarm_Observer.Swarm">
+<section id="module-Swarm_Observer.Swarm">
+<span id="swarm-observer-swarm-module"></span><h2>Swarm_Observer.Swarm module<a class="headerlink" href="#module-Swarm_Observer.Swarm" title="Link to this heading"></a></h2>
+<dl class="py class">
 <dt class="sig sig-object py" id="Swarm_Observer.Swarm.PSO">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">Swarm_Observer.Swarm.</span></span><span class="sig-name descname"><span class="pre">PSO</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">starting_positions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cost_func</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">callable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">c1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.8</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">c2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/Swarm_Observer/Swarm.html#PSO"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#Swarm_Observer.Swarm.PSO" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
@@ -235,9 +235,9 @@ This should be a function that takes in a PyTorch model and a tensor of position
 </dd></dl>
 
 </section>
-<section id="module-contents">
-<h2>Module contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
-<span class="target" id="module-Swarm_Observer"></span></section>
+<section id="module-Swarm_Observer">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-Swarm_Observer" title="Link to this heading"></a></h2>
+</section>
 </section>
 
 
