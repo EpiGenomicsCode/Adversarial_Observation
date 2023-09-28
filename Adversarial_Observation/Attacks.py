@@ -185,3 +185,42 @@ def gradient_ascent(input_batch_data: torch.tensor, model: torch.nn.Module, inpu
 
     return generated_images
 
+def saliency_map(input_image, model, target_class=None):
+    """
+    Generate a saliency map for an input image given a pre-trained PyTorch model.
+
+    Args:
+        input_image (torch.Tensor): Input image as a 3D torch.Tensor.
+        model (torch.nn.Module): Pre-trained PyTorch model used to generate the saliency map.
+        target_class (int, optional): Index of the target class for saliency computation.
+            If None, the class with the highest predicted score will be used.
+
+    Returns:
+        saliency_map (torch.Tensor): Saliency map for the input image.
+    """
+    # Set the model to evaluation mode
+    model.eval()
+
+    # Check if GPU is available
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    # Move the model and input image to the appropriate device
+    model.to(device)
+    input_image = input_image.to(device).requires_grad_()
+
+    # Make a forward pass through the model and get the predicted class scores for the input image
+    logits = model(input_image.unsqueeze(0))  # Add a batch dimension
+    if target_class is None:
+        # If target class is not specified, use the class with the highest predicted score
+        _, target_class = torch.max(logits, 1)
+
+    # Compute the score for the target class
+    target_score = logits[0, target_class]
+
+    # Compute gradients of the target class score with respect to the input image
+    target_score.backward()
+
+    # Calculate the absolute gradients as the saliency map
+    saliency_map = input_image.grad.abs().squeeze(0).cpu()
+
+    return saliency_map
