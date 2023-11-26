@@ -43,6 +43,7 @@ class PSO:
             None
 
         """
+        self.epoch += 1
         # Update velocities and positions.
         for p in self.swarm:
             p.evaluate(self.cost_func, self.model)
@@ -84,12 +85,12 @@ class PSO:
             pd.DataFrame: A dataframe containing the swarm's positions at each epoch.
         """
 
-        history = []
-        for particle in self.swarm:
-            particle_history = [np.array(i) for i in particle.history]
-            history.append(particle_history)
-
-        return pd.DataFrame(history)
+        history = {}
+        
+        for i in range(0, self.epoch):
+            history[f"epoch_{i}"] = [particle.history[i] for particle in self.swarm]
+        
+        return history
     
     def save_history(self, filename):
         """
