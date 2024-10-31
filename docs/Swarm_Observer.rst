@@ -20,7 +20,6 @@ Swarm\_Observer.Swarm module
    :undoc-members:
    :show-inheritance:
 
-
 Module contents
 ---------------
 

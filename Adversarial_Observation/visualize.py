@@ -2,27 +2,17 @@ import imageio
 from typing import List
 import matplotlib.pyplot as plt
 
-
-def visualizeGIF(filenames: List[str], output_file: str = 'output.gif') -> None:
+def visualize_gif(filenames: List[str], output_file: str = 'output.gif') -> None:
     """
-    Given a list of filenames, generate a GIF file in that order and save it to the specified output file.
+    Create a GIF from a list of image filenames.
 
     Args:
-        filenames (List[str]): A list of filenames of the images to include in the GIF.
-        output_file (str): The name of the output GIF file (default: 'output.gif').
+        filenames (List[str]): List of image filenames.
+        output_file (str): Output filename for the GIF (default: 'output.gif').
 
     Returns:
         None
-    
     """
-    # Load the images from the file names.
-    images = [imageio.imread(f'{filename}') for filename in filenames]
-
-    # Save the images as a GIF.
-    imageio.mimsave(output_file, images, duration=.5)
-    #close the images
+    images = [imageio.imread(filename) for filename in filenames]
+    imageio.mimsave(output_file, images, duration=0.5)
     plt.close('all')
-
-    return None
-    
-

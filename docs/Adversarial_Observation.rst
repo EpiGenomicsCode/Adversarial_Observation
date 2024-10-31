@@ -28,7 +28,6 @@ Adversarial\_Observation.visualize module
    :undoc-members:
    :show-inheritance:
 
-
 Module contents
 ---------------
 

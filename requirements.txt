@@ -1,12 +1,14 @@
+# General dependencies
 imageio
 matplotlib
 numpy
-torch
 Pillow
-umap-learn
 pandas
 typing_extensions
-torchvision
 scikit-learn
 tqdm
+umap-learn
 shap
+torch
+torchvision
+sphinx_rtd_theme
