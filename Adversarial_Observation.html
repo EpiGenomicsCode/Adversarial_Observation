@@ -1,21 +1,21 @@
+
+
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="./">
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Adversarial_Observation package &mdash; Adversarial_Observation 0.0.1 documentation</title>
-      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-  <!--[if lt IE 9]>
-    <script src="_static/js/html5shiv.min.js"></script>
-  <![endif]-->
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
   
-        <script src="_static/jquery.js?v=5d32c60e"></script>
-        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="_static/documentation_options.js?v=d45e8c67"></script>
-        <script src="_static/doctools.js?v=888ff710"></script>
-        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=d45e8c67"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -47,20 +47,22 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Adversarial_Observation package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#submodules">Submodules</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#module-Adversarial_Observation.Attacks">Adversarial_Observation.Attacks module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#Adversarial_Observation.Attacks.Config"><code class="docutils literal notranslate"><span class="pre">Config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Adversarial_Observation.Attacks.compute_gradients"><code class="docutils literal notranslate"><span class="pre">compute_gradients()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#Adversarial_Observation.Attacks.fgsm_attack"><code class="docutils literal notranslate"><span class="pre">fgsm_attack()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#Adversarial_Observation.Attacks.gradient_ascent"><code class="docutils literal notranslate"><span class="pre">gradient_ascent()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#Adversarial_Observation.Attacks.gradient_map"><code class="docutils literal notranslate"><span class="pre">gradient_map()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#Adversarial_Observation.Attacks.saliency_map"><code class="docutils literal notranslate"><span class="pre">saliency_map()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Adversarial_Observation.Attacks.generate_adversarial_examples"><code class="docutils literal notranslate"><span class="pre">generate_adversarial_examples()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Adversarial_Observation.Attacks.log_metrics"><code class="docutils literal notranslate"><span class="pre">log_metrics()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Adversarial_Observation.Attacks.visualize_adversarial_examples"><code class="docutils literal notranslate"><span class="pre">visualize_adversarial_examples()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#module-Adversarial_Observation.utils">Adversarial_Observation.utils module</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#Adversarial_Observation.utils.load_MNIST_data"><code class="docutils literal notranslate"><span class="pre">load_MNIST_data()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#Adversarial_Observation.utils.load_MNIST_model"><code class="docutils literal notranslate"><span class="pre">load_MNIST_model()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#Adversarial_Observation.utils.seedEverything"><code class="docutils literal notranslate"><span class="pre">seedEverything()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Adversarial_Observation.utils.seed_everything"><code class="docutils literal notranslate"><span class="pre">seed_everything()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#module-Adversarial_Observation.visualize">Adversarial_Observation.visualize module</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#Adversarial_Observation.visualize.visualizeGIF"><code class="docutils literal notranslate"><span class="pre">visualizeGIF()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Adversarial_Observation.visualize.visualize_gif"><code class="docutils literal notranslate"><span class="pre">visualize_gif()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#module-Adversarial_Observation">Module contents</a></li>
@@ -100,15 +102,26 @@
 </section>
 <section id="module-Adversarial_Observation.Attacks">
 <span id="adversarial-observation-attacks-module"></span><h2>Adversarial_Observation.Attacks module<a class="headerlink" href="#module-Adversarial_Observation.Attacks" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="Adversarial_Observation.Attacks.Config">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">Adversarial_Observation.Attacks.</span></span><span class="sig-name descname"><span class="pre">Config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">epsilon</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attack_method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'fgsm'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/Adversarial_Observation/Attacks.html#Config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#Adversarial_Observation.Attacks.Config" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="Adversarial_Observation.Attacks.compute_gradients">
+<span class="sig-prename descclassname"><span class="pre">Adversarial_Observation.Attacks.</span></span><span class="sig-name descname"><span class="pre">compute_gradients</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">img</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_class</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/Adversarial_Observation/Attacks.html#compute_gradients"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#Adversarial_Observation.Attacks.compute_gradients" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py function">
 <dt class="sig sig-object py" id="Adversarial_Observation.Attacks.fgsm_attack">
-<span class="sig-prename descclassname"><span class="pre">Adversarial_Observation.Attacks.</span></span><span class="sig-name descname"><span class="pre">fgsm_attack</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_batch_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_shape</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epsilon</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="_modules/Adversarial_Observation/Attacks.html#fgsm_attack"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#Adversarial_Observation.Attacks.fgsm_attack" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">Adversarial_Observation.Attacks.</span></span><span class="sig-name descname"><span class="pre">fgsm_attack</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_batch_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_shape</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epsilon</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="_modules/Adversarial_Observation/Attacks.html#fgsm_attack"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#Adversarial_Observation.Attacks.fgsm_attack" title="Link to this definition"></a></dt>
 <dd><p>Apply the FGSM attack to input images given a pre-trained PyTorch model.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>input_batch_data</strong> (<em>ndarray</em>) – Batch of input images as a 4D numpy array.</p></li>
-<li><p><strong>model</strong> (<em>nn.Module</em>) – Pre-trained PyTorch model to be attacked.</p></li>
+<li><p><strong>input_batch_data</strong> (<em>torch.Tensor</em>) – Batch of input images.</p></li>
+<li><p><strong>model</strong> (<em>torch.nn.Module</em>) – Pre-trained PyTorch model to be attacked.</p></li>
 <li><p><strong>input_shape</strong> (<em>tuple</em>) – Shape of the input array.</p></li>
 <li><p><strong>epsilon</strong> (<em>float</em>) – Magnitude of the perturbation for the attack.</p></li>
 </ul>
@@ -117,79 +130,25 @@
 <dd class="field-even"><p>Adversarial images generated by the FGSM attack.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>adversarial_batch_data (ndarray)</p>
+<dd class="field-odd"><p>torch.Tensor</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="Adversarial_Observation.Attacks.gradient_ascent">
-<span class="sig-prename descclassname"><span class="pre">Adversarial_Observation.Attacks.</span></span><span class="sig-name descname"><span class="pre">gradient_ascent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_batch_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_shape</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_neuron</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_iterations</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">step_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="_modules/Adversarial_Observation/Attacks.html#gradient_ascent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#Adversarial_Observation.Attacks.gradient_ascent" title="Link to this definition"></a></dt>
-<dd><p>Perform gradient ascent to generate an image that maximizes the activation of a target neuron given a pre-trained PyTorch model.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>input_batch_data</strong> (<em>ndarray</em>) – Batch of input images as a 4D numpy array.</p></li>
-<li><p><strong>model</strong> (<em>nn.Module</em>) – Pre-trained PyTorch model used for gradient ascent.</p></li>
-<li><p><strong>input_shape</strong> (<em>tuple</em>) – Shape of the input array.</p></li>
-<li><p><strong>target_neuron</strong> (<em>int</em>) – Index of the target neuron to maximize activation.</p></li>
-<li><p><strong>num_iterations</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of gradient ascent iterations. Defaults to 100.</p></li>
-<li><p><strong>step_size</strong> (<em>float</em><em>, </em><em>optional</em>) – Step size for each iteration. Defaults to 1.0.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>Generated images that maximize the activation of the target neuron.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>generated_images (ndarray)</p>
-</dd>
-</dl>
-</dd></dl>
+<dt class="sig sig-object py" id="Adversarial_Observation.Attacks.generate_adversarial_examples">
+<span class="sig-prename descclassname"><span class="pre">Adversarial_Observation.Attacks.</span></span><span class="sig-name descname"><span class="pre">generate_adversarial_examples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_batch_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'fgsm'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/Adversarial_Observation/Attacks.html#generate_adversarial_examples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#Adversarial_Observation.Attacks.generate_adversarial_examples" title="Link to this definition"></a></dt>
+<dd></dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="Adversarial_Observation.Attacks.gradient_map">
-<span class="sig-prename descclassname"><span class="pre">Adversarial_Observation.Attacks.</span></span><span class="sig-name descname"><span class="pre">gradient_map</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_batch_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_shape</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backprop_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'guided'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="_modules/Adversarial_Observation/Attacks.html#gradient_map"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#Adversarial_Observation.Attacks.gradient_map" title="Link to this definition"></a></dt>
-<dd><p>Generate a gradient map for an input image given a pre-trained PyTorch model.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>input_batch_data</strong> (<em>ndarray</em>) – Batch of input images as a 4D numpy array.</p></li>
-<li><p><strong>model</strong> (<em>nn.Module</em>) – Pre-trained PyTorch model used to generate the gradient map.</p></li>
-<li><p><strong>input_shape</strong> (<em>tuple</em>) – Shape of the input array.</p></li>
-<li><p><strong>backprop_type</strong> (<em>str</em><em>, </em><em>optional</em>) – Type of backpropagation. Supported values: ‘vanilla’, ‘guided’, ‘relu’.
-Defaults to ‘vanilla’.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>Gradient map for the input images.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>gradient_maps (ndarray)</p>
-</dd>
-</dl>
-</dd></dl>
+<dt class="sig sig-object py" id="Adversarial_Observation.Attacks.log_metrics">
+<span class="sig-prename descclassname"><span class="pre">Adversarial_Observation.Attacks.</span></span><span class="sig-name descname"><span class="pre">log_metrics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">success_rate</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">average_perturbation</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/Adversarial_Observation/Attacks.html#log_metrics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#Adversarial_Observation.Attacks.log_metrics" title="Link to this definition"></a></dt>
+<dd></dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="Adversarial_Observation.Attacks.saliency_map">
-<span class="sig-prename descclassname"><span class="pre">Adversarial_Observation.Attacks.</span></span><span class="sig-name descname"><span class="pre">saliency_map</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_image</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_class</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/Adversarial_Observation/Attacks.html#saliency_map"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#Adversarial_Observation.Attacks.saliency_map" title="Link to this definition"></a></dt>
-<dd><p>Generate a saliency map for an input image given a pre-trained PyTorch model.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>input_image</strong> (<em>torch.Tensor</em>) – Input image as a 3D torch.Tensor.</p></li>
-<li><p><strong>model</strong> (<em>torch.nn.Module</em>) – Pre-trained PyTorch model used to generate the saliency map.</p></li>
-<li><p><strong>target_class</strong> (<em>int</em><em>, </em><em>optional</em>) – Index of the target class for saliency computation.
-If None, the class with the highest predicted score will be used.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>Saliency map for the input image.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>saliency_map (torch.Tensor)</p>
-</dd>
-</dl>
-</dd></dl>
+<dt class="sig sig-object py" id="Adversarial_Observation.Attacks.visualize_adversarial_examples">
+<span class="sig-prename descclassname"><span class="pre">Adversarial_Observation.Attacks.</span></span><span class="sig-name descname"><span class="pre">visualize_adversarial_examples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">original</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">adversarial</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/Adversarial_Observation/Attacks.html#visualize_adversarial_examples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#Adversarial_Observation.Attacks.visualize_adversarial_examples" title="Link to this definition"></a></dt>
+<dd></dd></dl>
 
 </section>
 <section id="module-Adversarial_Observation.utils">
@@ -197,32 +156,38 @@ If None, the class with the highest predicted score will be used.</p></li>
 <dl class="py function">
 <dt class="sig sig-object py" id="Adversarial_Observation.utils.load_MNIST_data">
 <span class="sig-prename descclassname"><span class="pre">Adversarial_Observation.utils.</span></span><span class="sig-name descname"><span class="pre">load_MNIST_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/Adversarial_Observation/utils.html#load_MNIST_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#Adversarial_Observation.utils.load_MNIST_data" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="Adversarial_Observation.utils.load_MNIST_model">
-<span class="sig-prename descclassname"><span class="pre">Adversarial_Observation.utils.</span></span><span class="sig-name descname"><span class="pre">load_MNIST_model</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Sequential</span></span></span><a class="reference internal" href="_modules/Adversarial_Observation/utils.html#load_MNIST_model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#Adversarial_Observation.utils.load_MNIST_model" title="Link to this definition"></a></dt>
-<dd><p>Builds a convolutional neural network model.</p>
+<dd><p>Load the MNIST dataset and create data loaders.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>output_size</strong> (<em>int</em>) – The number of output classes.</p>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>(train_loader, test_loader) - Data loaders for training and testing.</p>
 </dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A convolutional neural network model with the specified output size.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>model (torch.nn.Sequential)</p>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>tuple</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="Adversarial_Observation.utils.seedEverything">
-<span class="sig-prename descclassname"><span class="pre">Adversarial_Observation.utils.</span></span><span class="sig-name descname"><span class="pre">seedEverything</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/Adversarial_Observation/utils.html#seedEverything"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#Adversarial_Observation.utils.seedEverything" title="Link to this definition"></a></dt>
-<dd><p>Seeds the random number generators for Python, PyTorch, and CUDA to make the results reproducible.</p>
+<dt class="sig sig-object py" id="Adversarial_Observation.utils.load_MNIST_model">
+<span class="sig-prename descclassname"><span class="pre">Adversarial_Observation.utils.</span></span><span class="sig-name descname"><span class="pre">load_MNIST_model</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Sequential</span></span></span><a class="reference internal" href="_modules/Adversarial_Observation/utils.html#load_MNIST_model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#Adversarial_Observation.utils.load_MNIST_model" title="Link to this definition"></a></dt>
+<dd><p>Build a convolutional neural network model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A convolutional neural network model for MNIST classification.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>nn.Sequential</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="Adversarial_Observation.utils.seed_everything">
+<span class="sig-prename descclassname"><span class="pre">Adversarial_Observation.utils.</span></span><span class="sig-name descname"><span class="pre">seed_everything</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/Adversarial_Observation/utils.html#seed_everything"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#Adversarial_Observation.utils.seed_everything" title="Link to this definition"></a></dt>
+<dd><p>Seed the random number generators for reproducibility.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>seed</strong> (<em>int</em>) – The seed to use for random number generation.</p>
+<dd class="field-odd"><p><strong>seed</strong> (<em>int</em>) – The seed for random number generation.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>None</p>
@@ -234,14 +199,14 @@ If None, the class with the highest predicted score will be used.</p></li>
 <section id="module-Adversarial_Observation.visualize">
 <span id="adversarial-observation-visualize-module"></span><h2>Adversarial_Observation.visualize module<a class="headerlink" href="#module-Adversarial_Observation.visualize" title="Link to this heading"></a></h2>
 <dl class="py function">
-<dt class="sig sig-object py" id="Adversarial_Observation.visualize.visualizeGIF">
-<span class="sig-prename descclassname"><span class="pre">Adversarial_Observation.visualize.</span></span><span class="sig-name descname"><span class="pre">visualizeGIF</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filenames</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'output.gif'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/Adversarial_Observation/visualize.html#visualizeGIF"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#Adversarial_Observation.visualize.visualizeGIF" title="Link to this definition"></a></dt>
-<dd><p>Given a list of filenames, generate a GIF file in that order and save it to the specified output file.</p>
+<dt class="sig sig-object py" id="Adversarial_Observation.visualize.visualize_gif">
+<span class="sig-prename descclassname"><span class="pre">Adversarial_Observation.visualize.</span></span><span class="sig-name descname"><span class="pre">visualize_gif</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filenames</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'output.gif'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/Adversarial_Observation/visualize.html#visualize_gif"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#Adversarial_Observation.visualize.visualize_gif" title="Link to this definition"></a></dt>
+<dd><p>Create a GIF from a list of image filenames.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>filenames</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – A list of filenames of the images to include in the GIF.</p></li>
-<li><p><strong>output_file</strong> (<em>str</em>) – The name of the output GIF file (default: ‘output.gif’).</p></li>
+<li><p><strong>filenames</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – List of image filenames.</p></li>
+<li><p><strong>output_file</strong> (<em>str</em>) – Output filename for the GIF (default: ‘output.gif’).</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>

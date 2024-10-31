@@ -1,20 +1,20 @@
+
+
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="../../">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Adversarial_Observation.visualize &mdash; Adversarial_Observation 0.0.1 documentation</title>
-      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
-  <!--[if lt IE 9]>
-    <script src="../../_static/js/html5shiv.min.js"></script>
-  <![endif]-->
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+
   
-        <script src="../../_static/jquery.js?v=5d32c60e"></script>
-        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../../_static/documentation_options.js?v=d45e8c67"></script>
-        <script src="../../_static/doctools.js?v=888ff710"></script>
-        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=d45e8c67"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
@@ -74,32 +74,22 @@
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
 <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
 
-
-<div class="viewcode-block" id="visualizeGIF">
-<a class="viewcode-back" href="../../Adversarial_Observation.html#Adversarial_Observation.visualize.visualizeGIF">[docs]</a>
-<span class="k">def</span> <span class="nf">visualizeGIF</span><span class="p">(</span><span class="n">filenames</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">output_file</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;output.gif&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<div class="viewcode-block" id="visualize_gif">
+<a class="viewcode-back" href="../../Adversarial_Observation.html#Adversarial_Observation.visualize.visualize_gif">[docs]</a>
+<span class="k">def</span> <span class="nf">visualize_gif</span><span class="p">(</span><span class="n">filenames</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">output_file</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;output.gif&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Given a list of filenames, generate a GIF file in that order and save it to the specified output file.</span>
+<span class="sd">    Create a GIF from a list of image filenames.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        filenames (List[str]): A list of filenames of the images to include in the GIF.</span>
-<span class="sd">        output_file (str): The name of the output GIF file (default: &#39;output.gif&#39;).</span>
+<span class="sd">        filenames (List[str]): List of image filenames.</span>
+<span class="sd">        output_file (str): Output filename for the GIF (default: &#39;output.gif&#39;).</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        None</span>
-<span class="sd">    </span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c1"># Load the images from the file names.</span>
-    <span class="n">images</span> <span class="o">=</span> <span class="p">[</span><span class="n">imageio</span><span class="o">.</span><span class="n">imread</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">filename</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">filename</span> <span class="ow">in</span> <span class="n">filenames</span><span class="p">]</span>
-
-    <span class="c1"># Save the images as a GIF.</span>
-    <span class="n">imageio</span><span class="o">.</span><span class="n">mimsave</span><span class="p">(</span><span class="n">output_file</span><span class="p">,</span> <span class="n">images</span><span class="p">,</span> <span class="n">duration</span><span class="o">=</span><span class="mf">.5</span><span class="p">)</span>
-    <span class="c1">#close the images</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="s1">&#39;all&#39;</span><span class="p">)</span>
-
-    <span class="k">return</span> <span class="kc">None</span></div>
-
-    
+    <span class="n">images</span> <span class="o">=</span> <span class="p">[</span><span class="n">imageio</span><span class="o">.</span><span class="n">imread</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span> <span class="k">for</span> <span class="n">filename</span> <span class="ow">in</span> <span class="n">filenames</span><span class="p">]</span>
+    <span class="n">imageio</span><span class="o">.</span><span class="n">mimsave</span><span class="p">(</span><span class="n">output_file</span><span class="p">,</span> <span class="n">images</span><span class="p">,</span> <span class="n">duration</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="s1">&#39;all&#39;</span><span class="p">)</span></div>
 
 </pre></div>
 

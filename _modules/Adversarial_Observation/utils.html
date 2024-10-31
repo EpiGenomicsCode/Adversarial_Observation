@@ -1,20 +1,20 @@
+
+
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="../../">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Adversarial_Observation.utils &mdash; Adversarial_Observation 0.0.1 documentation</title>
-      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
-  <!--[if lt IE 9]>
-    <script src="../../_static/js/html5shiv.min.js"></script>
-  <![endif]-->
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+
   
-        <script src="../../_static/jquery.js?v=5d32c60e"></script>
-        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../../_static/documentation_options.js?v=d45e8c67"></script>
-        <script src="../../_static/doctools.js?v=888ff710"></script>
-        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=d45e8c67"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
@@ -79,69 +79,53 @@
 <a class="viewcode-back" href="../../Adversarial_Observation.html#Adversarial_Observation.utils.load_MNIST_model">[docs]</a>
 <span class="k">def</span> <span class="nf">load_MNIST_model</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Builds a convolutional neural network model.</span>
+<span class="sd">    Build a convolutional neural network model.</span>
 
-<span class="sd">    Args:</span>
-<span class="sd">        output_size (int): The number of output classes.</span>
-<span class="sd">    </span>
 <span class="sd">    Returns:</span>
-<span class="sd">        model (torch.nn.Sequential): A convolutional neural network model with the specified output size.</span>
+<span class="sd">        nn.Sequential: A convolutional neural network model for MNIST classification.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c1"># Create a sequential container for building the model</span>
     <span class="k">return</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span>
-        <span class="c1"># Add a 2D convolutional layer with 1 input channel, 8 output channels, 3x3 kernel size,</span>
-        <span class="c1"># 1 pixel padding, and 1 pixel stride.</span>
         <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
-        <span class="c1"># Add a ReLU activation layer.</span>
         <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(),</span>
-        <span class="c1"># Add a 2D max pooling layer with 2x2 kernel size and 2 pixel stride.</span>
         <span class="n">nn</span><span class="o">.</span><span class="n">MaxPool2d</span><span class="p">(</span><span class="n">kernel_size</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="mi">2</span><span class="p">),</span>
-        <span class="c1"># Add another 2D convolutional layer with 8 input channels, 16 output channels, 3x3 kernel size,</span>
-        <span class="c1"># 1 pixel padding, and 1 pixel stride.</span>
         <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
-        <span class="c1"># Add another ReLU activation layer.</span>
         <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(),</span>
-        <span class="c1"># Add another 2D max pooling layer with 2x2 kernel size and 2 pixel stride.</span>
         <span class="n">nn</span><span class="o">.</span><span class="n">MaxPool2d</span><span class="p">(</span><span class="n">kernel_size</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="mi">2</span><span class="p">),</span>
-        <span class="c1"># Add a flattening layer to convert the 2D feature maps to a 1D vector.</span>
         <span class="n">nn</span><span class="o">.</span><span class="n">Flatten</span><span class="p">(),</span>
-        <span class="c1"># Add a fully connected layer with 7x7x16 input features and output_size output features.</span>
-        <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">7</span><span class="o">*</span><span class="mi">7</span><span class="o">*</span><span class="mi">16</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span>
-        <span class="c1"># Add a softmax activation layer to convert the outputs to probabilities.</span>
+        <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">7</span> <span class="o">*</span> <span class="mi">7</span> <span class="o">*</span> <span class="mi">16</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span>
         <span class="n">nn</span><span class="o">.</span><span class="n">Softmax</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
     <span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="seedEverything">
-<a class="viewcode-back" href="../../Adversarial_Observation.html#Adversarial_Observation.utils.seedEverything">[docs]</a>
-<span class="k">def</span> <span class="nf">seedEverything</span><span class="p">(</span><span class="n">seed</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<div class="viewcode-block" id="seed_everything">
+<a class="viewcode-back" href="../../Adversarial_Observation.html#Adversarial_Observation.utils.seed_everything">[docs]</a>
+<span class="k">def</span> <span class="nf">seed_everything</span><span class="p">(</span><span class="n">seed</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Seeds the random number generators for Python, PyTorch, and CUDA to make the results reproducible.</span>
+<span class="sd">    Seed the random number generators for reproducibility.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        seed (int): The seed to use for random number generation.</span>
+<span class="sd">        seed (int): The seed for random number generation.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        None</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c1"># Seed NumPy for random number generation.</span>
     <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
-    <span class="c1"># Seed PyTorch for random number generation.</span>
     <span class="n">torch</span><span class="o">.</span><span class="n">manual_seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
-    <span class="c1"># Seed CUDA for random number generation (if available).</span>
-    <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">manual_seed_all</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
-
-    <span class="k">return</span> <span class="kc">None</span></div>
+    <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">manual_seed_all</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="load_MNIST_data">
 <a class="viewcode-back" href="../../Adversarial_Observation.html#Adversarial_Observation.utils.load_MNIST_data">[docs]</a>
 <span class="k">def</span> <span class="nf">load_MNIST_data</span><span class="p">():</span>
-    <span class="c1"># read in the MNIST data from torchvision.datasets</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Load the MNIST dataset and create data loaders.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        tuple: (train_loader, test_loader) - Data loaders for training and testing.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">train_data</span> <span class="o">=</span> <span class="n">torchvision</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">MNIST</span><span class="p">(</span><span class="n">root</span><span class="o">=</span><span class="s1">&#39;./data&#39;</span><span class="p">,</span> <span class="n">train</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">download</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">torchvision</span><span class="o">.</span><span class="n">transforms</span><span class="o">.</span><span class="n">ToTensor</span><span class="p">())</span>
     <span class="n">test_data</span> <span class="o">=</span> <span class="n">torchvision</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">MNIST</span><span class="p">(</span><span class="n">root</span><span class="o">=</span><span class="s1">&#39;./data&#39;</span><span class="p">,</span> <span class="n">train</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">download</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">torchvision</span><span class="o">.</span><span class="n">transforms</span><span class="o">.</span><span class="n">ToTensor</span><span class="p">())</span>
 
-    <span class="c1"># create data loaders for the training and test data</span>
     <span class="n">train_loader</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">DataLoader</span><span class="p">(</span><span class="n">train_data</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">test_loader</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">DataLoader</span><span class="p">(</span><span class="n">test_data</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 

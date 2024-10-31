@@ -1,20 +1,20 @@
+
+
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="../../">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Swarm_Observer.BirdParticle &mdash; Adversarial_Observation 0.0.1 documentation</title>
-      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
-  <!--[if lt IE 9]>
-    <script src="../../_static/js/html5shiv.min.js"></script>
-  <![endif]-->
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+
   
-        <script src="../../_static/jquery.js?v=5d32c60e"></script>
-        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../../_static/documentation_options.js?v=d45e8c67"></script>
-        <script src="../../_static/doctools.js?v=888ff710"></script>
-        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=d45e8c67"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
@@ -86,17 +86,12 @@
 <span class="sd">            c1 (float): The cognitive weight.</span>
 <span class="sd">            c2 (float): The social weight.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-
         <span class="bp">self</span><span class="o">.</span><span class="n">position_i</span> <span class="o">=</span> <span class="n">position</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">velocity_i</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">position</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>  <span class="c1"># velocity</span>
-        <span class="c1"># copy the current position to the best position</span>
-
+        <span class="bp">self</span><span class="o">.</span><span class="n">velocity_i</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">position</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">position</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">history</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">position_i</span><span class="p">]</span>
-        
-        <span class="bp">self</span><span class="o">.</span><span class="n">pos_best_i</span> <span class="o">=</span> <span class="n">position</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span>   <span class="c1"># best position individual</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">cost_best_i</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>   <span class="c1"># best error individual</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">cost_i</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>   <span class="c1"># error individual</span>
-
+        <span class="bp">self</span><span class="o">.</span><span class="n">pos_best_i</span> <span class="o">=</span> <span class="n">position</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cost_best_i</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cost_i</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">w</span> <span class="o">=</span> <span class="n">w</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">c1</span> <span class="o">=</span> <span class="n">c1</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">c2</span> <span class="o">=</span> <span class="n">c2</span>
@@ -110,65 +105,42 @@
 
 <span class="sd">        Args:</span>
 <span class="sd">            costFunc (callable): The cost function to be maximized.</span>
-<span class="sd">                This should be a function that takes in a PyTorch model and a tensor of positions and returns a tensor of shape (n, 1) where n is the number of particles.</span>
-
 <span class="sd">            model (torch.nn.Module): The model to be used in the cost function.</span>
-<span class="sd">            </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">cost_i</span> <span class="o">=</span> <span class="n">costFunc</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">position_i</span><span class="p">)</span>
-
-        <span class="c1"># check to see if the current position is an individual best</span>
-        <span class="c1"># best has the highest confidence</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cost_i</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cost_best_i</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">pos_best_i</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">position_i</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">cost_best_i</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cost_i</span></div>
 
 
-
-                    
 <div class="viewcode-block" id="BirdParticle.update_velocity">
 <a class="viewcode-back" href="../../Swarm_Observer.html#Swarm_Observer.BirdParticle.BirdParticle.update_velocity">[docs]</a>
-    <span class="k">def</span> <span class="nf">update_velocity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos_best_g</span><span class="p">:</span> <span class="nb">list</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">update_velocity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos_best_g</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Updates the particle velocity based on its own position and the global best position.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            pos_best_g (list): the global best position</span>
+<span class="sd">            pos_best_g (torch.Tensor): The global best position.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">r1</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">r2</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-
+        <span class="n">r1</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">pos_best_g</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+        <span class="n">r2</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">pos_best_g</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
         <span class="n">vel_cognitive</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">c1</span> <span class="o">*</span> <span class="n">r1</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pos_best_i</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">position_i</span><span class="p">)</span>
         <span class="n">vel_social</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">c2</span> <span class="o">*</span> <span class="n">r2</span> <span class="o">*</span> <span class="p">(</span><span class="n">pos_best_g</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">position_i</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">velocity_i</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">w</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">velocity_i</span> <span class="o">+</span> <span class="n">vel_cognitive</span> <span class="o">+</span> <span class="n">vel_social</span></div>
 
 
-
 <div class="viewcode-block" id="BirdParticle.update_position">
 <a class="viewcode-back" href="../../Swarm_Observer.html#Swarm_Observer.BirdParticle.BirdParticle.update_position">[docs]</a>
     <span class="k">def</span> <span class="nf">update_position</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Updates the particle position based on its velocity.-</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># update position based on velocity</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">position_i</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">position_i</span> <span class="o">+</span>  <span class="bp">self</span><span class="o">.</span><span class="n">velocity_i</span>
-
-        <span class="c1"># add current position to history</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Updates the particle position based on its velocity.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">position_i</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">position_i</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">velocity_i</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">position_i</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="BirdParticle.get_history">
 <a class="viewcode-back" href="../../Swarm_Observer.html#Swarm_Observer.BirdParticle.BirdParticle.get_history">[docs]</a>
     <span class="k">def</span> <span class="nf">get_history</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns the history of the particle&#39;s positions.</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            None</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            list: The history of the particle&#39;s positions.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the history of the particle&#39;s positions.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">history</span></div>
 </div>
 

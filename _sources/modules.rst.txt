@@ -1,5 +1,5 @@
-Adversarial_Research
-====================
+Adversarial_Observation
+=======================
 
 .. toctree::
    :maxdepth: 4
