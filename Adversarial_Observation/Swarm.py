@@ -54,6 +54,7 @@ class ParticleSwarm:
         
         self.fitness_history: List[float] = []  # History of fitness scores to track progress
         self.setup_logging()  # Set up logging
+        self.log_progress(-1)  # Log initial state (before optimization)
 
     def setup_logging(self):
         """
@@ -146,7 +147,6 @@ class ParticleSwarm:
         Run the Particle Swarm Optimization process to optimize the perturbations.
         """
         for iteration in range(self.num_iterations):
-            self.log_progress(iteration)
             
             # Update particles and velocities, evaluate them, and track global best
             for particle in self.particles:
@@ -161,3 +161,5 @@ class ParticleSwarm:
                 self.global_best_position = best_particle.best_position.clone().detach()
             
             self.save_images(iteration)
+            
+            self.log_progress(iteration)
