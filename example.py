@@ -2,7 +2,7 @@ import torch
 from tqdm import tqdm
 import time
 from torch.utils.data import DataLoader, TensorDataset
-from Adversarial_Observation.utils import load_MNIST_model, load_data
+from Adversarial_Observation.utils import load_MNIST_model, load_data, seed_everything
 from Adversarial_Observation import AdversarialTester, ParticleSwarm
 
 
@@ -21,8 +21,7 @@ def adversarial_attack_whitebox(model: torch.nn.Module, dataloader: DataLoader) 
     for images, _ in dataloader:
         attacker.test_attack(images)
 
-
-def adversarial_attack_blackbox(model: torch.nn.Module, dataloader: DataLoader) -> DataLoader:
+def adversarial_attack_blackbox(model: torch.nn.Module, dataloader: DataLoader, num_iterations: int = 30, num_particles: int = 100) -> DataLoader:
     """
     Performs a black-box adversarial attack on the model using Particle Swarm optimization.
     
@@ -45,7 +44,7 @@ def adversarial_attack_blackbox(model: torch.nn.Module, dataloader: DataLoader) 
         "Target classes should be different for misclassification."
 
     # Create a noisy input set for black-box attack
-    input_set = [single_image_input + torch.randn_like(single_image_input) for _ in range(100)]
+    input_set = [single_image_input + torch.randn_like(single_image_input) for _ in range(num_particles)]
     input_set = torch.stack(input_set)
 
     print(f"Target class for original image: {single_image_target}")
@@ -53,7 +52,7 @@ def adversarial_attack_blackbox(model: torch.nn.Module, dataloader: DataLoader) 
     
     # Initialize the Particle Swarm optimizer with the model and input set
     attacker = ParticleSwarm(
-        model, input_set, single_misclassification_target, num_iterations=30,
+        model, input_set, single_misclassification_target, num_iterations=num_iterations,
         epsilon=0.8, save_dir='results', inertia_weight=0.8, cognitive_weight=0.5,
         social_weight=0.5, momentum=0.9, velocity_clamp=0.1
     )
@@ -61,7 +60,6 @@ def adversarial_attack_blackbox(model: torch.nn.Module, dataloader: DataLoader) 
 
     # Generate adversarial dataset
     return get_adversarial_dataloader(attacker, model, single_misclassification_target, single_image_target)
-
 
 def get_adversarial_dataloader(attacker: ParticleSwarm, model: torch.nn.Module, target_class: int, original_class: int) -> DataLoader:
     """
@@ -85,16 +83,18 @@ def get_adversarial_dataloader(attacker: ParticleSwarm, model: torch.nn.Module, 
             output = model(position)
             if torch.argmax(output) == target_class:
                 images.append(position)
-                target_confidence.append(torch.softmax(output, dim=1)[target_class])
-                original_confidence.append(torch.softmax(model(particle.original_data))[original_class])
+                target_confidence.append( torch.softmax(torch.flatten(output), dim=0)[target_class])
+                original_confidence.append( torch.softmax(torch.flatten(output), dim=0)[original_class])
 
+    if len(images) == 0:
+        print("No adversarial examples found.")
+        return None
     # Convert lists to tensors and return a TensorDataset
     X_images = torch.stack(images)
     X_original_confidence = torch.stack(original_confidence)
     y = torch.stack(target_confidence)
 
     return DataLoader(TensorDataset(X_images, y, X_original_confidence))
-
 
 def train(model: torch.nn.Module, dataloader: DataLoader, epochs: int = 10) -> torch.nn.Module:
     """
@@ -146,11 +146,12 @@ def train(model: torch.nn.Module, dataloader: DataLoader, epochs: int = 10) -> t
     
     return model
 
-
 def main() -> None:
     """
     Main function to execute the adversarial attack workflow.
     """
+
+    seed_everything(1252025)
     # Load pre-trained model (MNIST model)
     model = load_MNIST_model()
 
@@ -158,13 +159,11 @@ def main() -> None:
     train_loader, test_loader = load_data()
 
     # Train the model
-    model = train(model, train_loader, epochs=3)
+    model = train(model, train_loader, epochs=10)
 
     # Perform black-box attack using Particle Swarm optimization
     print("Performing black-box adversarial attack...")
-    final_dataloader = adversarial_attack_blackbox(model, test_loader)
+    final_dataloader = adversarial_attack_blackbox(model, test_loader, num_iterations=50, num_particles=100)
     
-
-
 if __name__ == "__main__":
     main()
