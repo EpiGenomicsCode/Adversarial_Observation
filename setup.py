@@ -27,7 +27,8 @@ setup(
                         "matplotlib",
                         "numpy",
                         "torch",
-                        "pandas"
+                        "pandas",
+                        "scikit-learn",
                       ],
     examples_require=[ 
                         "torchvision",
