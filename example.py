@@ -5,7 +5,6 @@ from torch.utils.data import DataLoader, TensorDataset
 from Adversarial_Observation.utils import load_MNIST_model, load_data, seed_everything
 from Adversarial_Observation import AdversarialTester, ParticleSwarm
 
-
 def adversarial_attack_whitebox(model: torch.nn.Module, dataloader: DataLoader) -> None:
     """
     Performs a white-box adversarial attack on the model using AdversarialTester.
@@ -159,11 +158,11 @@ def main() -> None:
     train_loader, test_loader = load_data()
 
     # Train the model
-    model = train(model, train_loader, epochs=10)
+    model = train(model, train_loader, epochs=5)
 
     # Perform black-box attack using Particle Swarm optimization
     print("Performing black-box adversarial attack...")
-    final_dataloader = adversarial_attack_blackbox(model, test_loader, num_iterations=50, num_particles=100)
+    final_dataloader = adversarial_attack_blackbox(model, test_loader, num_iterations=20, num_particles=100)
     
 if __name__ == "__main__":
     main()
