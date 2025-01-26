@@ -177,38 +177,50 @@ def log_metrics(success_rate: float, avg_perturbation: float):
     logging.info(f"Attack Success Rate: {success_rate:.4f}")
     logging.info(f"Average Perturbation: {avg_perturbation:.4f}")
 
-def load_pretrained_model():
+def load_MNIST_model():
     """
-    Loads a pre-trained model (e.g., ResNet18) for evaluation.
+    Loads a sequential CNN model for MNIST dataset.
 
     Returns:
-        torch.nn.Module: The pre-trained model (ResNet18).
+        torch.nn.Module: The CNN model.
     """
-    model = models.resnet18(weights='IMAGENET1K_V1')  # Ensure correct weights argument is used
-    model.eval()  # Set the model to evaluation mode
+    model = torch.nn.Sequential(
+        torch.nn.Conv2d(1, 32, kernel_size=3, padding=1),
+        torch.nn.ReLU(),
+        torch.nn.MaxPool2d(kernel_size=2),
+        torch.nn.Conv2d(32, 64, kernel_size=3, padding=1),
+        torch.nn.ReLU(),
+        torch.nn.MaxPool2d(kernel_size=2),
+        torch.nn.Flatten(),
+        torch.nn.Linear(64 * 7 * 7, 128),
+        torch.nn.ReLU(),
+        torch.nn.Linear(128, 10)
+    )
+
     return model
 
 def load_data(batch_size=32):
     """
-    Loads CIFAR-10 validation data and prepares it for evaluation.
+    Loads MNIST train and test data and prepares it for evaluation.
 
     Args:
         batch_size (int): The batch size for data loading.
 
     Returns:
-        DataLoader: A DataLoader object for the CIFAR-10 validation dataset.
+        TrinLoader, TestLoader: The training and testing data loaders.
     """
-    # Define the transformation for image preprocessing (same as what was used to train the model)
+    # Define the transformations for the dataset
     transform = transforms.Compose([
-        transforms.Resize(256),
-        transforms.CenterCrop(224),
         transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),  # ImageNet mean and std
+        transforms.Normalize((0.1307,), (0.3081,))
     ])
 
-    # Use CIFAR-10 dataset instead of ImageNet for simplicity
-    dataset = datasets.CIFAR10(root='./data', train=False, download=True, transform=transform)
+    # Load the MNIST dataset
+    train_dataset = datasets.MNIST(root='./data', train=True, download=True, transform=transform)
+    test_dataset = datasets.MNIST(root='./data', train=False, download=True, transform=transform)
 
-    # Use a DataLoader for batching
-    data_loader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
-    return data_loader
+    # Create data loaders for the training and test datasets
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
+
+    return train_loader, test_loader

@@ -38,6 +38,7 @@ class BirdParticle:
         self.best_score = -np.inf
         self.position = input_data.clone().detach()
         self.velocity = velocity if velocity is not None else torch.zeros_like(input_data)
+        self.history = []
         
         # Class attributes
         self.inertia_weight = inertia_weight
@@ -86,7 +87,8 @@ class BirdParticle:
         Ensures that the position stays within the valid input range [0, 1] (normalized pixel values).
         """
         self.position = torch.clamp(self.position + self.velocity, 0, 1)  # Ensure position stays within bounds
-
+        self.history.append(self.position.clone().detach())
+        
     def evaluate(self) -> None:
         """
         Evaluate the fitness of the current particle and update its personal best.
