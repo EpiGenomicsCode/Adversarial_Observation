@@ -1,11 +1,13 @@
 import os
 import logging
-import torch
-from torch import nn
-from torchvision import utils
 from typing import List
 from Adversarial_Observation.BirdParticle import BirdParticle
 
+import torch
+from torchvision import utils
+
+import tensorflow as tf
+import numpy as np
 
 class ParticleSwarm:
     """
@@ -15,7 +17,7 @@ class ParticleSwarm:
     to misclassify it into the target class.
     """
 
-    def __init__(self, model: nn.Module, input_set: torch.Tensor, target_class: int,
+    def __init__(self, model: tf.keras.Model, input_set: np.ndarray, target_class: int,
                  num_iterations: int = 20, epsilon: float = 0.8, save_dir: str = 'results',
                  inertia_weight: float = 0.5, cognitive_weight: float = .5, social_weight: float = .5,
                  momentum: float = 0.9, velocity_clamp: float = 0.1):
@@ -23,8 +25,8 @@ class ParticleSwarm:
         Initialize the Particle Swarm Optimization (PSO) for adversarial attacks.
         
         Args:
-            model (nn.Module): The model to attack.
-            input_set (torch.Tensor): The batch of input images to attack.
+            model (tf.keras.Model): The model to attack.
+            input_set (np.ndarray): The batch of input images to attack as a NumPy array.
             target_class (int): The target class for misclassification.
             num_iterations (int): The number of optimization iterations.
             epsilon (float): The perturbation bound.
@@ -36,20 +38,20 @@ class ParticleSwarm:
             velocity_clamp (float): The velocity clamp to limit the velocity.
         """
         self.model = model
-        self.input_set = input_set  # The batch of input images
+        self.input_set = tf.convert_to_tensor(input_set, dtype=tf.float32)  # Convert NumPy array to TensorFlow tensor
         self.target_class = target_class  # The target class index
         self.num_iterations = num_iterations
         self.epsilon = epsilon  # Perturbation bound
         self.save_dir = save_dir  # Directory to save perturbed images
         
         self.particles: List[BirdParticle] = [
-            BirdParticle(model, input_set[i:i + 1], target_class, epsilon,
+            BirdParticle(model, self.input_set[i:i + 1], target_class, epsilon,
                          inertia_weight=inertia_weight, cognitive_weight=cognitive_weight,
                          social_weight=social_weight, momentum=momentum, velocity_clamp=velocity_clamp) 
             for i in range(len(input_set))
         ]
         
-        self.global_best_position = torch.zeros_like(self.input_set[0])  # Global best position
+        self.global_best_position = tf.zeros_like(self.input_set[0]) # Global best position
         self.global_best_score = -float('inf')  # Initialize with a very low score
         
         self.fitness_history: List[float] = []  # History of fitness scores to track progress
@@ -101,32 +103,35 @@ class ParticleSwarm:
         self.logger.info(f"\n{'-'*60}")
         self.logger.info(f"Iteration {iteration + 1}/{self.num_iterations}")
         self.logger.info(f"{'='*60}")
-        
+    
         # Table header
         header = f"{'Particle':<10}{'Original Pred':<15}{'Perturbed Pred':<18}{'Orig Target Prob':<20}" \
                  f"{'Pert Target Prob':<20}{'Personal Best':<20}{'Global Best':<20}"
         self.logger.info(header)
         self.logger.info(f"{'-'*60}")
-        
+    
         # Log particle information
         for i, particle in enumerate(self.particles):
-            with torch.no_grad():
-                original_output = self.model(particle.original_data)
-                perturbed_output = self.model(particle.position)
-
-                original_pred = torch.argmax(original_output, dim=1).item()
-                perturbed_pred = torch.argmax(perturbed_output, dim=1).item()
-
-                original_probs = torch.softmax(original_output, dim=1)
-                perturbed_probs = torch.softmax(perturbed_output, dim=1)
-
-                original_prob_target = original_probs[0, self.target_class].item()
-                perturbed_prob_target = perturbed_probs[0, self.target_class].item()
-
+            # Get original and perturbed outputs
+            original_output = self.model(particle.original_data)  # Pass through the model
+            perturbed_output = self.model(particle.position)  # Pass through the model
+    
+            # Get predicted classes
+            original_pred = tf.argmax(original_output, axis=1).numpy().item()
+            perturbed_pred = tf.argmax(perturbed_output, axis=1).numpy().item()
+    
+            # Get softmax probabilities
+            original_probs = tf.nn.softmax(original_output, axis=1)
+            perturbed_probs = tf.nn.softmax(perturbed_output, axis=1)
+    
+            # Get target class probabilities
+            original_prob_target = original_probs[0, self.target_class].numpy().item()
+            perturbed_prob_target = perturbed_probs[0, self.target_class].numpy().item()
+    
             # Log each particle's data in a formatted row
             self.logger.info(f"{i+1:<10}{original_pred:<15}{perturbed_pred:<18}{original_prob_target:<20.4f}"
                              f"{perturbed_prob_target:<20.4f}{particle.best_score:<20.4f}{self.global_best_score:<20.4f}")
-        
+    
         self.logger.info(f"{'='*60}")
     
     def save_images(self, iteration: int):
@@ -140,7 +145,12 @@ class ParticleSwarm:
         os.makedirs(iteration_folder, exist_ok=True)
         
         for i, particle in enumerate(self.particles):
-            utils.save_image(particle.position, os.path.join(iteration_folder, f"perturbed_image_{i + 1}.png"))
+            # Convert TensorFlow tensor to NumPy array
+            position_numpy = particle.position.numpy()
+            # Remove extra batch dimension (if it exists)
+            position_numpy = np.squeeze(position_numpy)  # Now shape is (28, 28)
+            position_numpy = np.expand_dims(position_numpy, axis=-1)  # Shape becomes (28, 28, 1)
+            tf.keras.preprocessing.image.save_img(os.path.join(iteration_folder, f"perturbed_image_{i + 1}.png"), position_numpy)
 
     def optimize(self):
         """
@@ -158,7 +168,7 @@ class ParticleSwarm:
             best_particle = max(self.particles, key=lambda p: p.best_score)
             if best_particle.best_score > self.global_best_score:
                 self.global_best_score = best_particle.best_score
-                self.global_best_position = best_particle.best_position.clone().detach()
+                self.global_best_position = tf.identity(best_particle.best_position)
             
             self.save_images(iteration)
             
