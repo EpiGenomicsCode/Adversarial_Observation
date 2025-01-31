@@ -2,6 +2,7 @@ import argparse
 import time
 import numpy as np
 from tqdm import tqdm
+
 import tensorflow as tf
 from tensorflow.keras.models import load_model as load_keras_model
 from tensorflow.keras.datasets import mnist
@@ -11,9 +12,37 @@ from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
 from tensorflow.keras.optimizers import Adam
 from Adversarial_Observation.utils import seed_everything
 from Adversarial_Observation import AdversarialTester, ParticleSwarm
-import torch  # Import PyTorch for tensor conversion
+
+from sklearn.metrics import roc_auc_score, average_precision_score
 
 import sys
+
+def evaluate_model(model, test_dataset):
+    """
+    Evaluates the model on the test dataset and prints loss, accuracy, auROC, and auPRC.
+    """
+    y_true = []
+    
+    # Compute loss and accuracy
+    loss, accuracy = model.evaluate(test_dataset, verbose=0)
+    
+    # Collect ground truth labels
+    for images, labels in test_dataset:
+        y_true.extend(np.argmax(labels.numpy(), axis=1))
+    
+    # Predict all at once to suppress excessive output
+    y_pred = model.predict(test_dataset, verbose=0)
+    
+    y_pred = np.array(y_pred)
+    y_true = np.array(y_true)
+    
+    auroc = roc_auc_score(to_categorical(y_true, num_classes=10), y_pred, multi_class='ovr')
+    auprc = average_precision_score(to_categorical(y_true, num_classes=10), y_pred)
+    
+    print(f"Test Loss: {loss:.4f}")
+    print(f"Test Accuracy: {accuracy:.4f}")
+    print(f"Test auROC: {auroc:.4f}")
+    print(f"Test auPRC: {auprc:.4f}")
 
 def load_MNIST_model(model_path=None):
     """
@@ -114,42 +143,46 @@ def train(model: tf.keras.Model, train_dataset: tf.data.Dataset, epochs: int = 1
 
     return model
 
-def adversarial_attack_blackbox(model: tf.keras.Model, dataset: tf.data.Dataset, num_iterations: int = 30, num_particles: int = 100) -> tf.data.Dataset:
+def adversarial_attack_blackbox(model: tf.keras.Model, dataset: tf.data.Dataset, image_index: int, num_iterations: int = 30, num_particles: int = 100) -> tf.data.Dataset:
     """
-    Performs a black-box adversarial attack on the model using Particle Swarm optimization.
+    Performs a black-box adversarial attack on a specific image in the dataset using Particle Swarm optimization.
 
     Args:
         model (tf.keras.Model): The trained model to attack.
         dataset (tf.data.Dataset): The dataset containing the images.
+        image_index (int): The index of the image in the dataset to attack.
         num_iterations (int, optional): Number of iterations for the attack. Defaults to 30.
         num_particles (int, optional): Number of particles for the attack. Defaults to 100.
 
     Returns:
         tf.data.Dataset: A dataset containing adversarially perturbed images.
     """
-    # Get the first two images from the dataset to simulate misclassification
-    single_image_input = next(iter(dataset))[0][0].numpy()
-    single_image_target = np.argmax(model.predict(single_image_input[np.newaxis, ...]))
+    # Convert dataset to a list of images and labels for indexing
+    dataset_list = list(dataset.as_numpy_iterator())
+    all_images, all_labels = zip(*dataset_list)  # Unpack images and labels
+    all_images = np.concatenate(all_images, axis=0)
+    all_labels = np.concatenate(all_labels, axis=0)
 
-    print(single_image_input.shape)
+    # Ensure the index is within bounds
+    if image_index < 0 or image_index >= len(all_images):
+        raise ValueError(f"Image index {image_index} is out of bounds. Dataset size: {len(all_images)}")
 
-    single_misclassification_input = next(iter(dataset))[0][1].numpy()
-    single_misclassification_target = np.argmax(model.predict(single_misclassification_input[np.newaxis, ...]))
+    # Select the specified image and its ground truth label
+    single_image_input = all_images[image_index]
+    single_image_target = np.argmax(all_labels[image_index])  # Use the actual label
+
+    single_misclassification_target = (single_image_target + 1) % 10  # Change target to a different class
 
     # Ensure the targets are different to simulate misclassification
     assert single_image_target != single_misclassification_target, \
         "Target classes should be different for misclassification."
 
     # Create a noisy input set for black-box attack
-    input_set = [single_image_input + np.random.normal(0, 1, single_image_input.shape) for _ in range(num_particles)]
+    input_set = [single_image_input + np.random.normal(0, 0.75, single_image_input.shape) for _ in range(num_particles)]
     input_set = np.stack(input_set)
 
-#    print(input_set)
-#    print(input_set.shape)
-#    sys.exit(1)
-
-    print(f"Target class for original image: {single_image_target}")
-    print(f"Target class for misclassified image: {single_misclassification_target}")
+    print(f"Original class: {single_image_target}")
+    print(f"Misclassification target class: {single_misclassification_target}")
 
     # Initialize the Particle Swarm optimizer with the model and input set
     attacker = ParticleSwarm(
@@ -159,47 +192,6 @@ def adversarial_attack_blackbox(model: tf.keras.Model, dataset: tf.data.Dataset,
     )
     attacker.optimize()
 
-    # Generate adversarial dataset
-    return get_adversarial_dataset(attacker, model, single_misclassification_target, single_image_target)
-
-def get_adversarial_dataset(attacker: ParticleSwarm, model: tf.keras.Model, target_class: int, original_class: int) -> tf.data.Dataset:
-    """
-    Generates a dataset containing adversarially perturbed images.
-
-    Args:
-        attacker (ParticleSwarm): The ParticleSwarm instance after optimization.
-        model (tf.keras.Model): The trained model used for evaluating adversarial examples.
-        target_class (int): The target class for the attack.
-        original_class (int): The original class of the image.
-
-    Returns:
-        tf.data.Dataset: A dataset containing adversarial images with their target and original class confidences.
-    """
-    print(f"Generating adversarial examples with target class {target_class} and original class {original_class}")
-
-    images, target_confidence, original_confidence = [], [], []
-
-    for particle in attacker.particles:
-        for position in particle.history:
-            # Convert PyTorch tensor to NumPy array for Keras model prediction
-            position_np = position.numpy()
-            output = model.predict(position_np)
-            if np.argmax(output) == target_class:
-                images.append(position_np)
-                target_confidence.append(tf.nn.softmax(output).numpy().flatten()[target_class])
-                original_confidence.append(tf.nn.softmax(output).numpy().flatten()[original_class])
-
-    if len(images) == 0:
-        print("No adversarial examples found.")
-        return None
-
-    # Convert lists to tensors and return a TensorFlow dataset
-    X_images = np.stack(images)
-    X_original_confidence = np.stack(original_confidence)
-    y = np.stack(target_confidence)
-
-    return tf.data.Dataset.from_tensor_slices((X_images, y, X_original_confidence))
-
 def main() -> None:
     """
     Main function to execute the adversarial attack workflow.
@@ -208,7 +200,7 @@ def main() -> None:
     parser.add_argument('--model_path', type=str, default=None, help="Path to a pre-trained Keras model.")
     args = parser.parse_args()
 
-    seed_everything(1252025)
+    #seed_everything(1252025)
 
     # Load pre-trained model (MNIST model) or create a new one
     model = load_MNIST_model(args.model_path)
@@ -222,13 +214,12 @@ def main() -> None:
         model.save('mnist_model.keras')
         print("Model saved to mnist_model.keras")
 
-    # Perform adversarial attack
-    adversarial_dataset = adversarial_attack_blackbox(model, test_dataset, 25, 50)
+    # Evaluate the model
+    print("Model statistics on test dataset")
+    evaluate_model(model, test_dataset)
 
-#    if adversarial_dataset:
-#        # Example: Iterate over the adversarial dataset
-#        for images, target_conf, original_conf in adversarial_dataset:
-#            print(f"Target Confidence: {target_conf.numpy()}, Original Confidence: {original_conf.numpy()}")
+    # Perform adversarial attack
+    adversarial_dataset = adversarial_attack_blackbox(model, test_dataset, 0, 50, 100)
 
 if __name__ == "__main__":
     main()
