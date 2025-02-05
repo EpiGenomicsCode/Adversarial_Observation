@@ -36,7 +36,7 @@ class BirdParticle:
         self.best_score = -np.inf
         self.position = tf.identity(input_data)  # Clone the input data
         self.velocity = velocity if velocity is not None else tf.zeros_like(input_data)
-        self.history = []
+        self.history = [self.position]
         
         # Class attributes
         self.inertia_weight = inertia_weight
@@ -83,7 +83,7 @@ class BirdParticle:
         
         Ensures that the position stays within the valid input range [0, 1] (normalized pixel values).
         """
-        self.position = tf.clip_by_value(self.position + self.velocity, 0.0, 1.0)  # Ensure position stays within bounds
+        self.position = tf.clip_by_value(self.position + self.velocity, 0, 1)  # Ensure position stays within bounds
         self.history.append(tf.identity(self.position))  # Store the position history
         
     def evaluate(self) -> None:

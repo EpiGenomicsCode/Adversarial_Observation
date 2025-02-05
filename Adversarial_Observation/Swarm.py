@@ -3,11 +3,9 @@ import logging
 from typing import List
 from Adversarial_Observation.BirdParticle import BirdParticle
 
-import torch
-from torchvision import utils
-
 import tensorflow as tf
 import numpy as np
+import matplotlib.pyplot as plt
 
 class ParticleSwarm:
     """
@@ -149,8 +147,7 @@ class ParticleSwarm:
             position_numpy = particle.position.numpy()
             # Remove extra batch dimension (if it exists)
             position_numpy = np.squeeze(position_numpy)  # Now shape is (28, 28)
-            position_numpy = np.expand_dims(position_numpy, axis=-1)  # Shape becomes (28, 28, 1)
-            tf.keras.preprocessing.image.save_img(os.path.join(iteration_folder, f"perturbed_image_{i + 1}.png"), position_numpy)
+            plt.imsave(os.path.join(iteration_folder, f"perturbed_image_{i + 1}.png"), position_numpy, cmap="gray", vmin=0, vmax=1)
 
     def optimize(self):
         """
@@ -171,5 +168,4 @@ class ParticleSwarm:
                 self.global_best_position = tf.identity(best_particle.best_position)
             
             self.save_images(iteration)
-            
             self.log_progress(iteration)

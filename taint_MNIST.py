@@ -14,8 +14,9 @@ from Adversarial_Observation.utils import seed_everything
 from Adversarial_Observation import AdversarialTester, ParticleSwarm
 
 from sklearn.metrics import roc_auc_score, average_precision_score
+import matplotlib.pyplot as plt
 
-import sys
+import sys, os, json
 
 def evaluate_model(model, test_dataset):
     """
@@ -73,9 +74,10 @@ def load_MNIST_model(model_path=None):
 
 def normalize_mnist(x):
     """Applies mean/std normalization to MNIST image"""
-    mean = 0.1307
-    std = 0.3081
-    return (x / 255.0 - mean) / std
+#    mean = 0.1307
+#    std = 0.3081
+#    return ((x / 255.0) - mean) / std
+    return x / 255.0
 
 def load_data(batch_size=32):
     """
@@ -143,7 +145,7 @@ def train(model: tf.keras.Model, train_dataset: tf.data.Dataset, epochs: int = 1
 
     return model
 
-def adversarial_attack_blackbox(model: tf.keras.Model, dataset: tf.data.Dataset, image_index: int, num_iterations: int = 30, num_particles: int = 100) -> tf.data.Dataset:
+def adversarial_attack_blackbox(model: tf.keras.Model, dataset: tf.data.Dataset, image_index: int, output_dir: str = 'results', num_iterations: int = 30, num_particles: int = 100) -> tf.data.Dataset:
     """
     Performs a black-box adversarial attack on a specific image in the dataset using Particle Swarm optimization.
 
@@ -178,7 +180,7 @@ def adversarial_attack_blackbox(model: tf.keras.Model, dataset: tf.data.Dataset,
         "Target classes should be different for misclassification."
 
     # Create a noisy input set for black-box attack
-    input_set = [single_image_input + np.random.normal(0, 0.75, single_image_input.shape) for _ in range(num_particles)]
+    input_set = [single_image_input + (np.random.uniform(0, 1, single_image_input.shape) * (np.random.rand(*single_image_input.shape) < 0.9)) for _ in range(num_particles) ]
     input_set = np.stack(input_set)
 
     print(f"Original class: {single_image_target}")
@@ -187,10 +189,96 @@ def adversarial_attack_blackbox(model: tf.keras.Model, dataset: tf.data.Dataset,
     # Initialize the Particle Swarm optimizer with the model and input set
     attacker = ParticleSwarm(
         model, input_set, single_misclassification_target, num_iterations=num_iterations,
-        epsilon=0.8, save_dir='results', inertia_weight=0.8, cognitive_weight=0.5,
-        social_weight=0.5, momentum=0.9, velocity_clamp=0.1
+        epsilon=1, save_dir=output_dir, inertia_weight=1, cognitive_weight=0.8,
+        social_weight=0.5, momentum=0.9, velocity_clamp=0.2
     )
+
     attacker.optimize()
+
+    analysis(attacker, single_image_input, single_misclassification_target)
+
+def analysis(attacker, single_misclassification_input: np.ndarray, single_misclassification_target):
+    """
+    Analyzes the results of the attack and generates plots.
+    - Saves the original misclassification input and target.
+    - For each particle and each position in the particle's history:
+        - Save the position (perturbed image).
+        - Save all confidence values.
+        - Save the maximum output (softmax confidence).
+        - Save the difference from the original input.
+    """
+    # Save the original image and its classification
+    plt.imsave(os.path.join(attacker.save_dir, "original.png"), single_misclassification_input.squeeze(), cmap="gray", vmin=0, vmax=1)
+    
+    analysis_results = {
+        "original_misclassification_input": single_misclassification_input.tolist(),
+        "original_misclassification_target": int(single_misclassification_target),
+        "particles": []
+    }
+    
+    # Process each particle in the attacker's particles list
+    for particle_idx, particle in enumerate(attacker.particles):
+        print(f"Processing particle: {particle_idx}")
+        particle_data = {
+            "particle_index": particle_idx,
+            "positions": [],
+            "confidence_values": [],
+            "max_output_values": [],
+            "max_output_classes": [],
+            "differences_from_original": [],
+            "confidence_over_time": []  # Store confidence over time
+        }
+        
+        for step_idx, position in enumerate(particle.history):
+            # Ensure 'position' is a numpy array.
+            if isinstance(position, tf.Tensor):
+                position_np = position.numpy()
+            else:
+                position_np = np.array(position)
+            
+            output = attacker.model(position_np)
+
+            # Remove the batch dimension and apply softmax
+            softmax_output = tf.nn.softmax(tf.squeeze(output), axis=0)
+            confidence_values = softmax_output.numpy().tolist()
+            max_output_value = float(max(confidence_values))
+            max_output_class = confidence_values.index(max_output_value)
+
+            # Calculate pixel-wise difference from original image (before attack)
+            #diff_image = np.abs(position_np - single_misclassification_input)[0]
+            diff_image = (position_np - single_misclassification_input)[0]
+            #print(position_np)
+            #print(single_misclassification_input)
+            #print(diff_image)
+            # Save the difference image
+            iteration_folder = os.path.join(attacker.save_dir, f"iteration_{step_idx + 1}")
+            if not os.path.exists(iteration_folder):
+                os.makedirs(iteration_folder)
+            plt.imsave(os.path.join(iteration_folder, f"attack-vector_image_{particle_idx + 1}.png"), diff_image.squeeze(), cmap="seismic", vmin=-1, vmax=1)
+
+            # Calculate difference from original image (before attack)
+            difference_from_original = float(np.linalg.norm(position - single_misclassification_input))
+
+            # Add data for this step to the particle_data
+            particle_data["positions"].append(position_np.tolist())
+            particle_data["confidence_values"].append(confidence_values)
+            particle_data["max_output_values"].append(max_output_value)
+            particle_data["max_output_classes"].append(max_output_class)
+            particle_data["differences_from_original"].append(difference_from_original)
+            particle_data["confidence_over_time"].append(max_output_value)  # Store max output (confidence)
+        
+        # Append the particle's data to the main analysis results
+        analysis_results["particles"].append(particle_data)
+    
+    # Save the analysis results to a JSON file
+    output_dir = attacker.save_dir  # Use the save_dir from the attacker
+    os.makedirs(output_dir, exist_ok=True)
+    file_path = os.path.join(output_dir, "attack_analysis.json")
+    
+    with open(file_path, "w") as f:
+        json.dump(analysis_results, f, indent=4)
+    
+    print(f"Analysis results saved to {file_path}")
 
 def main() -> None:
     """
@@ -198,6 +286,9 @@ def main() -> None:
     """
     parser = argparse.ArgumentParser(description="Adversarial attack workflow with optional pre-trained Keras model.")
     parser.add_argument('--model_path', type=str, default=None, help="Path to a pre-trained Keras model.")
+    parser.add_argument('--iterations', type=int, default=50, help="Number of iterations for the black-box attack.")
+    parser.add_argument('--particles', type=int, default=100, help="Number of particles for the black-box attack.")
+    parser.add_argument('--save_dir', type=str, default="analysis_results", help="Directory to save analysis results.")
     args = parser.parse_args()
 
     #seed_everything(1252025)
@@ -219,7 +310,7 @@ def main() -> None:
     evaluate_model(model, test_dataset)
 
     # Perform adversarial attack
-    adversarial_dataset = adversarial_attack_blackbox(model, test_dataset, 0, 50, 100)
+    adversarial_dataset = adversarial_attack_blackbox(model, test_dataset, 0, output_dir=args.save_dir, num_iterations=args.iterations, num_particles=args.particles)
 
 if __name__ == "__main__":
     main()
