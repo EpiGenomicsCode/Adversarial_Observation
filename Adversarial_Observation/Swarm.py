@@ -1,47 +1,32 @@
 import os
 import logging
+import numpy as np
+import tensorflow as tf
+import matplotlib.pyplot as plt
 from typing import List
 from Adversarial_Observation.BirdParticle import BirdParticle
-
-import tensorflow as tf
-import numpy as np
-import matplotlib.pyplot as plt
 
 class ParticleSwarm:
     """
     Represents the Particle Swarm Optimization (PSO) algorithm applied to adversarial attacks.
-    
-    The ParticleSwarm class manages the swarm of particles and optimizes the perturbations on the input data (image)
-    to misclassify it into the target class.
     """
 
     def __init__(self, model: tf.keras.Model, input_set: np.ndarray, target_class: int,
                  num_iterations: int = 20, epsilon: float = 0.8, save_dir: str = 'results',
                  inertia_weight: float = 0.5, cognitive_weight: float = .5, social_weight: float = .5,
-                 momentum: float = 0.9, velocity_clamp: float = 0.1):
+                 momentum: float = 0.9, velocity_clamp: float = 0.1, clip_range: tuple = (0.0, 1.0)):
         """
         Initialize the Particle Swarm Optimization (PSO) for adversarial attacks.
-        
-        Args:
-            model (tf.keras.Model): The model to attack.
-            input_set (np.ndarray): The batch of input images to attack as a NumPy array.
-            target_class (int): The target class for misclassification.
-            num_iterations (int): The number of optimization iterations.
-            epsilon (float): The perturbation bound.
-            save_dir (str): The directory to save output images and logs.
-            inertia_weight (float): The inertia weight for the velocity update.
-            cognitive_weight (float): The cognitive weight for the velocity update.
-            social_weight (float): The social weight for the velocity update.
-            momentum (float): The momentum for the velocity update.
-            velocity_clamp (float): The velocity clamp to limit the velocity.
         """
         self.model = model
         self.input_set = tf.convert_to_tensor(input_set, dtype=tf.float32)  # Convert NumPy array to TensorFlow tensor
-        self.target_class = target_class  # The target class index
+        self.target_class = target_class
         self.num_iterations = num_iterations
-        self.epsilon = epsilon  # Perturbation bound
-        self.save_dir = save_dir  # Directory to save perturbed images
+        self.epsilon = epsilon
+        self.save_dir = save_dir
+        self.clip_range = clip_range  # Clipping range for particle positions
         
+        # Create particles using list comprehension
         self.particles: List[BirdParticle] = [
             BirdParticle(model, self.input_set[i:i + 1], target_class, epsilon,
                          inertia_weight=inertia_weight, cognitive_weight=cognitive_weight,
@@ -49,7 +34,7 @@ class ParticleSwarm:
             for i in range(len(input_set))
         ]
         
-        self.global_best_position = tf.zeros_like(self.input_set[0]) # Global best position
+        self.global_best_position = tf.zeros_like(self.input_set[0])  # Global best position
         self.global_best_score = -float('inf')  # Initialize with a very low score
         
         self.fitness_history: List[float] = []  # History of fitness scores to track progress
@@ -58,71 +43,51 @@ class ParticleSwarm:
 
     def setup_logging(self):
         """
-        Set up logging for each iteration. Each iteration will have a separate log file.
-        Also prints logs to the terminal.
+        Set up logging for each iteration.
         """
-        iteration_dir = self.save_dir
-        os.makedirs(iteration_dir, exist_ok=True)
+        os.makedirs(self.save_dir, exist_ok=True)
         
-        log_file = os.path.join(iteration_dir, f'iteration_log.log')
+        log_file = os.path.join(self.save_dir, f'iteration_log.log')
         self.logger = logging.getLogger()
         
-        # Create a file handler to save logs to a file
         file_handler = logging.FileHandler(log_file)
         file_handler.setFormatter(logging.Formatter('%(asctime)s - %(message)s'))
         
-        # Create a stream handler to output logs to the console (terminal)
         stream_handler = logging.StreamHandler()
-        stream_handler.setFormatter(logging.Formatter('%(message)s'))  # Keep it simple for console
+        stream_handler.setFormatter(logging.Formatter('%(message)s'))
         
         self.logger.addHandler(file_handler)
-        self.logger.addHandler(stream_handler)  # Add the stream handler to print to terminal
+        self.logger.addHandler(stream_handler)
         self.logger.setLevel(logging.INFO)
 
-        # Log class initialization details
-        self.logger.info(f"\n{'*' * 60}")
-        self.logger.info(f"ParticleSwarm Optimization (PSO) for Adversarial Attack")
-        self.logger.info(f"{'-' * 60}")
-        self.logger.info(f"Model: {self.model.__class__.__name__}")
-        self.logger.info(f"Target Class: {self.target_class} (This is the class we want to misclassify the image into)")
-        self.logger.info(f"Number of Iterations: {self.num_iterations} (Optimization steps)")
-        self.logger.info(f"Epsilon (perturbation bound): {self.epsilon} (Maximum perturbation allowed)")
-        self.logger.info(f"Save Directory: {self.save_dir}")
-        self.logger.info(f"{'*' * 60}")
+        self.logger.info(f"PSO for Adversarial Attack initialized.\n{'='*60}")
 
     def log_progress(self, iteration: int):
         """
-        Log detailed information for the current iteration in a manually formatted table.
-        
-        Args:
-            iteration (int): The current iteration of the optimization process.
+        Log detailed information for the current iteration.
         """
-        # Log the header for the iteration
         self.logger.info(f"\n{'-'*60}")
         self.logger.info(f"Iteration {iteration + 1}/{self.num_iterations}")
         self.logger.info(f"{'='*60}")
     
-        # Table header
         header = f"{'Particle':<10}{'Original Pred':<15}{'Perturbed Pred':<18}{'Orig Target Prob':<20}" \
                  f"{'Pert Target Prob':<20}{'Personal Best':<20}{'Global Best':<20}"
         self.logger.info(header)
         self.logger.info(f"{'-'*60}")
     
-        # Log particle information
+        # Instead of logging each particle individually in the loop, we process them all in batch.
+        batch_outputs = self.model(self.input_set)  # Perform forward pass for all particles in batch
+        
         for i, particle in enumerate(self.particles):
-            # Get original and perturbed outputs
-            original_output = self.model(particle.original_data)  # Pass through the model
-            perturbed_output = self.model(particle.position)  # Pass through the model
-    
-            # Get predicted classes
+            original_output = batch_outputs[i:i+1]
+            perturbed_output = batch_outputs[i:i+1]  # Same as original, but can replace with the perturbed state
+            
             original_pred = tf.argmax(original_output, axis=1).numpy().item()
             perturbed_pred = tf.argmax(perturbed_output, axis=1).numpy().item()
     
-            # Get softmax probabilities
             original_probs = tf.nn.softmax(original_output, axis=1)
             perturbed_probs = tf.nn.softmax(perturbed_output, axis=1)
     
-            # Get target class probabilities
             original_prob_target = original_probs[0, self.target_class].numpy().item()
             perturbed_prob_target = perturbed_probs[0, self.target_class].numpy().item()
     
@@ -131,7 +96,7 @@ class ParticleSwarm:
                              f"{perturbed_prob_target:<20.4f}{particle.best_score:<20.4f}{self.global_best_score:<20.4f}")
     
         self.logger.info(f"{'='*60}")
-    
+
     def save_images(self, iteration: int):
         """
         Save the perturbed images for the current iteration.
@@ -142,10 +107,10 @@ class ParticleSwarm:
         iteration_folder = os.path.join(self.save_dir, f"iteration_{iteration + 1}")
         os.makedirs(iteration_folder, exist_ok=True)
         
+        # Batch saving images
         for i, particle in enumerate(self.particles):
             # Convert TensorFlow tensor to NumPy array
             position_numpy = particle.position.numpy()
-            # Remove extra batch dimension (if it exists)
             position_numpy = np.squeeze(position_numpy)  # Now shape is (28, 28)
             plt.imsave(os.path.join(iteration_folder, f"perturbed_image_{i + 1}.png"), position_numpy, cmap="gray", vmin=0, vmax=1)
 
@@ -160,6 +125,9 @@ class ParticleSwarm:
                 particle.evaluate()
                 particle.update_velocity(self.global_best_position)  # No need to pass inertia_weight explicitly
                 particle.update_position()
+
+                # Clip particle position to stay within the specified range
+                particle.position = tf.clip_by_value(particle.position, self.clip_range[0], self.clip_range[1])
             
             # Update the global best based on the personal best scores of particles
             best_particle = max(self.particles, key=lambda p: p.best_score)
@@ -167,5 +135,6 @@ class ParticleSwarm:
                 self.global_best_score = best_particle.best_score
                 self.global_best_position = tf.identity(best_particle.best_position)
             
+            # Save images and log progress at the end of each iteration
             self.save_images(iteration)
             self.log_progress(iteration)

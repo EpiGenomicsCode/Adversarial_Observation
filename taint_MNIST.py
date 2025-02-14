@@ -310,7 +310,7 @@ def main() -> None:
     evaluate_model(model, test_dataset)
 
     # Perform adversarial attack
-    adversarial_dataset = adversarial_attack_blackbox(model, test_dataset, 0, output_dir=args.save_dir, num_iterations=args.iterations, num_particles=args.particles)
+    adversarial_dataset = adversarial_attack_blackbox(model, test_dataset, 3, output_dir=args.save_dir, num_iterations=args.iterations, num_particles=args.particles)
 
 if __name__ == "__main__":
     main()
