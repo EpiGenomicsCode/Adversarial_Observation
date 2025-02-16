@@ -36,6 +36,7 @@ class ParticleSwarm:
             device (str): The device for computation ('cpu' or 'gpu'). Default is 'cpu'.
         """
         self.model = model
+        import pdb; pdb.set_trace()
         self.input_set = tf.convert_to_tensor(input_set, dtype=tf.float32)  # Convert NumPy array to TensorFlow tensor
         self.target_class = target_class  # The target class index
         self.num_iterations = num_iterations

@@ -18,7 +18,6 @@ import matplotlib.pyplot as plt
 
 import sys, os, json
 
-# Method to evaluate model performance on the test dataset
 def evaluate_model(model, test_dataset):
     """
     Evaluates the model on the test dataset and prints loss, accuracy, auROC, and auPRC.
@@ -46,7 +45,6 @@ def evaluate_model(model, test_dataset):
     print(f"Test auROC: {auroc:.4f}")
     print(f"Test auPRC: {auprc:.4f}")
 
-# Method to load the MNIST model
 def load_MNIST_model(model_path=None):
     """
     Loads a pre-trained Keras model or creates a new one if no model is provided.
@@ -74,12 +72,13 @@ def load_MNIST_model(model_path=None):
         ])
         return model
 
-# Normalize MNIST images
 def normalize_mnist(x):
     """Applies mean/std normalization to MNIST image"""
+#    mean = 0.1307
+#    std = 0.3081
+#    return ((x / 255.0) - mean) / std
     return x / 255.0
 
-# Load MNIST data
 def load_data(batch_size=32):
     """
     Loads MNIST train and test data and prepares it for evaluation.
@@ -107,7 +106,6 @@ def load_data(batch_size=32):
 
     return train_dataset, test_dataset
 
-# Train the model
 def train(model: tf.keras.Model, train_dataset: tf.data.Dataset, epochs: int = 10) -> tf.keras.Model:
     """
     Trains the model for a specified number of epochs.
@@ -134,7 +132,7 @@ def train(model: tf.keras.Model, train_dataset: tf.data.Dataset, epochs: int = 1
 
         # Use tqdm for a progress bar
         for images, labels in tqdm(train_dataset, desc="Training", unit="batch"):
-            loss, accuracy = model.train_on_batch(images, labels)
+            loss, accuracy = model.fit(images, labels)
             running_loss += loss
             running_accuracy += accuracy
             num_batches += 1
@@ -147,10 +145,19 @@ def train(model: tf.keras.Model, train_dataset: tf.data.Dataset, epochs: int = 1
 
     return model
 
-# Perform adversarial attack (black-box using Particle Swarm)
 def adversarial_attack_blackbox(model: tf.keras.Model, dataset: tf.data.Dataset, image_index: int, output_dir: str = 'results', num_iterations: int = 30, num_particles: int = 100) -> tf.data.Dataset:
     """
     Performs a black-box adversarial attack on a specific image in the dataset using Particle Swarm optimization.
+
+    Args:
+        model (tf.keras.Model): The trained model to attack.
+        dataset (tf.data.Dataset): The dataset containing the images.
+        image_index (int): The index of the image in the dataset to attack.
+        num_iterations (int, optional): Number of iterations for the attack. Defaults to 30.
+        num_particles (int, optional): Number of particles for the attack. Defaults to 100.
+
+    Returns:
+        tf.data.Dataset: A dataset containing adversarially perturbed images.
     """
     # Convert dataset to a list of images and labels for indexing
     dataset_list = list(dataset.as_numpy_iterator())
@@ -182,18 +189,23 @@ def adversarial_attack_blackbox(model: tf.keras.Model, dataset: tf.data.Dataset,
     # Initialize the Particle Swarm optimizer with the model and input set
     attacker = ParticleSwarm(
         model, input_set, single_misclassification_target, num_iterations=num_iterations,
-        epsilon=1, save_dir=output_dir, inertia_weight=1, cognitive_weight=0.8,
-        social_weight=0.5, momentum=0.9, velocity_clamp=0.2
+        save_dir=output_dir, inertia_weight=1, cognitive_weight=0.8,
+        social_weight=0.5, momentum=0.9, clip_value_position=0.2
     )
 
     attacker.optimize()
 
     analysis(attacker, single_image_input, single_misclassification_target)
 
-# Perform analysis on the attack results
 def analysis(attacker, single_misclassification_input: np.ndarray, single_misclassification_target):
     """
     Analyzes the results of the attack and generates plots.
+    - Saves the original misclassification input and target.
+    - For each particle and each position in the particle's history:
+        - Save the position (perturbed image).
+        - Save all confidence values.
+        - Save the maximum output (softmax confidence).
+        - Save the difference from the original input.
     """
     # Save the original image and its classification
     plt.imsave(os.path.join(attacker.save_dir, "original.png"), single_misclassification_input.squeeze(), cmap="gray", vmin=0, vmax=1)
@@ -233,8 +245,11 @@ def analysis(attacker, single_misclassification_input: np.ndarray, single_miscla
             max_output_class = confidence_values.index(max_output_value)
 
             # Calculate pixel-wise difference from original image (before attack)
+            #diff_image = np.abs(position_np - single_misclassification_input)[0]
             diff_image = (position_np - single_misclassification_input)[0]
-
+            #print(position_np)
+            #print(single_misclassification_input)
+            #print(diff_image)
             # Save the difference image
             iteration_folder = os.path.join(attacker.save_dir, f"iteration_{step_idx + 1}")
             if not os.path.exists(iteration_folder):
@@ -265,10 +280,9 @@ def analysis(attacker, single_misclassification_input: np.ndarray, single_miscla
     
     print(f"Analysis results saved to {file_path}")
 
-# The new method for attack
-def attack_mnist_model():
+def main() -> None:
     """
-    Method to run MNIST model download, training and swarm attack
+    Main function to execute the adversarial attack workflow.
     """
     parser = argparse.ArgumentParser(description="Adversarial attack workflow with optional pre-trained Keras model.")
     parser.add_argument('--model_path', type=str, default=None, help="Path to a pre-trained Keras model.")
@@ -277,8 +291,12 @@ def attack_mnist_model():
     parser.add_argument('--save_dir', type=str, default="analysis_results", help="Directory to save analysis results.")
     args = parser.parse_args()
 
-    # Load the MNIST model or train a new one if not provided
+    #seed_everything(1252025)
+
+    # Load pre-trained model (MNIST model) or create a new one
     model = load_MNIST_model(args.model_path)
+
+    # Load MNIST dataset (train and test datasets)
     train_dataset, test_dataset = load_data()
 
     if args.model_path is None:
@@ -292,146 +310,7 @@ def attack_mnist_model():
     evaluate_model(model, test_dataset)
 
     # Perform adversarial attack
-    adversarial_attack_blackbox(model, test_dataset, 0, output_dir=args.save_dir, num_iterations=args.iterations, num_particles=args.particles)
-
-def load_CIFAR10_model(model_path=None):
-    """
-    Loads a pre-trained Keras model or creates a new one if no model is provided for CIFAR-10.
-
-    Args:
-        model_path (str, optional): Path to a pre-trained Keras model. Defaults to None.
-
-    Returns:
-        tf.keras.Model: The Keras model for CIFAR-10.
-    """
-    if model_path:
-        # Load a pre-trained Keras model
-        model = load_keras_model(model_path)
-        return model
-    else:
-        # Create a new Keras model for CIFAR-10
-        model = Sequential([
-            Conv2D(32, kernel_size=(3, 3), padding='same', activation='relu', input_shape=(32, 32, 3)),
-            MaxPooling2D(pool_size=(2, 2)),
-            Conv2D(64, kernel_size=(3, 3), padding='same', activation='relu'),
-            MaxPooling2D(pool_size=(2, 2)),
-            Conv2D(128, kernel_size=(3, 3), padding='same', activation='relu'),
-            MaxPooling2D(pool_size=(2, 2)),
-            Flatten(),
-            Dense(128, activation='relu'),
-            Dense(10, activation='softmax')
-        ])
-        return model
-
-def normalize_cifar10(x):
-    """Normalize CIFAR-10 images to [0, 1] range."""
-    return x / 255.0
-
-def load_cifar10_data(batch_size=32):
-    """
-    Loads CIFAR-10 train and test data and prepares it for evaluation.
-
-    Args:
-        batch_size (int): The batch size for data loading.
-
-    Returns:
-        tf.data.Dataset, tf.data.Dataset: The training and testing datasets.
-    """
-    # Load the CIFAR-10 dataset
-    (x_train, y_train), (x_test, y_test) = cifar10.load_data()
-
-    # Normalize the data
-    x_train = normalize_cifar10(x_train.astype('float32'))
-    x_test = normalize_cifar10(x_test.astype('float32'))
-
-    # One-hot encode the labels
-    y_train = to_categorical(y_train, 10)
-    y_test = to_categorical(y_test, 10)
-
-    # Create TensorFlow datasets
-    train_dataset = tf.data.Dataset.from_tensor_slices((x_train, y_train)).batch(batch_size)
-    test_dataset = tf.data.Dataset.from_tensor_slices((x_test, y_test)).batch(batch_size)
-
-    return train_dataset, test_dataset
-
-def train_cifar10_model(model: tf.keras.Model, train_dataset: tf.data.Dataset, epochs: int = 10) -> tf.keras.Model:
-    """
-    Trains the model for a specified number of epochs on CIFAR-10 dataset.
-
-    Args:
-        model (tf.keras.Model): The model to train.
-        train_dataset (tf.data.Dataset): The training dataset.
-        epochs (int, optional): Number of training epochs. Defaults to 10.
-
-    Returns:
-        tf.keras.Model: The trained model.
-    """
-    # Compile the model
-    model.compile(optimizer=Adam(learning_rate=0.001), loss='categorical_crossentropy', metrics=['accuracy'])
-
-    # Train the model
-    for epoch in range(epochs):
-        start_time = time.time()  # Track time for each epoch
-        print(f"\nEpoch {epoch + 1}/{epochs}:")
-
-        running_loss = 0.0
-        running_accuracy = 0.0
-        num_batches = 0
-
-        # Use tqdm for a progress bar
-        for images, labels in tqdm(train_dataset, desc="Training", unit="batch"):
-            loss, accuracy = model.train_on_batch(images, labels)
-            running_loss += loss
-            running_accuracy += accuracy
-            num_batches += 1
-
-        # Print average loss and accuracy for the epoch
-        epoch_loss = running_loss / num_batches
-        epoch_accuracy = running_accuracy / num_batches
-        elapsed_time = time.time() - start_time
-        print(f"Epoch {epoch + 1} completed in {elapsed_time:.2f}s, Average Loss: {epoch_loss:.4f}, Accuracy: {epoch_accuracy:.4f}")
-
-    return model
-
-def attack_cifar10_model(model=None, train_epochs=5, attack_epochs=50, attack_particles=100, attack_iterations=30, model_path=None, save_dir='results'):
-    """
-    Downloads the CIFAR-10 dataset, trains the model, and performs an adversarial attack using Particle Swarm Optimization.
-
-    Args:
-        model (tf.keras.Model, optional): A pre-trained model to use for the attack. If None, the model is trained from scratch.
-        train_epochs (int, optional): Number of epochs to train the model. Defaults to 5.
-        attack_epochs (int, optional): Number of attack iterations. Defaults to 50.
-        attack_particles (int, optional): Number of particles in the Particle Swarm Optimization attack. Defaults to 100.
-        attack_iterations (int, optional): Number of iterations for the attack. Defaults to 30.
-        model_path (str, optional): Path to a pre-trained model. Defaults to None.
-        save_dir (str, optional): Directory to save results. Defaults to 'results'.
-
-    Returns:
-        None
-    """
-    # Load model (either pre-trained or new)
-    model = load_CIFAR10_model(model_path)
-
-    # Load CIFAR-10 dataset (train and test datasets)
-    train_dataset, test_dataset = load_cifar10_data()
-
-    if model_path is None:
-        # Train the model if no pre-trained model is provided
-        model = train_cifar10_model(model, train_dataset, epochs=train_epochs)
-        model.save('cifar10_model.keras')
-        print("CIFAR-10 model saved to cifar10_model.keras")
-
-    # Evaluate the model on the test dataset
-    print("Model statistics on test dataset:")
-    evaluate_model(model, test_dataset)
-
-    # Perform adversarial attack using Particle Swarm Optimization
-    print(f"\nStarting adversarial attack with {attack_particles} particles and {attack_iterations} iterations...")
-    adversarial_dataset = adversarial_attack_blackbox(model, test_dataset, image_index=0, output_dir=save_dir, num_iterations=attack_iterations, num_particles=attack_particles)
-
-    print(f"Adversarial attack completed. Results saved to {save_dir}")
+    adversarial_dataset = adversarial_attack_blackbox(model, test_dataset, 0, output_dir=args.save_dir, num_iterations=args.iterations, num_particles=args.particles)
 
 if __name__ == "__main__":
-    attack_mnist_model()
-    attack_cifar10_model()
-    adversarial_attack_blackbox()
+    main()

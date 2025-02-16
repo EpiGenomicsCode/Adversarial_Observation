@@ -9,7 +9,7 @@ class BirdParticle:
     fitness evaluation, and the updates to its velocity and position based on the PSO algorithm.
     """
 
-    def __init__(self, model: tf.keras.Model, input_data: tf.Tensor, target_class: int,
+    def __init__(self, model: tf.keras.Model, input_data: tf.Tensor, target_class: int, num_iterations: int = 20,
                  velocity: tf.Tensor = None, inertia_weight: float = 0.5, 
                  cognitive_weight: float = 1.0, social_weight: float = 1.0, 
                  momentum: float = 0.9):
@@ -27,6 +27,7 @@ class BirdParticle:
             momentum (float): The momentum for the velocity update. Default is 0.9.
         """
         self.model = model
+        self.num_iterations = num_iterations
         self.original_data = tf.identity(input_data)  # Clone the input data
         self.target_class = target_class
         self.best_position = tf.identity(input_data)  # Clone the input data
@@ -90,3 +91,4 @@ class BirdParticle:
         if score > self.best_score:  # If score is better than the personal best, update the best position
             self.best_score = score
             self.best_position = tf.identity(self.position)  # Clone the current position
+
