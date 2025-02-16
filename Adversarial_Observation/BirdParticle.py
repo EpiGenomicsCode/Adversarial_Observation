@@ -12,7 +12,7 @@ class BirdParticle:
     def __init__(self, model: tf.keras.Model, input_data: tf.Tensor, target_class: int,
                  velocity: tf.Tensor = None, inertia_weight: float = 0.5, 
                  cognitive_weight: float = 1.0, social_weight: float = 1.0, 
-                 velocity_clamp: float = 0.1, momentum: float = 0.9):
+                 momentum: float = 0.9):
         """
         Initialize a particle in the PSO algorithm.
         
@@ -24,7 +24,6 @@ class BirdParticle:
             inertia_weight (float): The inertia weight for the velocity update. Default is 0.5.
             cognitive_weight (float): The cognitive weight for the velocity update. Default is 1.0.
             social_weight (float): The social weight for the velocity update. Default is 1.0.
-            velocity_clamp (float): The velocity clamp for limiting the maximum velocity. Default is 0.1.
             momentum (float): The momentum for the velocity update. Default is 0.9.
         """
         self.model = model
@@ -40,7 +39,6 @@ class BirdParticle:
         self.inertia_weight = inertia_weight
         self.cognitive_weight = cognitive_weight
         self.social_weight = social_weight
-        self.velocity_clamp = velocity_clamp
         self.momentum = momentum
 
     def fitness(self) -> float:
@@ -71,15 +69,14 @@ class BirdParticle:
 
         # Apply momentum to velocity update:
         self.velocity = self.momentum * self.velocity + inertia + cognitive + social  # Apply momentum
-        self.velocity = tf.clip_by_value(self.velocity, -self.velocity_clamp, self.velocity_clamp)  # Apply velocity clamp
 
     def update_position(self) -> None:
         """
         Update the position of the particle based on the updated velocity.
         
-        Ensures that the position stays within the valid input range [0, 1] (normalized pixel values).
+        The position is updated directly without any bounds checking.
         """
-        self.position = tf.clip_by_value(self.position + self.velocity, 0, 1)  # Ensure position stays within bounds
+        self.position = self.position + self.velocity  # Update position directly without clipping
         self.history.append(tf.identity(self.position))  # Store the position history
         
     def evaluate(self) -> None:
