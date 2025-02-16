@@ -18,7 +18,7 @@ class ParticleSwarm:
     def __init__(self, model: tf.keras.Model, input_set: np.ndarray, target_class: int,
                  num_iterations: int = 20, save_dir: str = 'results',
                  inertia_weight: float = 0.5, cognitive_weight: float = .5, social_weight: float = .5,
-                 momentum: float = 0.9, clip_value_position: float = 1.0):
+                 momentum: float = 0.9, clip_value_position: float = 1.0, device: str = 'cpu'):
         """
         Initialize the Particle Swarm Optimization (PSO) for adversarial attacks.
         
@@ -33,12 +33,14 @@ class ParticleSwarm:
             social_weight (float): The social weight for the velocity update.
             momentum (float): The momentum for the velocity update.
             clip_value_position (float): The maximum value for clipping the particle positions (default 1.0).
+            device (str): The device for computation ('cpu' or 'gpu'). Default is 'cpu'.
         """
         self.model = model
         self.input_set = tf.convert_to_tensor(input_set, dtype=tf.float32)  # Convert NumPy array to TensorFlow tensor
         self.target_class = target_class  # The target class index
         self.num_iterations = num_iterations
         self.save_dir = save_dir  # Directory to save perturbed images
+        self.device = device  # Device ('cpu' or 'gpu')
         
         self.particles: List[BirdParticle] = [
             BirdParticle(model, self.input_set[i:i + 1], target_class,
@@ -153,25 +155,26 @@ class ParticleSwarm:
         """
         Run the Particle Swarm Optimization process to optimize the perturbations.
         """
-        for iteration in range(self.num_iterations):
-            
-            # Update particles and velocities, evaluate them, and track global best
-            for particle in self.particles:
-                particle.evaluate()
-                particle.update_velocity(self.global_best_position)  # No need to pass inertia_weight explicitly
-                particle.update_position()  # Apply the position update
-            
-            # Clip particle positions to ensure they stay within the range [0, clip_value_position]
-            self.clip_position()
-            
-            # Update the global best based on the personal best scores of particles
-            best_particle = max(self.particles, key=lambda p: p.best_score)
-            if best_particle.best_score > self.global_best_score:
-                self.global_best_score = best_particle.best_score
-                self.global_best_position = tf.identity(best_particle.best_position)
-            
-            self.save_images(iteration)
-            self.log_progress(iteration)
+        with tf.device(f"/{self.device}:0"):  # Use the GPU/CPU based on the flag
+            for iteration in range(self.num_iterations):
+                
+                # Update particles and velocities, evaluate them, and track global best
+                for particle in self.particles:
+                    particle.evaluate()
+                    particle.update_velocity(self.global_best_position)  # No need to pass inertia_weight explicitly
+                    particle.update_position()  # Apply the position update
+                
+                # Clip particle positions to ensure they stay within the range [0, clip_value_position]
+                self.clip_position()
+                
+                # Update the global best based on the personal best scores of particles
+                best_particle = max(self.particles, key=lambda p: p.best_score)
+                if best_particle.best_score > self.global_best_score:
+                    self.global_best_score = best_particle.best_score
+                    self.global_best_position = tf.identity(best_particle.best_position)
+                
+                self.save_images(iteration)
+                self.log_progress(iteration)
 
     def clip_position(self):
         """
