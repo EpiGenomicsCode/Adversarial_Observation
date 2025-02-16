@@ -16,9 +16,9 @@ class ParticleSwarm:
     """
 
     def __init__(self, model: tf.keras.Model, input_set: np.ndarray, target_class: int,
-                 num_iterations: int = 20, epsilon: float = 0.8, save_dir: str = 'results',
+                 num_iterations: int = 20, save_dir: str = 'results',
                  inertia_weight: float = 0.5, cognitive_weight: float = .5, social_weight: float = .5,
-                 momentum: float = 0.9, velocity_clamp: float = 0.1):
+                 momentum: float = 0.9, clip_value_position: float = 1.0):
         """
         Initialize the Particle Swarm Optimization (PSO) for adversarial attacks.
         
@@ -27,34 +27,35 @@ class ParticleSwarm:
             input_set (np.ndarray): The batch of input images to attack as a NumPy array.
             target_class (int): The target class for misclassification.
             num_iterations (int): The number of optimization iterations.
-            epsilon (float): The perturbation bound.
             save_dir (str): The directory to save output images and logs.
             inertia_weight (float): The inertia weight for the velocity update.
             cognitive_weight (float): The cognitive weight for the velocity update.
             social_weight (float): The social weight for the velocity update.
             momentum (float): The momentum for the velocity update.
-            velocity_clamp (float): The velocity clamp to limit the velocity.
+            clip_value_position (float): The maximum value for clipping the particle positions (default 1.0).
         """
         self.model = model
         self.input_set = tf.convert_to_tensor(input_set, dtype=tf.float32)  # Convert NumPy array to TensorFlow tensor
         self.target_class = target_class  # The target class index
         self.num_iterations = num_iterations
-        self.epsilon = epsilon  # Perturbation bound
         self.save_dir = save_dir  # Directory to save perturbed images
         
         self.particles: List[BirdParticle] = [
-            BirdParticle(model, self.input_set[i:i + 1], target_class, epsilon,
+            BirdParticle(model, self.input_set[i:i + 1], target_class,
                          inertia_weight=inertia_weight, cognitive_weight=cognitive_weight,
-                         social_weight=social_weight, momentum=momentum, velocity_clamp=velocity_clamp) 
+                         social_weight=social_weight, momentum=momentum) 
             for i in range(len(input_set))
         ]
         
-        self.global_best_position = tf.zeros_like(self.input_set[0]) # Global best position
+        self.global_best_position = tf.zeros_like(self.input_set[0])  # Global best position
         self.global_best_score = -float('inf')  # Initialize with a very low score
         
         self.fitness_history: List[float] = []  # History of fitness scores to track progress
         self.setup_logging()  # Set up logging
         self.log_progress(-1)  # Log initial state (before optimization)
+        
+        # Clip value for particle positions
+        self.clip_value_position = clip_value_position  # Max value for clipping positions
 
     def setup_logging(self):
         """
@@ -86,7 +87,6 @@ class ParticleSwarm:
         self.logger.info(f"Model: {self.model.__class__.__name__}")
         self.logger.info(f"Target Class: {self.target_class} (This is the class we want to misclassify the image into)")
         self.logger.info(f"Number of Iterations: {self.num_iterations} (Optimization steps)")
-        self.logger.info(f"Epsilon (perturbation bound): {self.epsilon} (Maximum perturbation allowed)")
         self.logger.info(f"Save Directory: {self.save_dir}")
         self.logger.info(f"{'*' * 60}")
 
@@ -159,7 +159,10 @@ class ParticleSwarm:
             for particle in self.particles:
                 particle.evaluate()
                 particle.update_velocity(self.global_best_position)  # No need to pass inertia_weight explicitly
-                particle.update_position()
+                particle.update_position()  # Apply the position update
+            
+            # Clip particle positions to ensure they stay within the range [0, clip_value_position]
+            self.clip_position()
             
             # Update the global best based on the personal best scores of particles
             best_particle = max(self.particles, key=lambda p: p.best_score)
@@ -169,3 +172,10 @@ class ParticleSwarm:
             
             self.save_images(iteration)
             self.log_progress(iteration)
+
+    def clip_position(self):
+        """
+        Clips the position of each particle to the specified `clip_value_position` range.
+        """
+        for particle in self.particles:
+            particle.position = tf.clip_by_value(particle.position, 0.0, self.clip_value_position)  # Ensure position is within range [0, clip_value_position]
