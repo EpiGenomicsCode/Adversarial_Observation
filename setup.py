@@ -18,8 +18,7 @@ setup(
     author_email="Jamil-gafur@uiowa.edu",
     license='MIT',
     packages=[  
-                "Adversarial_Observation", 
-                "Swarm_Observer"
+                "Adversarial_Observation"
             ],
     python_requires='>=3.6',
     install_requires=[
