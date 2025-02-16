@@ -45,7 +45,7 @@ class ParticleSwarm:
         self.particles: List[BirdParticle] = [
             BirdParticle(model, self.input_set[i:i + 1], target_class,
                          inertia_weight=inertia_weight, cognitive_weight=cognitive_weight,
-                         social_weight=social_weight, momentum=momentum) 
+                         social_weight=social_weight, momentum=momentum, clip_value_position=clip_value_position) 
             for i in range(len(input_set))
         ]
         
@@ -56,8 +56,6 @@ class ParticleSwarm:
         self.setup_logging()  # Set up logging
         self.log_progress(-1)  # Log initial state (before optimization)
         
-        # Clip value for particle positions
-        self.clip_value_position = clip_value_position  # Max value for clipping positions
 
     def setup_logging(self):
         """
@@ -164,8 +162,6 @@ class ParticleSwarm:
                     particle.update_velocity(self.global_best_position)  # No need to pass inertia_weight explicitly
                     particle.update_position()  # Apply the position update
                 
-                # Clip particle positions to ensure they stay within the range [0, clip_value_position]
-                self.clip_position()
                 
                 # Update the global best based on the personal best scores of particles
                 best_particle = max(self.particles, key=lambda p: p.best_score)
@@ -176,9 +172,3 @@ class ParticleSwarm:
                 self.save_images(iteration)
                 self.log_progress(iteration)
 
-    def clip_position(self):
-        """
-        Clips the position of each particle to the specified `clip_value_position` range.
-        """
-        for particle in self.particles:
-            particle.position = tf.clip_by_value(particle.position, 0.0, self.clip_value_position)  # Ensure position is within range [0, clip_value_position]

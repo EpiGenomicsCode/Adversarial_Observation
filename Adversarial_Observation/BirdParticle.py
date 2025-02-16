@@ -12,7 +12,7 @@ class BirdParticle:
     def __init__(self, model: tf.keras.Model, input_data: tf.Tensor, target_class: int, num_iterations: int = 20,
                  velocity: tf.Tensor = None, inertia_weight: float = 0.5, 
                  cognitive_weight: float = 1.0, social_weight: float = 1.0, 
-                 momentum: float = 0.9):
+                 momentum: float = 0.9, clip_value_position: float = 1.0):
         """
         Initialize a particle in the PSO algorithm.
         
@@ -35,7 +35,7 @@ class BirdParticle:
         self.position = tf.identity(input_data)  # Clone the input data
         self.velocity = velocity if velocity is not None else tf.zeros_like(input_data)
         self.history = [self.position]
-        
+        self.clip_value_position = clip_value_position
         # Class attributes
         self.inertia_weight = inertia_weight
         self.cognitive_weight = cognitive_weight
@@ -70,6 +70,7 @@ class BirdParticle:
 
         # Apply momentum to velocity update:
         self.velocity = self.momentum * self.velocity + inertia + cognitive + social  # Apply momentum
+        self.velocity = tf.clip_by_value(self.velocity, -self.clip_value_position, self.clip_value_position)
 
     def update_position(self) -> None:
         """
@@ -78,6 +79,7 @@ class BirdParticle:
         The position is updated directly without any bounds checking.
         """
         self.position = self.position + self.velocity  # Update position directly without clipping
+        self.position = tf.clip_by_value(self.position + self.velocity, 0, 1) # Ensure position stays within bounds
         self.history.append(tf.identity(self.position))  # Store the position history
         
     def evaluate(self) -> None:
