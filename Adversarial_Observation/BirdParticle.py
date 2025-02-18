@@ -70,7 +70,6 @@ class BirdParticle:
 
         # Apply momentum to velocity update:
         self.velocity = self.momentum * self.velocity + inertia + cognitive + social  # Apply momentum
-        self.velocity = tf.clip_by_value(self.velocity, -self.clip_value_position, self.clip_value_position)
 
     def update_position(self) -> None:
         """
@@ -81,6 +80,7 @@ class BirdParticle:
         self.position = self.position + self.velocity  # Update position directly without clipping
         self.position = tf.clip_by_value(self.position + self.velocity, 0, 1) # Ensure position stays within bounds
         self.history.append(tf.identity(self.position))  # Store the position history
+        self.position = tf.clip_by_value(self.position, -self.clip_value_position, self.clip_value_position)
         
     def evaluate(self) -> None:
         """
