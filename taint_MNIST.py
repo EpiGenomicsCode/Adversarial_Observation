@@ -12,7 +12,9 @@ from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
 from tensorflow.keras.optimizers import Adam
 from Adversarial_Observation.utils import seed_everything
 from Adversarial_Observation import AdversarialTester, ParticleSwarm
-
+import time
+from tensorflow.keras.optimizers import Adam
+from tqdm import tqdm
 from sklearn.metrics import roc_auc_score, average_precision_score
 import matplotlib.pyplot as plt
 
@@ -125,14 +127,15 @@ def train(model: tf.keras.Model, train_dataset: tf.data.Dataset, epochs: int = 1
     for epoch in range(epochs):
         start_time = time.time()  # Track time for each epoch
         print(f"\nEpoch {epoch + 1}/{epochs}:")
-
+        
         running_loss = 0.0
         running_accuracy = 0.0
         num_batches = 0
 
         # Use tqdm for a progress bar
         for images, labels in tqdm(train_dataset, desc="Training", unit="batch"):
-            loss, accuracy = model.fit(images, labels)
+            # Use train_on_batch instead of fit to update the model on each batch
+            loss, accuracy = model.train_on_batch(images, labels)
             running_loss += loss
             running_accuracy += accuracy
             num_batches += 1
