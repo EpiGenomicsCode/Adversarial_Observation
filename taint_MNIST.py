@@ -2,7 +2,14 @@ import argparse
 import time
 import numpy as np
 from tqdm import tqdm
+import tensorflow as tf
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, BatchNormalization, Dropout
+from tensorflow.keras.models import load_model  # Use `load_model` from Keras
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
+import numpy as np
+import matplotlib.pyplot as plt
 import tensorflow as tf
 from tensorflow.keras.models import load_model as load_keras_model
 from tensorflow.keras.datasets import mnist
@@ -47,22 +54,20 @@ def evaluate_model(model, test_dataset):
     print(f"Test auROC: {auroc:.4f}")
     print(f"Test auPRC: {auprc:.4f}")
 
-def load_MNIST_model(model_path=None):
+def load_MNIST_model(model_path=None, experiment=1):
     """
     Loads a pre-trained Keras model or creates a new one if no model is provided.
 
     Args:
         model_path (str, optional): Path to a pre-trained Keras model. Defaults to None.
+        experiment (int, optional): Defines which experiment model to create. Defaults to 1.
 
     Returns:
         tf.keras.Model: The Keras model.
     """
-    if model_path:
-        # Load a pre-trained Keras model
-        model = load_keras_model(model_path)
-        return model
-    else:
-        # Create a new Keras model
+    
+    if experiment == 1:
+        # Create a new Keras model for experiment 1
         model = Sequential([
             Conv2D(32, kernel_size=(3, 3), padding='same', activation='relu', input_shape=(28, 28, 1)),
             MaxPooling2D(pool_size=(2, 2)),
@@ -72,21 +77,51 @@ def load_MNIST_model(model_path=None):
             Dense(128, activation='relu'),
             Dense(10, activation='softmax')
         ])
-        return model
+    
+    elif experiment == 2 or experiment == 3:
+        # Create a new Keras model for experiment 2 or 3
+        model = Sequential()
+        
+        model.add(Conv2D(32, kernel_size=3, activation='relu', input_shape=(28, 28, 1)))
+        model.add(BatchNormalization())
+        model.add(Conv2D(32, kernel_size=3, activation='relu'))
+        model.add(BatchNormalization())
+        model.add(Conv2D(32, kernel_size=5, strides=2, padding='same', activation='relu'))
+        model.add(BatchNormalization())
+        model.add(Dropout(0.4))
+
+        model.add(Conv2D(64, kernel_size=3, activation='relu'))
+        model.add(BatchNormalization())
+        model.add(Conv2D(64, kernel_size=3, activation='relu'))
+        model.add(BatchNormalization())
+        model.add(Conv2D(64, kernel_size=5, strides=2, padding='same', activation='relu'))
+        model.add(BatchNormalization())
+        model.add(Dropout(0.4))
+
+        model.add(Conv2D(128, kernel_size=4, activation='relu'))
+        model.add(BatchNormalization())
+        model.add(Flatten())
+        model.add(Dropout(0.4))
+        model.add(Dense(10, activation='softmax'))
+
+    if model_path is not None and os.path.isfile(model_path):
+        # Load the model weights from the model path
+        model = load_model(model_path)
+        print(f"Model loaded from {model_path}")
+
+    return model
 
 def normalize_mnist(x):
     """Applies mean/std normalization to MNIST image"""
-#    mean = 0.1307
-#    std = 0.3081
-#    return ((x / 255.0) - mean) / std
     return x / 255.0
 
-def load_data(batch_size=32):
+def load_data(batch_size=32, experiment=1):
     """
     Loads MNIST train and test data and prepares it for evaluation.
 
     Args:
         batch_size (int): The batch size for data loading.
+        experiment (int): Experiment number to define augmentation or preprocessing.
 
     Returns:
         tf.data.Dataset, tf.data.Dataset: The training and testing datasets.
@@ -102,10 +137,35 @@ def load_data(batch_size=32):
     y_train = to_categorical(y_train, 10)
     y_test = to_categorical(y_test, 10)
 
-    # Create TensorFlow datasets
-    train_dataset = tf.data.Dataset.from_tensor_slices((x_train, y_train)).batch(batch_size)
-    test_dataset = tf.data.Dataset.from_tensor_slices((x_test, y_test)).batch(batch_size)
+    # Apply data augmentation if experiment == 3
+    if experiment == 3:
+        datagen = ImageDataGenerator(
+            rotation_range=10,  
+            zoom_range=0.10,  
+            width_shift_range=0.1, 
+            height_shift_range=0.1
+        )
+        # Fit the datagen on the training data
+        datagen.fit(x_train)
 
+        # Create an augmented training data generator
+        train_datagen = datagen.flow(x_train, y_train, batch_size=batch_size)
+        
+        # Wrap it into a tf.data.Dataset for compatibility with TensorFlow model training
+        train_dataset = tf.data.Dataset.from_generator(
+            lambda: train_datagen,
+            output_signature=(
+                tf.TensorSpec(shape=(batch_size, 28, 28, 1), dtype=tf.float32),
+                tf.TensorSpec(shape=(batch_size, 10), dtype=tf.float32)
+            )
+        )
+    else:
+        # No augmentation, simply batch the data
+        train_dataset = tf.data.Dataset.from_tensor_slices((x_train, y_train)).batch(batch_size)
+
+    # Create test dataset (no augmentation applied)
+    test_dataset = tf.data.Dataset.from_tensor_slices((x_test, y_test)).batch(batch_size)
+    
     return train_dataset, test_dataset
 
 def train(model: tf.keras.Model, train_dataset: tf.data.Dataset, epochs: int = 10) -> tf.keras.Model:
@@ -191,7 +251,7 @@ def adversarial_attack_blackbox(model: tf.keras.Model, dataset: tf.data.Dataset,
 
     # Initialize the Particle Swarm optimizer with the model and input set
     attacker = ParticleSwarm(
-        model, input_set, single_misclassification_target, num_iterations=num_iterations,
+        model=model, input_set=input_set,starting_class=single_image_target, target_class=single_misclassification_target, num_iterations=num_iterations,
         save_dir=output_dir, inertia_weight=1, cognitive_weight=0.8,
         social_weight=0.5, momentum=0.9, clip_value_position=0.2
     )
@@ -201,112 +261,64 @@ def adversarial_attack_blackbox(model: tf.keras.Model, dataset: tf.data.Dataset,
     analysis(attacker, single_image_input, single_misclassification_target)
 
 def analysis(attacker, single_misclassification_input: np.ndarray, single_misclassification_target):
-    """
-    Analyzes the results of the attack and generates plots.
-    - Saves the original misclassification input and target.
-    - For each particle and each position in the particle's history:
-        - Save the position (perturbed image).
-        - Save all confidence values.
-        - Save the maximum output (softmax confidence).
-        - Save the difference from the original input.
-    """
-    # Save the original image and its classification
-    plt.imsave(os.path.join(attacker.save_dir, "original.png"), single_misclassification_input.squeeze(), cmap="gray", vmin=0, vmax=1)
-    
-    analysis_results = {
-        "original_misclassification_input": single_misclassification_input.tolist(),
-        "original_misclassification_target": int(single_misclassification_target),
-        "particles": []
-    }
-    
-    # Process each particle in the attacker's particles list
-    for particle_idx, particle in enumerate(attacker.particles):
-        print(f"Processing particle: {particle_idx}")
-        particle_data = {
-            "particle_index": particle_idx,
-            "positions": [],
-            "confidence_values": [],
-            "max_output_values": [],
-            "max_output_classes": [],
-            "differences_from_original": [],
-            "confidence_over_time": []  # Store confidence over time
-        }
-        
-        for step_idx, position in enumerate(particle.history):
-            # Ensure 'position' is a numpy array.
-            if isinstance(position, tf.Tensor):
-                position_np = position.numpy()
-            else:
-                position_np = np.array(position)
-            
-            output = attacker.model(position_np)
+    adv_img = attacker.reduce_excess_perturbations(single_misclassification_input.squeeze(), single_misclassification_target)
 
-            # Remove the batch dimension and apply softmax
-            softmax_output = tf.nn.softmax(tf.squeeze(output), axis=0)
-            confidence_values = softmax_output.numpy().tolist()
-            max_output_value = float(max(confidence_values))
-            max_output_class = confidence_values.index(max_output_value)
+    for i in range(len(adv_img)):
+        fig, axs = plt.subplots(1, 5, figsize=(15, 5))
 
-            # Calculate pixel-wise difference from original image (before attack)
-            #diff_image = np.abs(position_np - single_misclassification_input)[0]
-            diff_image = (position_np - single_misclassification_input)[0]
-            #print(position_np)
-            #print(single_misclassification_input)
-            #print(diff_image)
-            # Save the difference image
-            iteration_folder = os.path.join(attacker.save_dir, f"iteration_{step_idx + 1}")
-            if not os.path.exists(iteration_folder):
-                os.makedirs(iteration_folder)
-            plt.imsave(os.path.join(iteration_folder, f"attack-vector_image_{particle_idx + 1}.png"), diff_image.squeeze(), cmap="seismic", vmin=-1, vmax=1)
+        original = single_misclassification_input.squeeze().reshape(28,28)
+        perturbed = np.copy(attacker.particles[i].position).reshape(28,28)
 
-            # Calculate difference from original image (before attack)
-            difference_from_original = float(np.linalg.norm(position - single_misclassification_input))
+        axs[0].imshow(original, cmap="gray")
+        axs[0].set_title("Original Image")
 
-            # Add data for this step to the particle_data
-            particle_data["positions"].append(position_np.tolist())
-            particle_data["confidence_values"].append(confidence_values)
-            particle_data["max_output_values"].append(max_output_value)
-            particle_data["max_output_classes"].append(max_output_class)
-            particle_data["differences_from_original"].append(difference_from_original)
-            particle_data["confidence_over_time"].append(max_output_value)  # Store max output (confidence)
-        
-        # Append the particle's data to the main analysis results
-        analysis_results["particles"].append(particle_data)
-    
-    # Save the analysis results to a JSON file
-    output_dir = attacker.save_dir  # Use the save_dir from the attacker
-    os.makedirs(output_dir, exist_ok=True)
-    file_path = os.path.join(output_dir, "attack_analysis.json")
-    
-    with open(file_path, "w") as f:
-        json.dump(analysis_results, f, indent=4)
-    
-    print(f"Analysis results saved to {file_path}")
+        axs[1].imshow(original - perturbed, cmap="gray")
+        axs[1].set_title("Original - Perturbation")
+
+        axs[2].imshow(perturbed, cmap="gray")
+        axs[2].set_title("Perturbation")
+
+        axs[3].imshow(perturbed - adv_img[i], cmap="gray")
+        axs[3].set_title("Perturbation - Adversarial")
+
+        axs[4].imshow(adv_img[i], cmap="gray")
+        axs[4].set_title("Adversarial Image")
+
+        for ax in axs:
+            ax.axis("off")
+
+        plt.tight_layout()
+        os.makedirs(f"{attacker.save_dir}/denoised", exist_ok=True)
+        plt.savefig(f"{attacker.save_dir}/denoised/{i}.png")
+        plt.close(fig)
 
 def main() -> None:
     """
     Main function to execute the adversarial attack workflow.
     """
+    # Define argument parser
     parser = argparse.ArgumentParser(description="Adversarial attack workflow with optional pre-trained Keras model.")
     parser.add_argument('--model_path', type=str, default=None, help="Path to a pre-trained Keras model.")
-    parser.add_argument('--iterations', type=int, default=50, help="Number of iterations for the black-box attack.")
-    parser.add_argument('--particles', type=int, default=100, help="Number of particles for the black-box attack.")
+    parser.add_argument('--iterations', type=int, default=5, help="Number of iterations for the black-box attack.")
+    parser.add_argument('--particles', type=int, default=10, help="Number of particles for the black-box attack.")
     parser.add_argument('--save_dir', type=str, default="analysis_results", help="Directory to save analysis results.")
+    parser.add_argument('--model_experiment', type=int, default=1, help="Which of the 3 experiments to run: (1 is simple model, 2 is advanced, 3 is advanced with augmentation)")
+
     args = parser.parse_args()
 
     #seed_everything(1252025)
 
     # Load pre-trained model (MNIST model) or create a new one
-    model = load_MNIST_model(args.model_path)
+    model = load_MNIST_model(args.model_path, args.model_experiment)
 
     # Load MNIST dataset (train and test datasets)
     train_dataset, test_dataset = load_data()
 
-    if args.model_path is None:
+    if args.model_path is None or not os.path.isfile(args.model_path):
         # Train the model if no pre-trained model is provided
         model = train(model, train_dataset, epochs=5)
-        model.save('mnist_model.keras')
-        print("Model saved to mnist_model.keras")
+        model.save(f"mnist_model_{args.model_experiment}.keras")
+        print(f"Model saved to mnist_model_{args.model_experiment}.keras")
 
     # Evaluate the model
     print("Model statistics on test dataset")
