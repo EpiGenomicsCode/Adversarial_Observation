@@ -14,3 +14,4 @@ torchvision
 sphinx_rtd_theme
 tensorflow
 imageio[pyav]
+pytest
