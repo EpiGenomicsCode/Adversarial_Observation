@@ -60,51 +60,6 @@ def fgsm_attack(input_data: torch.Tensor, model: torch.nn.Module, epsilon: float
     
     return adversarial_data
 
-# PGD Attack (Projected Gradient Descent)
-def pgd_attack(input_data: torch.Tensor, model: torch.nn.Module, epsilon: float, alpha: float, num_steps: int, device: torch.device) -> torch.Tensor:
-    """
-    Performs PGD attack on the input data.
-    
-    Args:
-        input_data (torch.Tensor): The original input batch.
-        model (torch.nn.Module): The model to attack.
-        epsilon (float): The maximum perturbation magnitude.
-        alpha (float): The step size for each iteration.
-        num_steps (int): The number of steps for the attack.
-        device (torch.device): The device to perform the attack on (cuda or cpu).
-        
-    Returns:
-        torch.Tensor: The adversarially perturbed batch.
-    """
-    # Initialize the perturbation to be the same as the original input data
-    perturbed_data = input_data.clone().detach()
-    perturbed_data.requires_grad = True
-
-    for _ in range(num_steps):
-        # Forward pass to get the model's output
-        output = model(perturbed_data)
-        
-        # Compute the loss (we assume classification, so we use cross-entropy loss)
-        loss = F.cross_entropy(output, torch.argmax(output, dim=1))
-
-        # Backpropagate the gradients
-        model.zero_grad()
-        loss.backward()
-
-        # Get the gradient of the input data with respect to the loss
-        gradient = perturbed_data.grad.data
-
-        # Update the perturbation (step in the direction of the gradient)
-        perturbed_data = perturbed_data + alpha * torch.sign(gradient)
-        
-        # Clip the perturbation to stay within the epsilon ball
-        perturbed_data = torch.max(torch.min(perturbed_data, input_data + epsilon), input_data - epsilon)
-
-        # Ensure the adversarial data is within the valid range (e.g., [0, 1] for image data)
-        perturbed_data = torch.clamp(perturbed_data, 0, 1)
-
-    return perturbed_data
-
 # Compute the success rate of the attack
 def compute_success_rate(original_preds: torch.Tensor, adversarial_preds: torch.Tensor) -> float:
     """

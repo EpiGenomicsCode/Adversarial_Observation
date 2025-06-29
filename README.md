@@ -104,7 +104,7 @@ The attack will run for `num_iterations` iterations, and the results will be sav
 **Example:**
 
 ```bash
-python main.py --iterations 50 --particles 100 --save_dir "analysis_results"
+python taint_MNIST.py --iterations 50 --particles 100 --save_dir "analysis_results"
 ```
 
 This command performs the attack with **50 iterations** and **100 particles**.
@@ -150,6 +150,22 @@ After the attack is complete, the following information is saved:
   * Differences from the original image.
 
 You can open the `attack_analysis.json` file for a detailed analysis of the attack.
+
+---
+## Citing This Work
+
+If you use or refer to this code in your research, please cite the following paper:
+
+
+```
+@incollection{gafur2024adversarial,
+  title={Adversarial Robustness and Explainability of Machine Learning Models},
+  author={Gafur, Jamil and Goddard, Steve and Lai, William},
+  booktitle={Practice and Experience in Advanced Research Computing 2024: Human Powered Computing},
+  pages={1--7},
+  year={2024}
+}
+```
 
 ---
 

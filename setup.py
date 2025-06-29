@@ -19,7 +19,6 @@ setup(
     license='MIT',
     packages=[  
                 "Adversarial_Observation", 
-                "Swarm_Observer"
             ],
     python_requires='>=3.6',
     install_requires=[
