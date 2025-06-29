@@ -3,7 +3,7 @@ import logging
 import os
 from datetime import datetime
 from torch.nn import Softmax
-from .utils import fgsm_attack, pgd_attack, compute_success_rate, log_metrics, visualize_adversarial_examples
+from .utils import fgsm_attack, compute_success_rate, log_metrics, visualize_adversarial_examples
 from .utils import seed_everything
 
 class AdversarialTester:
@@ -44,8 +44,6 @@ class AdversarialTester:
         logging.info(f"Starting attack with method: {self.attack_method}")
         if self.attack_method == 'fgsm':
             return fgsm_attack(input_batch_data, self.model, self.epsilon, self.device)
-        elif self.attack_method == 'pgd':
-            return pgd_attack(input_batch_data, self.model, self.epsilon, self.alpha, self.num_steps, self.device)
         else:
             raise ValueError(f"Unsupported attack method: {self.attack_method}")
 
