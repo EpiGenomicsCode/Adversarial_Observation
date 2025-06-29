@@ -13,7 +13,6 @@
 import os
 import sys
 sys.path.insert(0, os.path.abspath('../Adversarial_Observation'))
-sys.path.insert(1, os.path.abspath('../Swarm_Observer'))
 sys.path.insert(2, os.path.abspath('../'))
 from Adversarial_Observation.Attacks import *
 from Adversarial_Observation.utils import *
