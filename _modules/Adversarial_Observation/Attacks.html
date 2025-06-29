@@ -1,20 +1,20 @@
 
 
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" data-content_root="../../">
+<html class="writer-html5" lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Adversarial_Observation.Attacks &mdash; Adversarial_Observation 0.0.1 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
 
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=d45e8c67"></script>
-      <script src="../../_static/doctools.js?v=9bcbadda"></script>
-      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=f6245a2f"></script>
+      <script src="../../_static/doctools.js?v=888ff710"></script>
+      <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
@@ -42,7 +42,6 @@
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../Adversarial_Observation.html">Adversarial_Observation package</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../Swarm_Observer.html">Swarm_Observer package</a></li>
 </ul>
 
         </div>
@@ -70,75 +69,80 @@
            <div itemprop="articleBody">
              
   <h1>Source code for Adversarial_Observation.Attacks</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">import</span> <span class="nn">torch.nn.functional</span> <span class="k">as</span> <span class="nn">F</span>
-<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
-<span class="kn">import</span> <span class="nn">logging</span>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="kn">import</span> <span class="n">Softmax</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">fgsm_attack</span><span class="p">,</span> <span class="n">compute_success_rate</span><span class="p">,</span> <span class="n">log_metrics</span><span class="p">,</span> <span class="n">visualize_adversarial_examples</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">seed_everything</span>
 
-<span class="c1"># Set up logging</span>
-<span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
-
-
-<div class="viewcode-block" id="fgsm_attack">
-<a class="viewcode-back" href="../../Adversarial_Observation.html#Adversarial_Observation.Attacks.fgsm_attack">[docs]</a>
-<span class="k">def</span> <span class="nf">fgsm_attack</span><span class="p">(</span><span class="n">input_batch_data</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">input_shape</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span> <span class="n">epsilon</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-    <span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
-    <span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;cuda&quot;</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
-    
-    <span class="n">input_batch_data</span> <span class="o">=</span> <span class="n">input_batch_data</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">requires_grad_</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">preds</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">input_batch_data</span><span class="p">)</span>
-    <span class="n">targets</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">preds</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-    <span class="n">loss</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">cross_entropy</span><span class="p">(</span><span class="n">preds</span><span class="p">,</span> <span class="n">targets</span><span class="p">)</span>
-
-    <span class="n">model</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
-    <span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
-
-    <span class="n">adversarial_batch_data</span> <span class="o">=</span> <span class="n">input_batch_data</span> <span class="o">+</span> <span class="p">(</span><span class="n">epsilon</span> <span class="o">*</span> <span class="n">input_batch_data</span><span class="o">.</span><span class="n">grad</span><span class="o">.</span><span class="n">sign</span><span class="p">())</span>
-
-    <span class="c1"># Debugging</span>
-    <span class="k">if</span> <span class="n">epsilon</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="k">assert</span> <span class="n">torch</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">adversarial_batch_data</span><span class="p">,</span> <span class="n">input_batch_data</span><span class="p">),</span> <span class="s2">&quot;Adversarial images should be the same as original.&quot;</span>
-
-    <span class="k">return</span> <span class="n">adversarial_batch_data</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span></div>
-
-
-<div class="viewcode-block" id="compute_gradients">
-<a class="viewcode-back" href="../../Adversarial_Observation.html#Adversarial_Observation.Attacks.compute_gradients">[docs]</a>
-<span class="k">def</span> <span class="nf">compute_gradients</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">img</span><span class="p">,</span> <span class="n">target_class</span><span class="p">):</span>
-    <span class="n">preds</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
-    <span class="n">target_score</span> <span class="o">=</span> <span class="n">preds</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">target_class</span><span class="p">]</span>
-    <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">grad</span><span class="p">(</span><span class="n">target_score</span><span class="p">,</span> <span class="n">img</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span></div>
-
-
-<div class="viewcode-block" id="generate_adversarial_examples">
-<a class="viewcode-back" href="../../Adversarial_Observation.html#Adversarial_Observation.Attacks.generate_adversarial_examples">[docs]</a>
-<span class="k">def</span> <span class="nf">generate_adversarial_examples</span><span class="p">(</span><span class="n">input_batch_data</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;fgsm&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-    <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;fgsm&#39;</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">fgsm_attack</span><span class="p">(</span><span class="n">input_batch_data</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
-
-    <span class="c1"># Implement other attack methods as needed</span>
-
-<div class="viewcode-block" id="visualize_adversarial_examples">
-<a class="viewcode-back" href="../../Adversarial_Observation.html#Adversarial_Observation.Attacks.visualize_adversarial_examples">[docs]</a>
-<span class="k">def</span> <span class="nf">visualize_adversarial_examples</span><span class="p">(</span><span class="n">original</span><span class="p">,</span> <span class="n">adversarial</span><span class="p">):</span>
-    <span class="c1"># Code to visualize original vs adversarial images</span>
-    <span class="k">pass</span></div>
-
-
-<div class="viewcode-block" id="log_metrics">
-<a class="viewcode-back" href="../../Adversarial_Observation.html#Adversarial_Observation.Attacks.log_metrics">[docs]</a>
-<span class="k">def</span> <span class="nf">log_metrics</span><span class="p">(</span><span class="n">success_rate</span><span class="p">,</span> <span class="n">average_perturbation</span><span class="p">):</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Success Rate: </span><span class="si">{</span><span class="n">success_rate</span><span class="si">}</span><span class="s1">, Average Perturbation: </span><span class="si">{</span><span class="n">average_perturbation</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="Config">
-<a class="viewcode-back" href="../../Adversarial_Observation.html#Adversarial_Observation.Attacks.Config">[docs]</a>
-<span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">attack_method</span><span class="o">=</span><span class="s1">&#39;fgsm&#39;</span><span class="p">):</span>
+<div class="viewcode-block" id="AdversarialTester"><a class="viewcode-back" href="../../Adversarial_Observation.html#Adversarial_Observation.Attacks.AdversarialTester">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">AdversarialTester</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">epsilon</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.1</span><span class="p">,</span> <span class="n">attack_method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;fgsm&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.01</span><span class="p">,</span> 
+                 <span class="n">num_steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">40</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">save_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;./results&#39;</span><span class="p">,</span> <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">42</span><span class="p">):</span>
+        <span class="n">seed_everything</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span> <span class="o">=</span> <span class="n">epsilon</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">attack_method</span> <span class="o">=</span> <span class="n">attack_method</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attack_method</span> <span class="o">=</span> <span class="n">attack_method</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="n">alpha</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_steps</span> <span class="o">=</span> <span class="n">num_steps</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="n">device</span> <span class="ow">or</span> <span class="p">(</span><span class="s2">&quot;cuda&quot;</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">save_dir</span> <span class="o">=</span> <span class="n">save_dir</span>
 
+        <span class="c1"># Create save directory if it doesn&#39;t exist</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">save_dir</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_setup_logging</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_setup_logging</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">log_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">save_dir</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;attack_log_</span><span class="si">{</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y%m</span><span class="si">%d</span><span class="s1">_%H%M%S&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">.log&quot;</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="n">log_file</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Started adversarial testing at </span><span class="si">{</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1"> %H:%M:%S&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Using model: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Attack Method: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">attack_method</span><span class="si">}</span><span class="s2">, Epsilon: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span><span class="si">}</span><span class="s2">, Alpha: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">alpha</span><span class="si">}</span><span class="s2">, Steps: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">num_steps</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="AdversarialTester.test_attack"><a class="viewcode-back" href="../../Adversarial_Observation.html#Adversarial_Observation.Attacks.AdversarialTester.test_attack">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">test_attack</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_batch_data</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+        <span class="n">input_batch_data</span> <span class="o">=</span> <span class="n">input_batch_data</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+        <span class="n">adversarial_images</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_generate_adversarial_images</span><span class="p">(</span><span class="n">input_batch_data</span><span class="p">)</span>
+
+        <span class="c1"># Save and log images</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_save_images</span><span class="p">(</span><span class="n">input_batch_data</span><span class="p">,</span> <span class="n">adversarial_images</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_compute_and_log_metrics</span><span class="p">(</span><span class="n">input_batch_data</span><span class="p">,</span> <span class="n">adversarial_images</span><span class="p">)</span></div>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_generate_adversarial_images</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_batch_data</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Starting attack with method: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">attack_method</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">attack_method</span> <span class="o">==</span> <span class="s1">&#39;fgsm&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">fgsm_attack</span><span class="p">(</span><span class="n">input_batch_data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported attack method: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">attack_method</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_save_images</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">original_images</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">adversarial_images</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">original_images</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)):</span>
+            <span class="n">original_image_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">save_dir</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;original_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">.png&quot;</span><span class="p">)</span>
+            <span class="n">adversarial_image_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">save_dir</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;adversarial_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">.png&quot;</span><span class="p">)</span>
+            <span class="n">visualize_adversarial_examples</span><span class="p">(</span><span class="n">original_images</span><span class="p">,</span> <span class="n">adversarial_images</span><span class="p">,</span> <span class="n">original_image_path</span><span class="p">,</span> <span class="n">adversarial_image_path</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_compute_and_log_metrics</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">original_images</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">adversarial_images</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+        <span class="n">original_predictions</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">original_images</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">adversarial_predictions</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">adversarial_images</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">success_rate</span> <span class="o">=</span> <span class="n">compute_success_rate</span><span class="p">(</span><span class="n">original_predictions</span><span class="p">,</span> <span class="n">adversarial_predictions</span><span class="p">)</span>
+        <span class="n">average_perturbation</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">adversarial_images</span> <span class="o">-</span> <span class="n">original_images</span><span class="p">))</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+
+        <span class="n">log_metrics</span><span class="p">(</span><span class="n">success_rate</span><span class="p">,</span> <span class="n">average_perturbation</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_save_metrics</span><span class="p">(</span><span class="n">success_rate</span><span class="p">,</span> <span class="n">average_perturbation</span><span class="p">)</span>
+
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Success Rate: </span><span class="si">{</span><span class="n">success_rate</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">, Average Perturbation: </span><span class="si">{</span><span class="n">average_perturbation</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_save_metrics</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">success_rate</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">avg_perturbation</span><span class="p">:</span> <span class="nb">float</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Save the metrics (success rate and average perturbation) to a file.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">metrics_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">save_dir</span><span class="p">,</span> <span class="s2">&quot;attack_metrics.txt&quot;</span><span class="p">)</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">metrics_file</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Success Rate: </span><span class="si">{</span><span class="n">success_rate</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">, Average Perturbation: </span><span class="si">{</span><span class="n">avg_perturbation</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span></div>
 </pre></div>
 
            </div>

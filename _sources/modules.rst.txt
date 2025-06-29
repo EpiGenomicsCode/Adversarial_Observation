@@ -5,5 +5,4 @@ Adversarial_Observation
    :maxdepth: 4
 
    Adversarial_Observation
-   Swarm_Observer
    setup
