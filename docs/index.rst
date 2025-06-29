@@ -11,7 +11,6 @@ Welcome to Adversarial_Observation's documentation!
    :caption: Contents:
 
    Adversarial_Observation
-   Swarm_Observer
    examples
 
 
