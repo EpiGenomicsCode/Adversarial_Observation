@@ -2,6 +2,7 @@ import argparse
 import time
 import numpy as np
 from tqdm import tqdm
+<<<<<<< HEAD
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, BatchNormalization, Dropout
@@ -10,50 +11,35 @@ from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
 import numpy as np
 import matplotlib.pyplot as plt
+=======
+>>>>>>> 2e3720e3acf18d382025057cfe30b34846348776
 import tensorflow as tf
 from tensorflow.keras.models import load_model as load_keras_model
-from tensorflow.keras.datasets import mnist
+from tensorflow.keras.datasets import mnist, cifar10
 from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
 from tensorflow.keras.optimizers import Adam
 from Adversarial_Observation.utils import seed_everything
 from Adversarial_Observation import AdversarialTester, ParticleSwarm
-import time
-from tensorflow.keras.optimizers import Adam
-from tqdm import tqdm
-from sklearn.metrics import roc_auc_score, average_precision_score
+import os
+import json
 import matplotlib.pyplot as plt
+from sklearn.metrics import roc_auc_score, average_precision_score
 
-import sys, os, json
 
-def evaluate_model(model, test_dataset):
+# Helper Functions for Data Loading
+def normalize_images(x, dataset_type='mnist'):
     """
-    Evaluates the model on the test dataset and prints loss, accuracy, auROC, and auPRC.
+    Normalize images for a given dataset type (MNIST or CIFAR-10).
     """
-    y_true = []
-    
-    # Compute loss and accuracy
-    loss, accuracy = model.evaluate(test_dataset, verbose=0)
-    
-    # Collect ground truth labels
-    for images, labels in test_dataset:
-        y_true.extend(np.argmax(labels.numpy(), axis=1))
-    
-    # Predict all at once to suppress excessive output
-    y_pred = model.predict(test_dataset, verbose=0)
-    
-    y_pred = np.array(y_pred)
-    y_true = np.array(y_true)
-    
-    auroc = roc_auc_score(to_categorical(y_true, num_classes=10), y_pred, multi_class='ovr')
-    auprc = average_precision_score(to_categorical(y_true, num_classes=10), y_pred)
-    
-    print(f"Test Loss: {loss:.4f}")
-    print(f"Test Accuracy: {accuracy:.4f}")
-    print(f"Test auROC: {auroc:.4f}")
-    print(f"Test auPRC: {auprc:.4f}")
+    if dataset_type == 'mnist':
+        return x / 255.0
+    elif dataset_type == 'cifar10':
+        return x / 255.0
+    return x
 
+<<<<<<< HEAD
 def load_MNIST_model(model_path=None, experiment=1):
     """
     Loads a pre-trained Keras model or creates a new one if no model is provided.
@@ -132,6 +118,22 @@ def load_data(batch_size=32, experiment=1):
     # Reshape and normalize the data
     x_train = normalize_mnist(x_train.reshape(-1, 28, 28, 1).astype('float32'))
     x_test = normalize_mnist(x_test.reshape(-1, 28, 28, 1).astype('float32'))
+=======
+def load_data(dataset_type='mnist', batch_size=32):
+    """
+    Loads the specified dataset and prepares it for evaluation.
+    """
+    if dataset_type == 'mnist':
+        (x_train, y_train), (x_test, y_test) = mnist.load_data()
+        x_train = x_train.reshape(-1, 28, 28, 1)
+        x_test = x_test.reshape(-1, 28, 28, 1)
+    elif dataset_type == 'cifar10':
+        (x_train, y_train), (x_test, y_test) = cifar10.load_data()
+
+    # Normalize data
+    x_train = normalize_images(x_train, dataset_type)
+    x_test = normalize_images(x_test, dataset_type)
+>>>>>>> 2e3720e3acf18d382025057cfe30b34846348776
 
     # One-hot encode the labels
     y_train = to_categorical(y_train, 10)
@@ -168,60 +170,40 @@ def load_data(batch_size=32, experiment=1):
     
     return train_dataset, test_dataset
 
-def train(model: tf.keras.Model, train_dataset: tf.data.Dataset, epochs: int = 10) -> tf.keras.Model:
+
+# Helper Functions for Model Creation
+def create_model(dataset_type='mnist'):
     """
-    Trains the model for a specified number of epochs.
-
-    Args:
-        model (tf.keras.Model): The model to train.
-        train_dataset (tf.data.Dataset): The training dataset.
-        epochs (int, optional): Number of training epochs. Defaults to 10.
-
-    Returns:
-        tf.keras.Model: The trained model.
+    Create a CNN model for the specified dataset type.
     """
-    # Compile the model
-    model.compile(optimizer=Adam(learning_rate=0.001), loss='categorical_crossentropy', metrics=['accuracy'])
-
-    # Train the model
-    for epoch in range(epochs):
-        start_time = time.time()  # Track time for each epoch
-        print(f"\nEpoch {epoch + 1}/{epochs}:")
-        
-        running_loss = 0.0
-        running_accuracy = 0.0
-        num_batches = 0
-
-        # Use tqdm for a progress bar
-        for images, labels in tqdm(train_dataset, desc="Training", unit="batch"):
-            # Use train_on_batch instead of fit to update the model on each batch
-            loss, accuracy = model.train_on_batch(images, labels)
-            running_loss += loss
-            running_accuracy += accuracy
-            num_batches += 1
-
-        # Print average loss and accuracy for the epoch
-        epoch_loss = running_loss / num_batches
-        epoch_accuracy = running_accuracy / num_batches
-        elapsed_time = time.time() - start_time
-        print(f"Epoch {epoch + 1} completed in {elapsed_time:.2f}s, Average Loss: {epoch_loss:.4f}, Accuracy: {epoch_accuracy:.4f}")
-
+    if dataset_type == 'mnist':
+        model = Sequential([
+            Conv2D(32, kernel_size=(3, 3), padding='same', activation='relu', input_shape=(28, 28, 1)),
+            MaxPooling2D(pool_size=(2, 2)),
+            Conv2D(64, kernel_size=(3, 3), padding='same', activation='relu'),
+            MaxPooling2D(pool_size=(2, 2)),
+            Flatten(),
+            Dense(128, activation='relu'),
+            Dense(10, activation='softmax')
+        ])
+    elif dataset_type == 'cifar10':
+        model = Sequential([
+            Conv2D(32, kernel_size=(3, 3), padding='same', activation='relu', input_shape=(32, 32, 3)),
+            MaxPooling2D(pool_size=(2, 2)),
+            Conv2D(64, kernel_size=(3, 3), padding='same', activation='relu'),
+            MaxPooling2D(pool_size=(2, 2)),
+            Flatten(),
+            Dense(128, activation='relu'),
+            Dense(10, activation='softmax')
+        ])
     return model
 
-def adversarial_attack_blackbox(model: tf.keras.Model, dataset: tf.data.Dataset, image_index: int, output_dir: str = 'results', num_iterations: int = 30, num_particles: int = 100) -> tf.data.Dataset:
-    """
-    Performs a black-box adversarial attack on a specific image in the dataset using Particle Swarm optimization.
 
-    Args:
-        model (tf.keras.Model): The trained model to attack.
-        dataset (tf.data.Dataset): The dataset containing the images.
-        image_index (int): The index of the image in the dataset to attack.
-        num_iterations (int, optional): Number of iterations for the attack. Defaults to 30.
-        num_particles (int, optional): Number of particles for the attack. Defaults to 100.
-
-    Returns:
-        tf.data.Dataset: A dataset containing adversarially perturbed images.
+def load_model(model_path=None, dataset_type='mnist'):
     """
+    Loads a pre-trained model or creates a new one if no model is provided.
+    """
+<<<<<<< HEAD
     # Convert dataset to a list of images and labels for indexing
     dataset_list = list(dataset.as_numpy_iterator())
     all_images, all_labels = zip(*dataset_list)  # Unpack images and labels
@@ -259,6 +241,12 @@ def adversarial_attack_blackbox(model: tf.keras.Model, dataset: tf.data.Dataset,
     attacker.optimize()
 
     analysis(attacker, single_image_input, single_misclassification_target)
+=======
+    if model_path:
+        return load_keras_model(model_path)
+    else:
+        return create_model(dataset_type)
+>>>>>>> 2e3720e3acf18d382025057cfe30b34846348776
 
 def analysis(attacker, single_misclassification_input: np.ndarray, single_misclassification_target):
     adv_img = attacker.reduce_excess_perturbations(single_misclassification_input.squeeze(), single_misclassification_target)
@@ -292,12 +280,103 @@ def analysis(attacker, single_misclassification_input: np.ndarray, single_miscla
         plt.savefig(f"{attacker.save_dir}/denoised/{i}.png")
         plt.close(fig)
 
-def main() -> None:
+# Helper Function for Evaluation
+def evaluate_model(model, test_dataset):
+    """
+    Evaluates the model on the test dataset and prints loss, accuracy, auROC, and auPRC.
+    """
+    y_true = []
+    # Compute loss and accuracy
+    loss, accuracy = model.evaluate(test_dataset, verbose=0)
+
+    # Collect ground truth labels
+    for images, labels in test_dataset:
+        y_true.extend(np.argmax(labels.numpy(), axis=1))
+
+    # Predict all at once to suppress excessive output
+    y_pred = model.predict(test_dataset, verbose=0)
+
+    y_pred = np.array(y_pred)
+    y_true = np.array(y_true)
+
+    auroc = roc_auc_score(to_categorical(y_true, num_classes=10), y_pred, multi_class='ovr')
+    auprc = average_precision_score(to_categorical(y_true, num_classes=10), y_pred)
+
+    print(f"Test Loss: {loss:.4f}")
+    print(f"Test Accuracy: {accuracy:.4f}")
+    print(f"Test auROC: {auroc:.4f}")
+    print(f"Test auPRC: {auprc:.4f}")
+
+
+# Helper Functions for Training
+def train_model(model, train_dataset, epochs=10):
+    """
+    Trains the model for a specified number of epochs.
+    """
+    model.compile(optimizer=Adam(learning_rate=0.001), loss='categorical_crossentropy', metrics=['accuracy'])
+    
+    for epoch in range(epochs):
+        start_time = time.time()  # Track time for each epoch
+        print(f"\nEpoch {epoch + 1}/{epochs}:")
+        
+        running_loss = 0.0
+        running_accuracy = 0.0
+        num_batches = 0
+
+        # Use tqdm for a progress bar
+        for images, labels in tqdm(train_dataset, desc="Training", unit="batch"):
+            # Use train_on_batch instead of fit to update the model on each batch
+            loss, accuracy = model.train_on_batch(images, labels)
+            running_loss += loss
+            running_accuracy += accuracy
+            num_batches += 1
+
+        epoch_loss = running_loss / num_batches
+        epoch_accuracy = running_accuracy / num_batches
+        elapsed_time = time.time() - start_time
+        print(f"Epoch {epoch + 1} completed in {elapsed_time:.2f}s, Average Loss: {epoch_loss:.4f}, Accuracy: {epoch_accuracy:.4f}")
+
+    return model
+
+
+# Adversarial Attack Helper
+def adversarial_attack_blackbox(model, dataset, image_index, output_dir='results', num_iterations=30, num_particles=100):
+    """
+    Perform adversarial attack on a specific image using Particle Swarm optimization.
+    """
+    # Convert dataset to a list of images and labels for indexing
+    dataset_list = list(dataset.as_numpy_iterator())
+    all_images, all_labels = zip(*dataset_list)
+    all_images = np.concatenate(all_images, axis=0)
+    all_labels = np.concatenate(all_labels, axis=0)
+
+    # Ensure the index is within bounds
+    if image_index < 0 or image_index >= len(all_images):
+        raise ValueError(f"Image index {image_index} is out of bounds. Dataset size: {len(all_images)}")
+
+    # Select the specified image and its ground truth label
+    single_image_input = all_images[image_index]
+    single_image_target = np.argmax(all_labels[image_index])
+
+    single_misclassification_target = (single_image_target + 1) % 10  # Change target to a different class
+
+    input_set = [single_image_input + (np.random.uniform(0, 1, single_image_input.shape) * (np.random.rand(*single_image_input.shape) < 0.9)) for _ in range(num_particles) ]
+    input_set = np.stack(input_set)
+
+    attacker = ParticleSwarm(model, input_set, single_misclassification_target, num_iterations=num_iterations, save_dir=output_dir, inertia_weight=.01)
+    attacker.optimize()
+
+    analysis(attacker, single_image_input, single_misclassification_target)
+
+
+# Main Function to Tie Everything Together
+def main():
     """
     Main function to execute the adversarial attack workflow.
     """
     # Define argument parser
     parser = argparse.ArgumentParser(description="Adversarial attack workflow with optional pre-trained Keras model.")
+    parser.add_argument('--dataset', type=str, default='mnist', choices=['mnist', 'cifar10'], help="Dataset to use (mnist or cifar10).")
     parser.add_argument('--model_path', type=str, default=None, help="Path to a pre-trained Keras model.")
     parser.add_argument('--iterations', type=int, default=5, help="Number of iterations for the black-box attack.")
     parser.add_argument('--particles', type=int, default=10, help="Number of particles for the black-box attack.")
@@ -306,6 +385,7 @@ def main() -> None:
 
     args = parser.parse_args()
 
+<<<<<<< HEAD
     #seed_everything(1252025)
 
     # Load pre-trained model (MNIST model) or create a new one
@@ -319,13 +399,21 @@ def main() -> None:
         model = train(model, train_dataset, epochs=5)
         model.save(f"mnist_model_{args.model_experiment}.keras")
         print(f"Model saved to mnist_model_{args.model_experiment}.keras")
+=======
+    model = load_model(args.model_path, args.dataset)
+    train_dataset, test_dataset = load_data(args.dataset)
 
-    # Evaluate the model
+    if args.model_path is None:
+        model = train_model(model, train_dataset, epochs=5)
+        model.save(f'{args.dataset}_model.keras')
+        print(f"Model saved to {args.dataset}_model.keras")
+>>>>>>> 2e3720e3acf18d382025057cfe30b34846348776
+
     print("Model statistics on test dataset")
     evaluate_model(model, test_dataset)
 
-    # Perform adversarial attack
-    adversarial_dataset = adversarial_attack_blackbox(model, test_dataset, 0, output_dir=args.save_dir, num_iterations=args.iterations, num_particles=args.particles)
+    adversarial_attack_blackbox(model, test_dataset, image_index=0, output_dir=args.save_dir, num_iterations=args.iterations, num_particles=args.particles)
+
 
 if __name__ == "__main__":
     main()
