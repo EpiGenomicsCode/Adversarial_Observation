@@ -77,7 +77,7 @@ pip install -r requirements.txt
 To train a new **MNIST classifier** model from scratch, run the following command:
 
 ```bash
-python main.py --iterations 50 --particles 100 --save_dir "analysis_results"
+python taint_MNIST.py --iterations 50 --particles 100 --save_dir "analysis_results"
 ```
 
 This command will:
@@ -90,7 +90,7 @@ This command will:
 If you already have a pre-trained model, you can load it by providing the `--model_path` argument:
 
 ```bash
-python main.py --model_path "path_to_model/mnist_model.keras" --iterations 50 --particles 100 --save_dir "analysis_results"
+python taint_MNIST.py --model_path "path_to_model/mnist_model.keras" --iterations 50 --particles 100 --save_dir "analysis_results"
 ```
 
 This will load the provided pre-trained model, evaluate it on the test dataset, and then perform the adversarial attack.
