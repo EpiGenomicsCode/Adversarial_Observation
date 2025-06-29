@@ -17,7 +17,6 @@ sys.path.insert(2, os.path.abspath('../'))
 from Adversarial_Observation.Attacks import *
 from Adversarial_Observation.utils import *
 from Adversarial_Observation.visualize import *
-import Swarm_Observer
 
 # -- Project information -----------------------------------------------------
 
