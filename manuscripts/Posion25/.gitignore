@@ -1,1 +1,6 @@
 AudioMNIST*
+results/
+*.pyc
+__pycache__/
+*.pkl
+*.keras
