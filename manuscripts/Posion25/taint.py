@@ -2,35 +2,36 @@ import os
 import numpy as np
 import tensorflow as tf
 import pickle
-from manuscripts.Posion25.analysis import best_analysis, denoise_analysis, reduce_excess_perturbations, full_analysis
+from manuscripts.Posion25.analysis import *
 from Adversarial_Observation.Swarm import ParticleSwarm
 from analysis import *
 
 def adversarial_attack_blackbox(model, dataset, image_index, output_dir='results', num_iterations=30, num_particles=100):
     
     pickle_path = os.path.join(output_dir, 'attacker.pkl')
+
+    dataset_list = list(dataset.as_numpy_iterator())
+    all_images, all_labels = zip(*dataset_list)
+    all_images = np.concatenate(all_images, axis=0)
+    all_labels = np.concatenate(all_labels, axis=0)
+
+    if image_index < 0 or image_index >= len(all_images):
+        raise ValueError(f"Image index {image_index} out of range")
+
+    single_input = all_images[image_index]
+    single_target = np.argmax(all_labels[image_index])
+    target_class = (single_target + 1) % 10
+
+    input_set = np.stack([
+        single_input + (np.random.uniform(0, 1, single_input.shape) * (np.random.rand(*single_input.shape) < 0.9))
+        for _ in range(num_particles)
+    ])
+
     if os.path.exists(pickle_path):
         with open(pickle_path, 'rb') as f:
             attacker = pickle.load(f)
         print(f"Loaded attacker from {pickle_path}")
     else:
-
-        dataset_list = list(dataset.as_numpy_iterator())
-        all_images, all_labels = zip(*dataset_list)
-        all_images = np.concatenate(all_images, axis=0)
-        all_labels = np.concatenate(all_labels, axis=0)
-
-        if image_index < 0 or image_index >= len(all_images):
-            raise ValueError(f"Image index {image_index} out of range")
-
-        single_input = all_images[image_index]
-        single_target = np.argmax(all_labels[image_index])
-        target_class = (single_target + 1) % 10
-
-        input_set = np.stack([
-            single_input + (np.random.uniform(0, 1, single_input.shape) * (np.random.rand(*single_input.shape) < 0.9))
-            for _ in range(num_particles)
-        ])
 
         attacker = ParticleSwarm(
             model=model, input_set=input_set, starting_class=single_target,
@@ -42,7 +43,7 @@ def adversarial_attack_blackbox(model, dataset, image_index, output_dir='results
         with open(pickle_path, 'wb') as f:
             pickle.dump(attacker, f)
         print(f"Saved attacker to {pickle_path}")
-
+    print("Adversarial attack completed. Analyzing results...")
     analyze_attack(attacker, single_input, target_class)
 
 def best_analysis(attacker, original_data, target):
@@ -200,7 +201,10 @@ def full_analysis(attacker, input_data, target):
     print(f"Full analysis saved to {path}")
 
 def analyze_attack(attacker, original_img, target):
+    print("Starting analysis of the adversarial attack...")
     best_analysis(attacker, original_img, target)
-    reduced_img = reduce_excess_perturbations_scale(attacker, original_img, attacker.global_best_position.numpy(), target)
+    print("Reducing excess perturbations...")
+    reduced_img = reduce_excess_perturbations(attacker, original_img, attacker.global_best_position.numpy(), target)
     denoise_analysis(attacker, original_img, reduced_img, target)
+    print("Performing full analysis of the attack...")
     full_analysis(attacker, original_img, target)

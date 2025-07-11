@@ -15,6 +15,7 @@ def main():
     # get the experiment model 1 is MNIST, 2 is MNIST with data augmentation, 3 is AudioMNIST
     args.model_experiment = args.experiment
     args.save_dir = os.path.join(args.save_dir, f'experiment_{args.model_experiment}')
+    args.model_path = os.path.join(args.save_dir, f'model_experiment_{args.model_experiment}.keras')
     if args.model_experiment == 1:
         args.model_path = args.model_path or 'mnist_model_1.keras'
         model = load_MNIST_model(args.model_path)
@@ -37,7 +38,7 @@ def main():
         model.load_weights(args.model_path)
     else:
         print("Training model...")
-        model = train_model(model, train_ds, epochs=10)
+        model = train_model(model, train_ds, epochs=40)
         model.save(args.model_path)
     
     # Evaluate the model
