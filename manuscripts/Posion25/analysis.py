@@ -2,34 +2,60 @@ import numpy as np
 import json
 from tqdm import tqdm
 import os
-import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
-import json
+from scipy.io import wavfile
 
 
 def ensure_dir(directory):
     os.makedirs(directory, exist_ok=True)
 
 
-def save_ndarray_visualization(path, array, mode="auto", **kwargs):
+def save_ndarray_visualization(path, array, mode="auto", sample_rate=16000, **kwargs):
     """
     Try to save an ndarray visualization depending on its shape.
     For 2D/3D (image-like), use imsave.
     For 1D or other, use line plot or imshow fallback.
+    Additionally, if the data looks like audio waveform (1D),
+    save it as a WAV audio file (AudioMNIST style).
+    
+    Params:
+      path: base path (extension used for image, wav saved alongside)
+      array: ndarray data
+      mode: "auto" or "image" (forces imsave)
+      sample_rate: used for wav saving (default 16kHz)
+      kwargs: extra params for imsave
     """
     array = np.squeeze(array)
 
     try:
         if mode == "image" or (mode == "auto" and array.ndim in [2, 3]):
+            # Image-like data: save as image
             plt.imsave(path, array, **kwargs)
-        else:
-            # 1D or general data: use plot or imshow
+        elif array.ndim == 1:
+            # 1D data - audio waveform?
+            # Save waveform plot
             plt.figure()
-            if array.ndim == 1:
-                plt.plot(array)
+            plt.plot(array)
+            plt.title(os.path.basename(path))
+            plt.savefig(path)
+            plt.close()
+
+            # Also save as wav audio file (normalize to int16)
+            wav_path = os.path.splitext(path)[0] + ".wav"
+            audio = array
+            # Normalize audio to int16 range
+            max_abs = np.max(np.abs(audio))
+            if max_abs > 0:
+                audio_norm = audio / max_abs
             else:
-                plt.imshow(array, aspect='auto')
+                audio_norm = audio
+            audio_int16 = (audio_norm * 32767).astype(np.int16)
+            wavfile.write(wav_path, sample_rate, audio_int16)
+        else:
+            # fallback for other dims: show as imshow
+            plt.figure()
+            plt.imshow(array, aspect='auto')
             plt.title(os.path.basename(path))
             plt.savefig(path)
             plt.close()
@@ -104,6 +130,10 @@ def best_analysis(attacker, original_data, target):
     save_dir = attacker.save_dir
     ensure_dir(save_dir)
 
+    # save the original data
+    save_array_csv(os.path.join(save_dir, "original_data.csv"), original_data)
+    save_ndarray_visualization(os.path.join(save_dir, "original_data.png"), original_data)
+    
     # Save best particle
     save_array_csv(os.path.join(save_dir, "best_particle.csv"), adv)
     save_ndarray_visualization(os.path.join(save_dir, "best_particle.png"), adv)
@@ -153,9 +183,11 @@ def reduce_excess_perturbations(attacker, original_data, adv_data, target_label)
     adv_data = adv_data.copy()
     changed = True
 
+    # Wrap the iteration with tqdm to monitor progress
     while changed:
         changed = False
-        for idx in np.ndindex(original_data.shape):
+        indices = list(np.ndindex(original_data.shape))
+        for idx in tqdm(indices, desc="Reducing perturbations"):
             if np.isclose(original_data[idx], adv_data[idx]):
                 continue
 
@@ -200,7 +232,7 @@ def full_analysis(attacker, input_data, target):
             "differences_from_original": []
         }
 
-        for pos in particle.history:
+        for pos in tqdm(particle.history, desc=f"Particle {i} history", leave=False):
             pos_np = pos.numpy() if isinstance(pos, tf.Tensor) else np.array(pos)
             softmax, max_val, max_class = get_softmax_stats(attacker.model, pos_np)
             diff = float(np.linalg.norm(pos_np - input_data))
