@@ -14,7 +14,7 @@ from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.datasets import mnist
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.utils import to_categorical
-
+from models import *
 SAMPLING_RATE = 16000
 NUM_CLASSES = 10
 RANDOM_SEED = 42
@@ -59,18 +59,19 @@ def load_audio_mnist_data(data_path):
     if not os.path.exists(data_path):
         raise FileNotFoundError(f"Data path {data_path} does not exist.")
     data, labels, max_len = load_dataset(data_path)
-    train_ds, test_ds, (x_test, y_test) = prepare_datasets(data, labels, max_len)
-    return train_ds, test_ds, x_test, y_test, max_len
+    train_ds, test_ds, _, _, _ = prepare_datasets(data, labels, max_len)
+    return train_ds, test_ds, max_len
 
-def load_data(batch_size=32, experiment=1):
-    if experiment in [1, 2]:
+def load_data(batch_size=32, dataset_type="MNIST", use_augmentation=False):
+    if dataset_type == "MNIST":
         (x_train, y_train), (x_test, y_test) = mnist.load_data()
         x_train = normalize_mnist(x_train.reshape(-1, 28, 28, 1).astype('float32'))
         x_test = normalize_mnist(x_test.reshape(-1, 28, 28, 1).astype('float32'))
         y_train = to_categorical(y_train, 10)
         y_test = to_categorical(y_test, 10)
 
-        if experiment == 2:
+        if use_augmentation:
+            # Data Augmentation with ImageDataGenerator
             datagen = ImageDataGenerator(
                 rotation_range=10,
                 zoom_range=0.10,
@@ -92,13 +93,13 @@ def load_data(batch_size=32, experiment=1):
         test_dataset = tf.data.Dataset.from_tensor_slices((x_test, y_test)).batch(batch_size)
         return train_dataset, test_dataset
 
-    elif experiment == 3:
+    elif dataset_type == "MNIST_Audio":
         data_path = "./AudioMNIST/data"
-        train_ds, test_ds, _, _, _ = load_audio_mnist_data(data_path)
-        return train_ds, test_ds
+        train_ds, test_ds, max_len = load_audio_mnist_data(data_path)
+        return train_ds, test_ds, max_len
 
     else:
-        raise ValueError(f"Unsupported experiment: {experiment}")
+        raise ValueError(f"Unsupported dataset type: {dataset_type}")
 
 def train_model(model, train_dataset, epochs=10):
     model.compile(optimizer=Adam(0.001), loss='categorical_crossentropy', metrics=['accuracy'])
@@ -124,3 +125,50 @@ def evaluate_model(model, test_dataset):
     auroc = roc_auc_score(to_categorical(y_true, NUM_CLASSES), y_pred, multi_class='ovr')
     auprc = average_precision_score(to_categorical(y_true, NUM_CLASSES), y_pred)
     print(f"Test Loss: {loss:.4f}, Accuracy: {acc:.4f}, AUROC: {auroc:.4f}, AUPRC: {auprc:.4f}")
+
+def train_model_and_save(args):
+    # Create folder name based on dataset and model type
+    folder_name = f"{args.data}_{args.model_type}"
+    save_dir = os.path.join(args.save_dir, folder_name)
+
+    # Ensure the save directory exists
+    os.makedirs(save_dir, exist_ok=True)
+    model_path = os.path.join(save_dir, f'{folder_name}.keras')
+
+    # Load or train the model based on the data and model type
+    if args.data == 'MNIST':
+        if args.model_type == 'normal':
+            model = load_MNIST_model(model_path)
+            train_ds, test_ds = load_data(dataset_type="MNIST", use_augmentation=False)
+        elif args.model_type == 'complex':
+            model = load_complex_MNIST_model(model_path)
+            train_ds, test_ds = load_data(dataset_type="MNIST", use_augmentation=False)
+        elif args.model_type == 'complex_augmented':
+            model = load_complex_MNIST_model(model_path)
+            train_ds, test_ds = load_data(dataset_type="MNIST", use_augmentation=True)
+    elif args.data == 'MNIST_Audio':
+        if args.model_type == 'normal':
+            model = load_AudioMNIST_model(model_path)
+            train_ds, test_ds = load_data(dataset_type="MNIST_Audio", use_augmentation=False)
+        elif args.model_type == 'complex':
+            model = load_complex_AudioMNIST_model(model_path)
+            train_ds, test_ds = load_data(dataset_type="MNIST_Audio", use_augmentation=False)
+        elif args.model_type == 'complex_augmented':
+            model = load_complex_AudioMNIST_model(model_path)
+            train_ds, test_ds = load_data(dataset_type="MNIST_Audio", use_augmentation=True)
+
+    # Check if model weights exist, if not, train and save
+    if not os.path.exists(model_path):
+        print("Training the model...")
+        model = train_model(model, train_ds, epochs=args.epochs)
+        model.save(model_path)
+        print(f"Model saved to {model_path}")
+    else:
+        print(f"Model found. Loading weights from {model_path}")
+        model.load_weights(model_path)
+
+    # Evaluate the model
+    print("Evaluating the model...")
+    evaluate_model(model, test_ds)
+
+    return model, test_ds, save_dir, model_path

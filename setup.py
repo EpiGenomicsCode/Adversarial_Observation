@@ -28,6 +28,8 @@ setup(
                         "torch",
                         "pandas",
                         "scikit-learn",
+                        "tensorflow[and-cuda]",
+                        "librosa",
                       ],
     examples_require=[ 
                         "torchvision",
