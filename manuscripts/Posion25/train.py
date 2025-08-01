@@ -59,8 +59,9 @@ def load_audio_mnist_data(data_path):
     if not os.path.exists(data_path):
         raise FileNotFoundError(f"Data path {data_path} does not exist.")
     data, labels, max_len = load_dataset(data_path)
-    train_ds, test_ds, _, _, _ = prepare_datasets(data, labels, max_len)
+    train_ds, test_ds, _ = prepare_datasets(data, labels, max_len)
     return train_ds, test_ds, max_len
+
 
 def load_data(batch_size=32, dataset_type="MNIST", use_augmentation=False):
     if dataset_type == "MNIST":
@@ -96,7 +97,7 @@ def load_data(batch_size=32, dataset_type="MNIST", use_augmentation=False):
     elif dataset_type == "MNIST_Audio":
         data_path = "./AudioMNIST/data"
         train_ds, test_ds, max_len = load_audio_mnist_data(data_path)
-        return train_ds, test_ds, max_len
+        return train_ds, test_ds
 
     else:
         raise ValueError(f"Unsupported dataset type: {dataset_type}")
