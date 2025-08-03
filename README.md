@@ -1,34 +1,187 @@
-# Adversarial Observation
----
-[![Python Testing](https://github.com/EpiGenomicsCode/Adversarial_Observation/actions/workflows/run_tests.yml/badge.svg)](https://github.com/EpiGenomicsCode/Adversarial_Observation/actions/workflows/run_tests.yml)
-[![Upload to Github Pages](https://github.com/EpiGenomicsCode/Adversarial_Observation/actions/workflows/build_docs.yml/badge.svg)](https://github.com/EpiGenomicsCode/Adversarial_Observation/actions/workflows/build_docs.yml)
+# Adversarial Attack Workflow with Particle Swarm Optimization
 
+This repository contains a framework for generating **adversarial attacks** on a pre-trained or newly trained **MNIST classification model** using **Particle Swarm Optimization (PSO)**. The workflow includes model training, adversarial attack generation, and detailed analysis of attack results.
 
-The Adversarial Observation framework is a novel solution that addresses concerns regarding the fairness and social impact of machine learning models, specifically neural networks. The framework provides a user-friendly approach to adversarial testing and explainability, utilizing an adversarial swarm optimizer to increase the ease of explainability for the network. It comprises two intertwined parts focusing on adversarial testing and explainability, utilizing the fast gradient sign method (FGSM) and the Adversarial Particle Swarm Optimization (APSO) algorithm to identify regions where the network is most susceptible to adversarial attacks. The framework has the potential to significantly improve the social impact of neural network models, enhancing their effectiveness and efficiency while improving transparency and trust between stakeholders.
+## Table of Contents
 
+1. [Overview](#overview)
+2. [Requirements](#requirements)
+3. [Setup and Installation](#setup-and-installation)
+4. [Usage](#usage)
 
-# Features
----
+   * [Train a New Model](#train-a-new-model)
+   * [Load a Pre-trained Model](#load-a-pre-trained-model)
+   * [Perform Adversarial Attack](#perform-adversarial-attack)
+5. [Directory Structure](#directory-structure)
+6. [Results and Analysis](#results-and-analysis)
+7. [Contributing](#contributing)
+8. [License](#license)
 
-* Adversarial robustness: The Adversarial Observation framework enables users to generate and evaluate adversarial examples in a user-friendly way, which enhances the neural network's robustness against adversarial attacks.
-* Optimization algorithm: The framework utilizes the state-of-the-art Adversarial Particle Swarm Optimization (APSO) algorithm to efficiently search for adversarial perturbations in high-dimensional parameter space, improving the effectiveness and efficiency of adversarial testing.
-* Explainability: The framework allows for improved interpretability of the neural network's decision-making process by generating saliency maps for the network, providing insights into its internal workings and improving transparency for stakeholders.
-
-# License
----
-
-This project is licensed under the MIT License. For more information, see the [LICENSE.md](./LICENSE.txt) file.
-
-# Installation
 ---
 
-To install the Adversarial Observation framework, you can follow each of the following:
+## Overview
 
-## Build From Source
+This project demonstrates how to attack a **Keras-based MNIST classifier** by performing a **black-box adversarial attack** using **Particle Swarm Optimization (PSO)**. The main workflow includes:
+
+* **Model Training:** Create and train a convolutional neural network (CNN) for MNIST classification.
+* **Adversarial Attack:** Use PSO to generate adversarial perturbations on a given image and cause misclassification.
+* **Analysis:** Collect detailed metrics during the attack, including confidence values, softmax outputs, and pixel-wise differences from the original image.
+
+The model can either be trained from scratch or you can use a pre-trained model for attacking. The attack results are saved with detailed logs and images for further analysis.
+
 ---
-1. Clone this repository:
-2. Run the following command:
-    ``` bash
-    python setup.py install
-    ```
+
+## Requirements
+
+This project requires the following Python libraries:
+
+* `tensorflow` (for model building and training)
+* `numpy` (for numerical operations)
+* `matplotlib` (for visualizations)
+* `tqdm` (for progress bars)
+* `argparse` (for command-line argument parsing)
+* `os`, `json`, `time` (for file handling and timing)
+* `scipy` (for some utility functions)
+
+You can install the necessary dependencies by running the following command:
+
+```bash
+pip install -r requirements.txt
+```
+
+---
+
+## Setup and Installation
+
+1. **Clone the repository:**
+
+```bash
+git clone https://github.com/your-username/adversarial-attack-pso.git
+cd adversarial-attack-pso
+```
+
+2. **Install dependencies:**
+
+```bash
+pip install -r requirements.txt
+```
+
+3. **Run the script** with the desired parameters.
+
+---
+
+## Usage
+
+### Train a New Model
+
+To train a new **MNIST classifier** model from scratch, run the following command:
+
+```bash
+python taint_MNIST.py --iterations 50 --particles 100 --save_dir "analysis_results"
+```
+
+This command will:
+
+* Train the model for 5 epochs on the MNIST dataset (the number of epochs is set to 5 in this script).
+* Save the trained model as `mnist_model.keras` if no pre-trained model path is provided.
+
+### Load a Pre-trained Model
+
+If you already have a pre-trained model, you can load it by providing the `--model_path` argument:
+
+```bash
+python taint_MNIST.py --model_path "path_to_model/mnist_model.keras" --iterations 50 --particles 100 --save_dir "analysis_results"
+```
+
+This will load the provided pre-trained model, evaluate it on the test dataset, and then perform the adversarial attack.
+
+### Perform Adversarial Attack
+
+Once the model is trained or loaded, the script will automatically perform a **black-box adversarial attack** on a specified image in the test dataset. The attack is performed using **Particle Swarm Optimization (PSO)** to perturb the image and cause misclassification.
+
+The attack will run for `num_iterations` iterations, and the results will be saved in the `output_dir` directory.
+
+**Example:**
+
+```bash
+python taint_MNIST.py --iterations 50 --particles 100 --save_dir "analysis_results"
+```
+
+This command performs the attack with **50 iterations** and **100 particles**.
+
+---
+
+## Directory Structure
+
+After running the attack, the results will be saved in the `analysis_results` directory (or the directory specified by `--save_dir`). The structure of the output directory looks like this:
+
+```
+analysis_results/
+│
+├── original.png                  # Original image before attack
+├── iteration_1/                  # Directory for each iteration
+│   ├── attack-vector_image_1.png  # Perturbed image for the first particle at iteration 1
+│   ├── attack-vector_image_2.png  # Perturbed image for the second particle at iteration 1
+│   └── ...
+├── iteration_2/
+│   ├── attack-vector_image_1.png
+│   └── ...
+├── attack_analysis.json           # JSON file containing analysis results
+└── ...
+```
+
+### Key Files
+
+* **`original.png`**: The original image before the attack.
+* **`attack-vector_image_1.png`, `attack-vector_image_2.png`**: The perturbed images generated by the particles at each iteration.
+* **`attack_analysis.json`**: A JSON file containing the analysis of the attack, including confidence values, perturbation differences, and more.
+
+---
+
+## Results and Analysis
+
+After the attack is complete, the following information is saved:
+
+* **Images** showing the pixel-wise differences between the original image and the perturbed versions generated by each particle.
+* **Analysis JSON file** containing the following details for each particle:
+
+  * The perturbed images (positions in the particle's history).
+  * Softmax confidence values and maximum output values over time.
+  * Differences from the original image.
+
+You can open the `attack_analysis.json` file for a detailed analysis of the attack.
+
+---
+## Citing This Work
+
+If you use or refer to this code in your research, please cite the following paper:
+
+
+```
+@incollection{gafur2024adversarial,
+  title={Adversarial Robustness and Explainability of Machine Learning Models},
+  author={Gafur, Jamil and Goddard, Steve and Lai, William},
+  booktitle={Practice and Experience in Advanced Research Computing 2024: Human Powered Computing},
+  pages={1--7},
+  year={2024}
+}
+```
+
+---
+
+## Contributing
+
+Feel free to fork this repository and submit pull requests. Contributions are always welcome!
+
+Please ensure any changes you propose adhere to the following guidelines:
+
+* Write clear commit messages.
+* Add or update tests as needed.
+* Ensure that the code follows the existing style and conventions.
+
+---
+
+## License
+
+This project is licensed under the MIT License. See the LICENSE file for details.
 
