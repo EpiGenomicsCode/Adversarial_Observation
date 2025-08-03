@@ -210,3 +210,16 @@ def analyze_attack(attacker, original_img, target):
     denoise_analysis(attacker, original_img, reduced_img, target)
     print("Performing full analysis of the attack...")
     full_analysis(attacker, original_img, target)
+
+def pgd_attack(model, images, labels, eps=0.3, alpha=0.01, steps=40):
+    adv_images = tf.identity(images)
+    for _ in range(steps):
+        with tf.GradientTape() as tape:
+            tape.watch(adv_images)
+            preds = model(adv_images)
+            loss = tf.keras.losses.categorical_crossentropy(labels, preds)
+        gradients = tape.gradient(loss, adv_images)
+        adv_images = adv_images + alpha * tf.sign(gradients)
+        adv_images = tf.clip_by_value(adv_images, images - eps, images + eps)
+        adv_images = tf.clip_by_value(adv_images, 0.0, 1.0)
+    return adv_images
