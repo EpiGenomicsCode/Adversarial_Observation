@@ -1,7 +1,8 @@
 #!/bin/bash
 
 # Define available datasets and model types
-datasets=("MNIST" "MNIST_Audio")
+datasets=("MNIST")
+#  "MNIST_Audio")
 model_types=("normal" "complex")
 #  "complex_augmented")
 save_dir="results"
@@ -19,11 +20,7 @@ for dataset in "${datasets[@]}"; do
         
         echo "Finished training and attacking for $dataset - $model_type"
     done
+        # python 3_stats.py --data $dataset --model_type $model_type --save_dir $save_dir
+        # echo "Statistics collected for $dataset - $model_type"
 done
 
-# Step 3: Collect statistics after all attacks have been run
-echo "Collecting statistics..."
-python 3_stats.py --data MNIST --iterations 10 --particles 100 --save_dir $save_dir
-python 3_stats.py --data MNIST_Audio --iterations 10 --particles 100 --save_dir $save_dir
-
-echo "Statistics collection complete."

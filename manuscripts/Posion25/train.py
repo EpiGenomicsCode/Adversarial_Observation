@@ -130,6 +130,7 @@ def evaluate_model(model, test_dataset):
 def train_model_and_save(args):
     # Create folder name based on dataset and model type
     folder_name = f"{args.data}_{args.model_type}"
+
     save_dir = os.path.join(args.save_dir, folder_name)
 
     # Ensure the save directory exists

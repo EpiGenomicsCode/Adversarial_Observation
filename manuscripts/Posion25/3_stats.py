@@ -13,7 +13,7 @@ from analysis import get_softmax_stats, save_softmax_stats
 def collect_statistics(model, dataset, model_type, attack_iterations=10, attack_particles=100, image_index=0, output_dir='results'):
     """
     Run adversarial attack for the given model and dataset combination and collect statistics.
-    
+
     Args:
     - model: The model to attack.
     - dataset: The test dataset.
@@ -22,7 +22,7 @@ def collect_statistics(model, dataset, model_type, attack_iterations=10, attack_
     - attack_particles: Number of particles for attack.
     - image_index: Index of the image to perform the attack on.
     - output_dir: Directory to save results.
-    
+
     Returns:
     - statistics: A dictionary with softmax output, attack success, and other relevant data.
     """
@@ -40,12 +40,13 @@ def collect_statistics(model, dataset, model_type, attack_iterations=10, attack_
     single_target = np.argmax(all_labels[image_index])
     target_class = (single_target + 1) % 10  # Attack a different class
 
-    # Perform the attack (check if pickle exists first)
+    # Load the attacker if pickle exists
     if os.path.exists(pickle_path):
         with open(pickle_path, 'rb') as f:
             attacker = pickle.load(f)
         print(f"Loaded attacker from {pickle_path}")
     else:
+        # If attacker doesn't exist, run the attack and save it
         adversarial_attack_blackbox(
             model, dataset, image_index=image_index, output_dir=output_dir,
             num_iterations=attack_iterations, num_particles=attack_particles
@@ -56,7 +57,7 @@ def collect_statistics(model, dataset, model_type, attack_iterations=10, attack_
 
     # Analyze the attack results
     softmax_output, max_val, max_class = get_softmax_stats(model, single_input)
-    attack_success = max_class != target_class
+    attack_success = max_class != target_class  # Attack success is when max_class differs from target class
 
     stats = {
         "model_type": model_type,
@@ -76,10 +77,10 @@ def collect_statistics(model, dataset, model_type, attack_iterations=10, attack_
 def get_model_types_for_dataset(dataset):
     """
     Dynamically search for model types for a given dataset.
-    
+
     Args:
     - dataset: The dataset name, e.g., 'MNIST' or 'AudioMNIST'.
-    
+
     Returns:
     - model_types: List of available model types for the dataset.
     """
@@ -125,6 +126,7 @@ def main():
 
     # Data and model type arguments
     parser.add_argument('--data', type=str, choices=['MNIST', 'MNIST_Audio'], required=True, help='Dataset to use')
+    parser.add_argument('--model_type', type=str, choices=['normal', 'complex', 'complex_augmented'], required=True, help='Model type to use')
 
     # Attack parameters
     parser.add_argument('--iterations', type=int, default=10, help='Number of iterations for attack')

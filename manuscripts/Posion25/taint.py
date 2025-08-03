@@ -6,7 +6,7 @@ from manuscripts.Posion25.analysis import *
 from Adversarial_Observation.Swarm import ParticleSwarm
 from analysis import *
 
-def adversarial_attack_blackbox(model, dataset, image_index, output_dir='results', num_iterations=30, num_particles=100):
+def adversarial_attack_blackbox(model, dataset, image_index, output_dir='results', num_iterations=30, num_particles=100, target_class=None):
     
     pickle_path = os.path.join(output_dir, 'attacker.pkl')
 
@@ -20,7 +20,8 @@ def adversarial_attack_blackbox(model, dataset, image_index, output_dir='results
 
     single_input = all_images[image_index]
     single_target = np.argmax(all_labels[image_index])
-    target_class = (single_target + 1) % 10
+    if target_class is None:
+        target_class = (single_target + 1) % 10
 
     input_set = np.stack([
         single_input + (np.random.uniform(0, 1, single_input.shape) * (np.random.rand(*single_input.shape) < 0.9))
@@ -45,6 +46,7 @@ def adversarial_attack_blackbox(model, dataset, image_index, output_dir='results
         print(f"Saved attacker to {pickle_path}")
     print("Adversarial attack completed. Analyzing results...")
     analyze_attack(attacker, single_input, target_class)
+    return attacker
 
 def best_analysis(attacker, original_data, target):
     adv = attacker.global_best_position.numpy()
