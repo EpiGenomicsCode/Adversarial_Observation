@@ -1,102 +1,71 @@
 import argparse
 import os
 import pickle
-from taint import adversarial_attack_blackbox
-from analysis import *
-from train import train_model_and_save
-import torch
 import tensorflow as tf
+import torch
+from taint import adversarial_attack_blackbox
 
-def attack_model(args, model, test_ds, save_dir, num_data=10):
-    # Get the labels by iterating through a batch from the test_ds
-    first_batch = next(iter(test_ds))  # Get the first batch
-    images, labels = first_batch  # Unpack the images and labels from the first batch
-    
-    # Check if labels are a TensorFlow tensor or PyTorch tensor
-    if isinstance(labels, tf.Tensor):
-        # If using TensorFlow, convert labels to class indices (from one-hot encoded)
-        labels = tf.argmax(labels, axis=1).numpy()  # Get class indices from one-hot encoded labels
-    elif isinstance(labels, torch.Tensor):
-        # If using PyTorch, convert labels to class indices (from one-hot encoded)
-        labels = torch.argmax(labels, dim=1).cpu().numpy()  # Get class indices from one-hot encoded labels
 
-    # Convert labels to a set of unique outputs
-    unique_outputs = set(labels)  # Convert to a Python set for unique labels
+def load_model(model_path):
+    # Assumes it's a Keras model (update if using PyTorch)
+    return tf.keras.models.load_model(model_path)
 
-    # Continue with the rest of the attack logic
-    for output in unique_outputs:
-        instances = [i for i, label in enumerate(labels) if label == output][:num_data]  # Select `num_data` instances with the current output label
-        
-        for image_index in instances:
-            # Create a subdirectory for each image_index and its original output label
-            sub_dir = os.path.join(save_dir, f'image_{image_index}_label_{output}')
-            
-            # Ensure the directory exists
-            os.makedirs(sub_dir, exist_ok=True)
 
-            # Correct dynamic pickle filename to include the original and target class
-            pickle_filename = f'attacker_{image_index}_{output}.pkl'
-            pickle_path = os.path.join(sub_dir, pickle_filename)
-            
-            # Check if the attacker pickle already exists for this image_index and output
-            if os.path.exists(pickle_path):
-                with open(pickle_path, 'rb') as f:
-                    attacker = pickle.load(f)
-                print(f"Loaded attacker for image {image_index} with label {output} from {pickle_path}")
-            else:
-                print(f"Running adversarial attack for image {image_index} with label {output}...")
-                
-                # For the current `output`, target all other classes
-                for target_output in unique_outputs:
-                    if target_output != output:  # We want to target all other outputs
-                        for _ in range(num_data):  # Attack the target output `num_data` times
-                            target_sub_dir = os.path.join(sub_dir, f'target_{target_output}')
-                            os.makedirs(target_sub_dir, exist_ok=True)  # Create a subdir for each target class
+def get_test_dataset(data_name):
+    # Import here to avoid unnecessary dependencies if unused
+    from train import get_data  # Ensure get_data returns (train_ds, test_ds)
 
-                            # Correct dynamic pickle filename to include the original and target class
-                            target_pickle_filename = f'attacker_{image_index}_{output}_to_{target_output}.pkl'
-                            target_pickle_path = os.path.join(target_sub_dir, target_pickle_filename)
+    train_ds, test_ds = get_data(data_name)
+    return test_ds
 
-                            # Perform the adversarial attack targeting `target_output`
-                            attacker = adversarial_attack_blackbox(
-                                model=model,
-                                dataset=test_ds,
-                                image_index=image_index,
-                                output_dir=target_sub_dir,
-                                num_iterations=args.iterations,
-                                num_particles=args.particles,
-                                target_class=target_output  # Specify the target class for the attack
-                            )
-                            print(f"Adversarial attack completed for image {image_index} targeting class {target_output}")
-
-                            # After performing the attack, save the attacker object to a pickle file
-                            with open(target_pickle_path, 'wb') as f:
-                                pickle.dump(attacker, f)
-                            print(f"Saved attacker for image {image_index} with label {output} targeting {target_output} to {target_pickle_path}")
 
 def main():
-    # Command-line arguments
     parser = argparse.ArgumentParser()
 
-    # Data and model type arguments (to align with the ones used in the training script)
-    parser.add_argument('--data', type=str, choices=['MNIST', 'MNIST_Audio'], required=True, help='Dataset to use')
-    parser.add_argument('--model_type', type=str, choices=['normal', 'complex', 'complex_augmented'], required=True, help='Model type to use')
+    # Required args
+    parser.add_argument('--model_path', type=str, required=True, help='Path to saved model (.keras)')
+    parser.add_argument('--save_dir', type=str, required=True, help='Directory to save attack results')
+    parser.add_argument('--source_index', type=int, required=True, help='Index of image to attack')
+    parser.add_argument('--target', type=int, required=True, help='Target class for adversarial attack')
 
-    # Attack parameters
-    parser.add_argument('--iterations', type=int, default=10, help='Number of iterations for attack')
-    parser.add_argument('--particles', type=int, default=100, help='Number of particles for attack')
+    # Dataset config
+    parser.add_argument('--data', type=str, choices=['MNIST', 'MNIST_Audio'], required=True, help='Dataset name')
 
-    # Folder saving argument
-    parser.add_argument('--save_dir', type=str, default='results', help='Directory to save model and results')
+    # Attack config
+    parser.add_argument('--iterations', type=int, default=30, help='Number of attack iterations')
+    parser.add_argument('--particles', type=int, default=100, help='Number of swarm particles')
 
-    # Parse arguments
     args = parser.parse_args()
 
-    # First, train the model and get the necessary details for attack
-    model, test_ds, save_dir, model_path = train_model_and_save(args)
+    # Load model and dataset
+    model = load_model(args.model_path)
+    test_ds = get_test_dataset(args.data)
 
-    # Perform the adversarial attack
-    attack_model(args, model, test_ds, save_dir)
+    # Create output directory
+    os.makedirs(args.save_dir, exist_ok=True)
+
+    # Run the blackbox adversarial attack
+    try:
+        attacker = adversarial_attack_blackbox(
+            model=model,
+            dataset=test_ds,
+            image_index=args.source_index,
+            output_dir=args.save_dir,
+            num_iterations=args.iterations,
+            num_particles=args.particles,
+            target_class=args.target
+        )
+
+        # Save attacker object
+        output_path = os.path.join(args.save_dir, f'attacker_{args.source_index}_to_{args.target}.pkl')
+        with open(output_path, 'wb') as f:
+            pickle.dump(attacker, f)
+
+        print(f"Attack complete. Saved attacker to: {output_path}")
+
+    except Exception as e:
+        print(f"Error during attack: {e}")
+
 
 if __name__ == '__main__':
     main()

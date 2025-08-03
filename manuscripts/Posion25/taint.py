@@ -1,13 +1,15 @@
 import os
+import json
 import numpy as np
 import tensorflow as tf
 import pickle
+from tqdm import tqdm
 from manuscripts.Posion25.analysis import *
 from Adversarial_Observation.Swarm import ParticleSwarm
 from analysis import *
 
+
 def adversarial_attack_blackbox(model, dataset, image_index, output_dir='results', num_iterations=30, num_particles=100, target_class=None):
-    
     pickle_path = os.path.join(output_dir, 'attacker.pkl')
 
     dataset_list = list(dataset.as_numpy_iterator())
@@ -23,8 +25,14 @@ def adversarial_attack_blackbox(model, dataset, image_index, output_dir='results
     if target_class is None:
         target_class = (single_target + 1) % 10
 
+    if single_target == target_class:
+        raise ValueError("Target class must be different from original class")
+
+    print(f"Original class: {single_target}")
+    print(f"Target misclassification class: {target_class}")
+
     input_set = np.stack([
-        single_input + (np.random.uniform(0, 1, single_input.shape) * (np.random.rand(*single_input.shape) < 0.9))
+        single_input + (np.random.uniform(0, 1, single_input.shape) * (np.random.rand(*single_input.shape) < 0.7))
         for _ in range(num_particles)
     ])
 
@@ -33,32 +41,35 @@ def adversarial_attack_blackbox(model, dataset, image_index, output_dir='results
             attacker = pickle.load(f)
         print(f"Loaded attacker from {pickle_path}")
     else:
-
         attacker = ParticleSwarm(
             model=model, input_set=input_set, starting_class=single_target,
             target_class=target_class, num_iterations=num_iterations,
             save_dir=output_dir, inertia_weight=0.01
         )
         attacker.optimize()
-        # save the attacker as a pickle
         with open(pickle_path, 'wb') as f:
             pickle.dump(attacker, f)
         print(f"Saved attacker to {pickle_path}")
+
     print("Adversarial attack completed. Analyzing results...")
     analyze_attack(attacker, single_input, target_class)
+
+    final_pred = predict_class(model, attacker.global_best_position.numpy())
+    print(f"Attack {'succeeded' if final_pred == target_class else 'failed'}. Final prediction: {final_pred}")
     return attacker
+
 
 def best_analysis(attacker, original_data, target):
     adv = attacker.global_best_position.numpy()
     save_dir = attacker.save_dir
     ensure_dir(save_dir)
 
-    # save the original data
-    save_array_csv(os.path.join(save_dir, "original_data.csv"), original_data)
-    save_ndarray_visualization(os.path.join(save_dir, "original_data.png"), original_data)
+    # Save original input
+    save_array_csv(os.path.join(save_dir, "original_image.csv"), original_data)
+    save_ndarray_visualization(os.path.join(save_dir, "original_image.png"), original_data)
     save_softmax_stats(os.path.join(save_dir, "original_data_stats.tsv"),
                        *get_softmax_stats(attacker.model, original_data), target)
-    
+
     # Save best particle
     save_array_csv(os.path.join(save_dir, "best_particle.csv"), adv)
     save_ndarray_visualization(os.path.join(save_dir, "best_particle.png"), adv)
@@ -73,9 +84,6 @@ def best_analysis(attacker, original_data, target):
         diff, mode="auto", cmap="seismic", vmin=-1, vmax=1
     )
 
-    # Save stats
-    softmax_output, max_val, max_class = get_softmax_stats(attacker.model, adv)
-    save_softmax_stats(os.path.join(save_dir, "best_particle_stats.tsv"), softmax_output, max_class, max_val, target)
 
 def denoise_analysis(attacker, original_data, denoised_data, target):
     save_dir = attacker.save_dir
@@ -92,13 +100,15 @@ def denoise_analysis(attacker, original_data, denoised_data, target):
     )
 
     softmax_output, max_val, max_class = get_softmax_stats(attacker.model, denoised_data)
-    save_softmax_stats(os.path.join(save_dir, "best_particle-clean_stats.tsv"), softmax_output, max_class, max_val, target)
+    save_softmax_stats(os.path.join(save_dir, "best_particle-clean_stats.tsv"),
+                       softmax_output, max_class, max_val, target)
+
+    print(f"Denoised image predicted class: {max_class} with confidence: {max_val}")
+    if max_class != target:
+        print("Warning: Denoised image no longer classified as target!")
+
 
 def reduce_excess_perturbations(attacker, original_data, adv_data, target_label):
-    """
-    Reduce unnecessary perturbations in adversarial data while maintaining misclassification.
-    Works for data of any shape.
-    """
     original_data = np.squeeze(original_data)
     adv_data = np.squeeze(adv_data)
 
@@ -106,13 +116,13 @@ def reduce_excess_perturbations(attacker, original_data, adv_data, target_label)
         raise ValueError("Original and adversarial data must have the same shape after squeezing.")
 
     adv_data = adv_data.copy()
-    changed = True
+    max_iterations = 5
+    iteration = 0
 
-    # Wrap the iteration with tqdm to monitor progress
-    while changed:
+    while iteration < max_iterations:
         changed = False
         indices = list(np.ndindex(original_data.shape))
-        for idx in tqdm(indices, desc="Reducing perturbations"):
+        for idx in tqdm(indices, desc=f"Reducing perturbations (iter {iteration+1})"):
             if np.isclose(original_data[idx], adv_data[idx]):
                 continue
 
@@ -134,7 +144,12 @@ def reduce_excess_perturbations(attacker, original_data, adv_data, target_label)
             else:
                 changed = True
 
+        if not changed:
+            break
+        iteration += 1
+
     return adv_data
+
 
 def reduce_excess_perturbations_scale(attacker, original_data, adv_data, target_label, tol=1e-4, max_iter=20):
     original_data = np.squeeze(original_data)
@@ -163,10 +178,8 @@ def reduce_excess_perturbations_scale(attacker, original_data, adv_data, target_
 
     return best_scaled
 
+
 def full_analysis(attacker, input_data, target):
-    """
-    Save full analysis of all particles' histories and confidences.
-    """
     analysis = {
         "original_misclassification_input": input_data.tolist(),
         "original_misclassification_target": int(target),
@@ -183,7 +196,7 @@ def full_analysis(attacker, input_data, target):
             "differences_from_original": []
         }
 
-        for pos in tqdm(particle.history, desc=f"Particle {i} history", leave=False):
+        for step_idx, pos in enumerate(tqdm(particle.history, desc=f"Particle {i} history", leave=False)):
             pos_np = pos.numpy() if isinstance(pos, tf.Tensor) else np.array(pos)
             softmax, max_val, max_class = get_softmax_stats(attacker.model, pos_np)
             diff = float(np.linalg.norm(pos_np - input_data))
@@ -194,6 +207,12 @@ def full_analysis(attacker, input_data, target):
             pdata["max_output_classes"].append(max_class)
             pdata["differences_from_original"].append(diff)
 
+            # Optional: Save intermediate images
+            iter_dir = os.path.join(attacker.save_dir, f"particle_{i}_step_{step_idx}")
+            ensure_dir(iter_dir)
+            save_ndarray_visualization(os.path.join(iter_dir, "perturbed.png"), pos_np, cmap="gray")
+            save_ndarray_visualization(os.path.join(iter_dir, "perturbation.png"), pos_np - input_data, cmap="seismic", vmin=-1, vmax=1)
+
         analysis["particles"].append(pdata)
 
     path = os.path.join(attacker.save_dir, "attack_analysis.json")
@@ -202,14 +221,19 @@ def full_analysis(attacker, input_data, target):
 
     print(f"Full analysis saved to {path}")
 
+
 def analyze_attack(attacker, original_img, target):
     print("Starting analysis of the adversarial attack...")
     best_analysis(attacker, original_img, target)
+
     print("Reducing excess perturbations...")
     reduced_img = reduce_excess_perturbations(attacker, original_img, attacker.global_best_position.numpy(), target)
+
     denoise_analysis(attacker, original_img, reduced_img, target)
+
     print("Performing full analysis of the attack...")
     full_analysis(attacker, original_img, target)
+
 
 def pgd_attack(model, images, labels, eps=0.3, alpha=0.01, steps=40):
     adv_images = tf.identity(images)
