@@ -18,7 +18,7 @@ setup(
     author_email="Jamil-gafur@uiowa.edu",
     license='MIT',
     packages=[  
-                "Adversarial_Observation", 
+                "Adversarial_Observation",
             ],
     python_requires='>=3.6',
     install_requires=[
@@ -28,6 +28,8 @@ setup(
                         "torch",
                         "pandas",
                         "scikit-learn",
+                        "tensorflow[and-cuda]",
+                        "librosa",
                       ],
     examples_require=[ 
                         "torchvision",
