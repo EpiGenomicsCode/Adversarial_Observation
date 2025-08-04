@@ -7,6 +7,7 @@ WORKINGDIR=/workspaces/Adversarial_Observation/manuscripts/Posion25
 LABELDIR=$WORKINGDIR/false_data
 MODELDIR=$WORKINGDIR/models/MNIST_normal
 MODEL=$MODELDIR/MNIST_normal.keras
+DATA=MNIST
 
 # Attack script (adjust path if needed)
 POISON=$WORKINGDIR/2_attackModel.py
@@ -49,7 +50,7 @@ while read line; do
     falseLabel=$(echo "$line" | awk '{print $3}')
 
     # Add attack command
-    echo "time python $POISON --model_path $MODEL --iterations $ITERATION --particles $PARTICLE --save_dir MNIST_train_$index --target $falseLabel --source_index $index" >> $OUTPUT/attack_$COHORT_ID.slurm
+    echo "time python $POISON --data $DATA --model_path $MODEL --iterations $ITERATION --particles $PARTICLE --save_dir MNIST_train_$index --target $falseLabel --source_index $index" >> $OUTPUT/attack_$COHORT_ID.slurm
 
     ((COHORT_INDEX++))
 

@@ -19,12 +19,12 @@ for model_type in "${MODEL_TYPES[@]}"; do
         for adv in "${ADVERSARIAL_MODES[@]:1}"; do
             echo "Training $DATASET with model_type=$model_type and adversarial=$adv"
             echo "Command: python 0_trainModel.py --data $DATASET --model_type $model_type --adversarial $adv --batch_size $BATCH_SIZE --epochs $EPOCHS --save_dir $SAVE_DIR"
-            # python 0_trainModel.py --data $DATASET --model_type $model_type --adversarial $adv --batch_size $BATCH_SIZE --epochs $EPOCHS --save_dir $SAVE_DIR
+            python 0_trainModel.py --data $DATASET --model_type $model_type --adversarial $adv --batch_size $BATCH_SIZE --epochs $EPOCHS --save_dir $SAVE_DIR
         done
     else
         echo "Training $DATASET with model_type=$model_type (no adversarial)"
         echo "Command: python 0_trainModel.py --data $DATASET --model_type $model_type --batch_size $BATCH_SIZE --epochs $EPOCHS --save_dir $SAVE_DIR"
-        # python 0_trainModel.py --data $DATASET --model_type $model_type --batch_size $BATCH_SIZE --epochs $EPOCHS --save_dir $SAVE_DIR
+        python 0_trainModel.py --data $DATASET --model_type $model_type --batch_size $BATCH_SIZE --epochs $EPOCHS --save_dir $SAVE_DIR
     fi
 done
 

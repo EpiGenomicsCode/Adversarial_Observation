@@ -13,9 +13,9 @@ def load_model(model_path):
 
 def get_test_dataset(data_name):
     # Import here to avoid unnecessary dependencies if unused
-    from train import get_data  # Ensure get_data returns (train_ds, test_ds)
+    from train import load_data  # Ensure get_data returns (train_ds, test_ds)
 
-    train_ds, test_ds = get_data(data_name)
+    train_ds, test_ds = load_data(dataset_type=data_name)
     return test_ds
 
 
@@ -45,26 +45,22 @@ def main():
     os.makedirs(args.save_dir, exist_ok=True)
 
     # Run the blackbox adversarial attack
-    try:
-        attacker = adversarial_attack_blackbox(
-            model=model,
-            dataset=test_ds,
-            image_index=args.source_index,
-            output_dir=args.save_dir,
-            num_iterations=args.iterations,
-            num_particles=args.particles,
-            target_class=args.target
-        )
+    attacker = adversarial_attack_blackbox(
+        model=model,
+        dataset=test_ds,
+        image_index=args.source_index,
+        output_dir=args.save_dir,
+        num_iterations=args.iterations,
+        num_particles=args.particles,
+        target_class=args.target
+    )
 
-        # Save attacker object
-        output_path = os.path.join(args.save_dir, f'attacker_{args.source_index}_to_{args.target}.pkl')
-        with open(output_path, 'wb') as f:
-            pickle.dump(attacker, f)
+    # Save attacker object
+    output_path = os.path.join(args.save_dir, f'attacker_{args.source_index}_to_{args.target}.pkl')
+    with open(output_path, 'wb') as f:
+        pickle.dump(attacker, f)
 
-        print(f"Attack complete. Saved attacker to: {output_path}")
-
-    except Exception as e:
-        print(f"Error during attack: {e}")
+    print(f"Attack complete. Saved attacker to: {output_path}")
 
 
 if __name__ == '__main__':
