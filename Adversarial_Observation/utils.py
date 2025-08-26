@@ -154,7 +154,7 @@ def load_MNIST_model():
 
     return model
 
-def load_data(batch_size=32):
+def load_MNIST_data(batch_size=32):
     """
     Loads MNIST train and test data and prepares it for evaluation.
 

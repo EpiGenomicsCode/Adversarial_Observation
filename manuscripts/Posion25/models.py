@@ -52,7 +52,7 @@ def load_complex_MNIST_model(model_path=None):
     model.summary()
     return model
 
-def load_CIFAR_model(model_path=None):
+def load_CIFAR10_model(model_path=None):
     from tensorflow.keras.models import Sequential
     from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout, BatchNormalization, GlobalAveragePooling2D
     from tensorflow.keras.optimizers import Adam
@@ -76,7 +76,7 @@ def load_CIFAR_model(model_path=None):
     model.summary()
     return model
 
-def load_CIFAR_model(model_path=None):
+def load_complex_CIFAR10_model(model_path=None):
     from tensorflow.keras.models import Sequential
     from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout, BatchNormalization, GlobalAveragePooling2D, MaxPool2D
     from tensorflow.keras.optimizers import Adam

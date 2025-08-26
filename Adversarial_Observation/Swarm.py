@@ -220,3 +220,21 @@ class ParticleSwarm:
             denoised_adv.append(adv_img)
 
         return denoised_adv
+
+    def getBest(self) -> np.ndarray:
+        """
+        Get the best adversarial example found by the swarm.
+
+        Returns:
+            np.ndarray: The best adversarial example as a NumPy array.
+        """
+        return self.global_best_position.numpy()
+
+    def getPoints(self) -> List[np.ndarray]:
+        """
+        Get the current positions of all particles in the swarm.
+
+        Returns:
+            List[np.ndarray]: A list of current particle positions as NumPy arrays.
+        """
+        return [particle.position.numpy() for particle in self.particles]
