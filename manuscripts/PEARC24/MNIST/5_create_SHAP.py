@@ -35,67 +35,70 @@ def save_and_plot_shap_values(dataloader, model):
     data = data.to(device)
     target = target.to(device)
 
-    # Move model to device
     model = model.to(device)
 
-    # Generate SHAP values
     explainer = shap.DeepExplainer(model, data)
-    shap_values = explainer.shap_values(data)
+    shap_values = explainer.shap_values(data)  # List of [class][samples, features]
 
     save_dir = 'SHAP'
     os.makedirs(save_dir, exist_ok=True)
 
-    # Create a 10x10 grid of subplots
+    # Create a 10x11 grid: 1 original + 10 SHAP values
     fig, axes = plt.subplots(10, 11, figsize=(20, 22))
+    last_img = None  # For colorbar
 
-    # Iterate over the SHAP values and plot on the subplots
     for i in range(len(data)):
-        shap_i = shap_values[i]
         label = target[i].item()
+        shap_i = [class_shap[i] for class_shap in shap_values]  # SHAP per class, for this image
 
-        # Save the original image as a numpy array
+        # Save original image
         np.save(f'{save_dir}/{i}_original.npy', data[i].cpu().numpy())
-
-        # Plot the original image
         axes[i, 0].imshow(data[i].cpu().reshape(28, 28), cmap='gray')
         axes[i, 0].set_title(f'Label: {label}')
+        axes[i, 0].axis('off')
 
-        # Plot the SHAP values
-        num_shap_values = min(10, len(shap_i))  # Adjust the number of SHAP values to fit within the grid
-        for j in range(num_shap_values):
-            # Save the SHAP value as a numpy array
-            np.save(f'{save_dir}/{i}_shap_{j}.npy', shap_i[j])
-            img = axes[i, j+1].imshow(shap_i[j].reshape(28, 28), cmap='jet')
+        for j in range(min(10, len(shap_i))):
+            shap_array = shap_i[j]
+            try:
+                reshaped = shap_array.reshape(10, 28, 28)[j]  # extract correct class
+            except Exception as e:
+                print(f"[ERROR] SHAP reshape failed for sample {i}, class {j}: {e}")
+                continue
+
+            np.save(f'{save_dir}/{i}_shap_{j}.npy', shap_array)
+            last_img = axes[i, j+1].imshow(reshaped, cmap='jet')
             axes[i, j+1].axis('off')
-            # axes[i, j+1].set_title(f'SHAP value {j+1}')
 
-        # Remove empty cells in the row
-        for j in range(num_shap_values + 1, 11):
+
+        # Fill remaining columns
+        for j in range(len(shap_i) + 1, 11):
             axes[i, j].axis('off')
 
-        # Save the row individually and remove the white space
-        row_fig = plt.figure(figsize=(10, 1))
-        row_axes = row_fig.subplots(1, num_shap_values + 1)
+        # Save row as standalone image
+        row_fig, row_axes = plt.subplots(1, 11, figsize=(20, 2))
         row_axes[0].imshow(data[i].cpu().reshape(28, 28), cmap='gray')
         row_axes[0].set_title(f'Label: {label}')
-        for j in range(num_shap_values):
-            row_axes[j+1].imshow(shap_i[j].reshape(28, 28), cmap='jet')
+        row_axes[0].axis('off')
+        for j in range(min(10, len(shap_i))):
+            row_axes[j+1].imshow(shap_i[j][:784].reshape(28, 28), cmap='jet')
             row_axes[j+1].axis('off')
+        for j in range(len(shap_i) + 1, 11):
+            row_axes[j].axis('off')
         plt.tight_layout()
         row_fig.savefig(f'{save_dir}/row_{i}.png')
         plt.close(row_fig)
 
-    # Remove empty rows
+    # Fill empty rows if less than 10 samples
     for i in range(len(data), 10):
-        for j in range(10):
+        for j in range(11):
             axes[i, j].axis('off')
 
-    # Add colorbar
-    cbar_ax = fig.add_axes([.93, 0.15, 0.02, 0.7])  # Adjust the position of the colorbar
-    fig.colorbar(img, cax=cbar_ax)
+    # Add colorbar only if a SHAP plot was rendered
+    if last_img is not None:
+        cbar_ax = fig.add_axes([.93, 0.15, 0.02, 0.7])
+        fig.colorbar(last_img, cax=cbar_ax)
 
-    # Save the figure
-    # plt.tight_layout()
+    plt.tight_layout()
     plt.savefig(f'{save_dir}/shap_values.png')
     plt.close()
 

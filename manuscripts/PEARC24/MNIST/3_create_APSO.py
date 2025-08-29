@@ -1,4 +1,4 @@
-from Swarm_Observer import Swarm 
+from Adversarial_Observation import Swarm as Swarm
 import Adversarial_Observation as AO
 import os
 import torch
@@ -105,10 +105,13 @@ def plotSwarm(swarm, umap_model, epoch, otherpoints):
             y = [i[1] for i in otherpoints[key]]
             ax.scatter(x, y, label=key)
     # Get all the points
-    points = swarm.getPoints()
+    points = np.array(swarm.getPoints())
 
     # Transform the points
-    points = umap_model.transform(points)
+    points_np = points.cpu().detach().numpy() if hasattr(points, 'cpu') else points
+    points_reshaped = points_np.reshape(points_np.shape[0], -1)
+    points = umap_model.transform(points_reshaped)
+
     ax.scatter(points[:, 0], points[:, 1], c='black', label='Swarm', marker='x', s=100)                
     ax.legend()
     ax.set_title(f'Epoch: {epoch}')
@@ -120,7 +123,7 @@ def plotSwarm(swarm, umap_model, epoch, otherpoints):
 
 def plotImages(swarm, epoch):
     points = swarm.getPoints()
-    points = points.reshape(-1, 1, 28, 28)
+    points =np.array(points).reshape(-1, 1, 28, 28)
     #  plot the best
     best = swarm.getBest()
     best = best.reshape(28, 28)
@@ -130,9 +133,9 @@ def plotImages(swarm, epoch):
     ax.imshow(best, cmap='gray')
     ax.axis('off')
     global label
-    ax.set_title(f'Confidence of {label}: {round(swarm.model(best.reshape(1,1,28,28).to(torch.float32).to(device))[0][label].item(),2)}')
+    ax.set_title(f'Confidence of {label}: {round(swarm.model(torch.tensor(best).reshape(1,1,28,28).to(torch.float32).to(device))[0][label].item(),2)}')
 
-    grad = AO.Attacks.gradient_map(best.reshape(1,1,28,28), swarm.model, (1,1, 28, 28))[0].reshape(28,28)
+    grad = AO.Attacks.gradient_map(torch.tensor(best).reshape(1,1,28,28), swarm.model, (1,1, 28, 28))[0].reshape(28,28)
     grad = np.abs(grad)  # Make the gradients absolute for better visualization
     grad_normalized = (grad - np.min(grad)) / (np.max(grad) - np.min(grad))  # Normalize gradients to 0-1
 
@@ -152,9 +155,9 @@ def plotImages(swarm, epoch):
         fig, ax = plt.subplots(figsize=(6, 6))
         ax.imshow(point, cmap='gray')
         ax.axis('off')
-        ax.set_title(f'Confidence of {label}: {round(swarm.model(point.reshape(1,1,28,28).to(torch.float32).to(device))[0][label].item(),3)}')
+        ax.set_title(f'Confidence of {label}: {round(swarm.model(torch.tensor(point).reshape(1,1,28,28).to(torch.float32).to(device))[0][label].item(),3)}')
 
-        grad = AO.Attacks.gradient_map(point.reshape(1,1,28,28), swarm.model, (1,1, 28, 28))[0].reshape(28,28)
+        grad = AO.Attacks.gradient_map(torch.tensor(point).reshape(1,1,28,28), swarm.model, (1,1, 28, 28))[0].reshape(28,28)
         grad = np.abs(grad)  # Make the gradients absolute for better visualization
         grad_normalized = (grad - np.min(grad)) / (np.max(grad) - np.min(grad))  # Normalize gradients to 0-1
 
@@ -170,10 +173,26 @@ def plotImages(swarm, epoch):
         plt.close()
 
 def runSwarm(inital_points, model, device, umap_model, epochs, otherpoints):
-    APSO = Swarm.PSO(inital_points, cost_func, model, 1, .5, .5)
+    APSO = Swarm.ParticleSwarm(
+        model=model,
+        input_set=inital_points,
+        starting_class=label,
+        target_class=label,
+        num_iterations=1,  
+        save_dir='results',
+        inertia_weight=0.5,
+        cognitive_weight=0.5,
+        social_weight=0.5,
+        momentum=0.9,
+        clip_value_position=0.2,
+        enable_logging=True,
+        device='cuda'  # or 'cpu' if you want to run on CPU
+    )
+
+
     plotSwarm(APSO, umap_model, 0, otherpoints)
     for i in tqdm.tqdm(range(1, 1+epochs), desc='Running Swarm', total=epochs):
-        APSO.step()
+        APSO.optimize()
         plotSwarm(APSO, umap_model, i, otherpoints)
     plotSwarm(APSO, umap_model, epochs+1, otherpoints)
 
