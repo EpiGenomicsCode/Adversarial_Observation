@@ -62,7 +62,7 @@ def testModel(model, test_loader, filename):
 
 def main():
     # Seed everything
-    AO.utils.seedEverything(42)
+    AO.utils.seed_everything(42)
 
     train_loader, test_loader = AO.utils.load_MNIST_data()
     model = AO.utils.load_MNIST_model()

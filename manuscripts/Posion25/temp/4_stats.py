@@ -115,7 +115,7 @@ def run_statistics(args):
     # Save the collected statistics as a JSON file for later analysis
     stats_file = os.path.join(results_dir, f"{args.data}_attack_stats.json")
     with open(stats_file, 'w') as f:
-        json.dump(all_stats, f, indent=4)
+        json.dump(all_stats, f, indent=4)   
 
     print(f"Statistics saved to {stats_file}")
 

@@ -7,22 +7,16 @@
 		"dockerfile": "Dockerfile"
 	},
 	"features": {
-		"ghcr.io/devcontainers/features/anaconda:1": {
-			"version": "latest"
-		},
-		"ghcr.io/devcontainers/features/nvidia-cuda:2": {
-			"installCudnn": true,
-			"installCudnnDev": true,
-			"installNvtx": true,
-			"installToolkit": true,
-			"cudaVersion": "11.8",
-			"cudnnVersion": "automatic"
-		},
-		"ghcr.io/raucha/devcontainer-features/pytorch:1": {}
+		"ghcr.io/devcontainers/features/anaconda:1": {},
+		"ghcr.io/devcontainers/features/nvidia-cuda:2": {},
+		"ghcr.io/rocker-org/devcontainer-features/miniforge:2": {}
 	},
 	"runArgs": [
-		"--gpus=all"
-	]
+		"--gpus", "all"
+	],
+	// allow gpu
+
+
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	// "features": {},
 

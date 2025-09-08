@@ -15,6 +15,8 @@ from tensorflow.keras.datasets import mnist
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.utils import to_categorical
 from models import *
+from taint import pgd_attack
+
 SAMPLING_RATE = 16000
 NUM_CLASSES = 10
 RANDOM_SEED = 42
@@ -44,26 +46,66 @@ def load_dataset(data_path):
     data = [pad_audio(audio, max_len) for audio in data]
     return np.array(data), np.array(labels), max_len
 
-def prepare_datasets(data, labels, max_len, test_size=0.2):
+def augment_audio(audio, label):
+    def add_noise(audio):
+        noise = tf.random.normal(shape=tf.shape(audio), mean=0.0, stddev=0.005)
+        return audio + noise
+
+    def time_shift(audio):
+        shift = tf.random.uniform([], minval=-1600, maxval=1600, dtype=tf.int32)
+        return tf.roll(audio, shift=shift, axis=0)
+
+    audio = add_noise(audio)
+    audio = time_shift(audio)
+    return audio, label
+
+def generate_adversarial_audio(audio, label):
+    # Placeholder for actual adversarial attack
+    perturbation = tf.random.normal(tf.shape(audio), mean=0.0, stddev=0.01)
+    adversarial_audio = tf.clip_by_value(audio + perturbation, -1.0, 1.0)
+    return adversarial_audio, label
+
+def prepare_datasets(data, labels, max_len, test_size=0.2, use_augmentation=False, adversarial="none"):
     data = np.array([pad_audio(audio, max_len) for audio in data])[..., np.newaxis]
     x_train, x_test, y_train, y_test = train_test_split(data, labels, test_size=test_size, random_state=RANDOM_SEED)
     x_train = x_train.astype(np.float32) / np.max(np.abs(x_train))
     x_test = x_test.astype(np.float32) / np.max(np.abs(x_test))
     y_train = to_categorical(y_train, NUM_CLASSES)
     y_test = to_categorical(y_test, NUM_CLASSES)
-    train_ds = tf.data.Dataset.from_tensor_slices((x_train, y_train)).batch(BATCH_SIZE)
-    test_ds = tf.data.Dataset.from_tensor_slices((x_test, y_test)).batch(BATCH_SIZE)
+
+    train_ds = tf.data.Dataset.from_tensor_slices((x_train, y_train))
+    test_ds = tf.data.Dataset.from_tensor_slices((x_test, y_test))
+
+    if use_augmentation:
+        train_ds = train_ds.map(augment_audio, num_parallel_calls=tf.data.AUTOTUNE)
+
+    if adversarial in ["train", "both"]:
+        train_ds = train_ds.map(generate_adversarial_audio, num_parallel_calls=tf.data.AUTOTUNE)
+
+    if adversarial in ["test", "both"]:
+        test_ds = test_ds.map(generate_adversarial_audio, num_parallel_calls=tf.data.AUTOTUNE)
+
+    train_ds = train_ds.batch(BATCH_SIZE).prefetch(tf.data.AUTOTUNE)
+    test_ds = test_ds.batch(BATCH_SIZE).prefetch(tf.data.AUTOTUNE)
+
     return train_ds, test_ds, (x_test, y_test)
 
-def load_audio_mnist_data(data_path):
+def load_audio_mnist_data(data_path, use_augmentation=False, adversarial="none"):
     if not os.path.exists(data_path):
         raise FileNotFoundError(f"Data path {data_path} does not exist.")
     data, labels, max_len = load_dataset(data_path)
-    train_ds, test_ds, _ = prepare_datasets(data, labels, max_len)
+    train_ds, test_ds, _ = prepare_datasets(data, labels, max_len, use_augmentation=use_augmentation, adversarial=adversarial)
     return train_ds, test_ds, max_len
 
+from tensorflow.keras.datasets import cifar10
 
-def load_data(batch_size=32, dataset_type="MNIST", use_augmentation=False):
+def normalize_cifar10(x):
+    return x.astype('float32') / 255.0
+
+def load_data(batch_size=32, dataset_type="MNIST", use_augmentation=False, adversarial="none"):
+    """
+    Loads the dataset (MNIST, CIFAR10, or MNIST_Audio) with optional augmentation and adversarial setting.
+    """
     if dataset_type == "MNIST":
         (x_train, y_train), (x_test, y_test) = mnist.load_data()
         x_train = normalize_mnist(x_train.reshape(-1, 28, 28, 1).astype('float32'))
@@ -72,7 +114,6 @@ def load_data(batch_size=32, dataset_type="MNIST", use_augmentation=False):
         y_test = to_categorical(y_test, 10)
 
         if use_augmentation:
-            # Data Augmentation with ImageDataGenerator
             datagen = ImageDataGenerator(
                 rotation_range=10,
                 zoom_range=0.10,
@@ -80,12 +121,41 @@ def load_data(batch_size=32, dataset_type="MNIST", use_augmentation=False):
                 height_shift_range=0.1
             )
             datagen.fit(x_train)
-            train_datagen = datagen.flow(x_train, y_train, batch_size=batch_size)
+            train_generator = datagen.flow(x_train, y_train, batch_size=batch_size)
             train_dataset = tf.data.Dataset.from_generator(
-                lambda: train_datagen,
+                lambda: train_generator,
                 output_signature=(
-                    tf.TensorSpec(shape=(batch_size, 28, 28, 1), dtype=tf.float32),
-                    tf.TensorSpec(shape=(batch_size, 10), dtype=tf.float32)
+                    tf.TensorSpec(shape=(None, 28, 28, 1), dtype=tf.float32),
+                    tf.TensorSpec(shape=(None, 10), dtype=tf.float32)
+                )
+            )
+        else:
+            train_dataset = tf.data.Dataset.from_tensor_slices((x_train, y_train)).batch(batch_size)
+
+        test_dataset = tf.data.Dataset.from_tensor_slices((x_test, y_test)).batch(batch_size)
+        return train_dataset, test_dataset
+
+    elif dataset_type == "CIFAR10":
+        (x_train, y_train), (x_test, y_test) = cifar10.load_data()
+        x_train = normalize_cifar10(x_train)
+        x_test = normalize_cifar10(x_test)
+        y_train = to_categorical(y_train, 10)
+        y_test = to_categorical(y_test, 10)
+
+        if use_augmentation:
+            datagen = ImageDataGenerator(
+                rotation_range=15,
+                width_shift_range=0.1,
+                height_shift_range=0.1,
+                horizontal_flip=True
+            )
+            datagen.fit(x_train)
+            train_generator = datagen.flow(x_train, y_train, batch_size=batch_size)
+            train_dataset = tf.data.Dataset.from_generator(
+                lambda: train_generator,
+                output_signature=(
+                    tf.TensorSpec(shape=(None, 32, 32, 3), dtype=tf.float32),
+                    tf.TensorSpec(shape=(None, 10), dtype=tf.float32)
                 )
             )
         else:
@@ -96,12 +166,12 @@ def load_data(batch_size=32, dataset_type="MNIST", use_augmentation=False):
 
     elif dataset_type == "MNIST_Audio":
         data_path = "./AudioMNIST/data"
-        train_ds, test_ds, max_len = load_audio_mnist_data(data_path)
+        train_ds, test_ds, _ = load_audio_mnist_data(data_path, use_augmentation=use_augmentation, adversarial=adversarial)
         return train_ds, test_ds
 
     else:
         raise ValueError(f"Unsupported dataset type: {dataset_type}")
-
+ 
 def train_model(model, train_dataset, epochs=10):
     model.compile(optimizer=Adam(0.001), loss='categorical_crossentropy', metrics=['accuracy'])
     for epoch in range(epochs):
@@ -127,49 +197,111 @@ def evaluate_model(model, test_dataset):
     auprc = average_precision_score(to_categorical(y_true, NUM_CLASSES), y_pred)
     print(f"Test Loss: {loss:.4f}, Accuracy: {acc:.4f}, AUROC: {auroc:.4f}, AUPRC: {auprc:.4f}")
 
+def trades_loss(model, x_natural, y, eps=0.3, alpha=0.01, steps=10, beta=6.0):
+    x_adv = tf.identity(x_natural) + 0.001 * tf.random.normal(tf.shape(x_natural))
+    for _ in range(steps):
+        with tf.GradientTape() as tape:
+            tape.watch(x_adv)
+            kl_loss = tf.keras.losses.KLDivergence()(
+                tf.nn.softmax(model(x_natural)), tf.nn.softmax(model(x_adv)))
+        grad = tape.gradient(kl_loss, x_adv)
+        x_adv = x_adv + alpha * tf.sign(grad)
+        x_adv = tf.clip_by_value(x_adv, x_natural - eps, x_natural + eps)
+        x_adv = tf.clip_by_value(x_adv, 0.0, 1.0)
+
+    loss_nat = tf.keras.losses.categorical_crossentropy(y, model(x_natural))
+    loss_rob = tf.keras.losses.KLDivergence()(tf.nn.softmax(model(x_natural)), tf.nn.softmax(model(x_adv)))
+    return tf.reduce_mean(loss_nat + beta * loss_rob)
+
+def train_trades(model, train_dataset, epochs=5):
+    optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
+    for epoch in range(epochs):
+        print(f"\nEpoch {epoch + 1}/{epochs} [TRADES]")
+        for images, labels in train_dataset:
+            with tf.GradientTape() as tape:
+                loss = trades_loss(model, images, labels)
+            grads = tape.gradient(loss, model.trainable_variables)
+            optimizer.apply_gradients(zip(grads, model.trainable_variables))
+    return model
+
+def train_pgd(model, train_dataset, eps=0.3, alpha=0.01, steps=40, epochs=5):
+    optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
+    loss_fn = tf.keras.losses.CategoricalCrossentropy()
+    for epoch in range(epochs):
+        print(f"\nEpoch {epoch + 1}/{epochs} [PGD]")
+        for x, y in train_dataset:
+            x_adv = pgd_attack(model, x, y, eps=eps, alpha=alpha, steps=steps)
+            with tf.GradientTape() as tape:
+                logits = model(x_adv, training=True)
+                loss = loss_fn(y, logits)
+            grads = tape.gradient(loss, model.trainable_variables)
+            optimizer.apply_gradients(zip(grads, model.trainable_variables))
+    return model
+
 def train_model_and_save(args):
-    # Create folder name based on dataset and model type
     folder_name = f"{args.data}_{args.model_type}"
-
     save_dir = os.path.join(args.save_dir, folder_name)
-
-    # Ensure the save directory exists
     os.makedirs(save_dir, exist_ok=True)
     model_path = os.path.join(save_dir, f'{folder_name}.keras')
 
-    # Load or train the model based on the data and model type
+    # Select model and load data
     if args.data == 'MNIST':
+        if args.model_type in ['normal', 'complex']:
+            model = load_complex_MNIST_model(model_path) if args.model_type == 'complex' else load_MNIST_model(model_path)
+            train_ds, test_ds = load_data(
+                dataset_type="MNIST",
+                use_augmentation=False,
+                adversarial=args.adversarial
+            )
+        elif args.model_type in ['complex_augmented', 'complex_adversarial']:
+            model = load_complex_MNIST_model(model_path)
+            train_ds, test_ds = load_data(
+                dataset_type="MNIST",
+                use_augmentation=True,
+                adversarial=args.adversarial
+            )
+
+    elif args.data == 'CIFAR10':
         if args.model_type == 'normal':
-            model = load_MNIST_model(model_path)
-            train_ds, test_ds = load_data(dataset_type="MNIST", use_augmentation=False)
-        elif args.model_type == 'complex':
-            model = load_complex_MNIST_model(model_path)
-            train_ds, test_ds = load_data(dataset_type="MNIST", use_augmentation=False)
-        elif args.model_type == 'complex_augmented':
-            model = load_complex_MNIST_model(model_path)
-            train_ds, test_ds = load_data(dataset_type="MNIST", use_augmentation=True)
+            model = load_CIFAR10_model(model_path)
+        else:
+            model = load_complex_CIFAR10_model(model_path)
+        train_ds, test_ds = load_data(
+            dataset_type="CIFAR10",
+            use_augmentation=args.model_type != 'normal',
+            adversarial=args.adversarial
+        )
+
     elif args.data == 'MNIST_Audio':
         if args.model_type == 'normal':
             model = load_AudioMNIST_model(model_path)
-            train_ds, test_ds = load_data(dataset_type="MNIST_Audio", use_augmentation=False)
-        elif args.model_type == 'complex':
+        else:
             model = load_complex_AudioMNIST_model(model_path)
-            train_ds, test_ds = load_data(dataset_type="MNIST_Audio", use_augmentation=False)
-        elif args.model_type == 'complex_augmented':
-            model = load_complex_AudioMNIST_model(model_path)
-            train_ds, test_ds = load_data(dataset_type="MNIST_Audio", use_augmentation=True)
+        train_ds, test_ds = load_data(
+            dataset_type="MNIST_Audio",
+            use_augmentation=args.model_type != 'normal',
+            adversarial=args.adversarial
+        )
 
-    # Check if model weights exist, if not, train and save
+    else:
+        raise ValueError(f"Unsupported dataset: {args.data}")
+
+    # Train or load
     if not os.path.exists(model_path):
         print("Training the model...")
-        model = train_model(model, train_ds, epochs=args.epochs)
+        if args.adversarial == "trades":
+            model = train_trades(model, train_ds, epochs=args.epochs)
+        elif args.adversarial == "pgd":
+            model = train_pgd(model, train_ds, epochs=args.epochs)
+        else:
+            model = train_model(model, train_ds, epochs=args.epochs)
+
         model.save(model_path)
         print(f"Model saved to {model_path}")
     else:
         print(f"Model found. Loading weights from {model_path}")
         model.load_weights(model_path)
 
-    # Evaluate the model
     print("Evaluating the model...")
     evaluate_model(model, test_ds)
 

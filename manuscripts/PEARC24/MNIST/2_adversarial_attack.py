@@ -8,7 +8,7 @@ import tqdm
 
 def main():
     # Seed everything
-    AO.utils.seedEverything(6991)
+    AO.utils.seed_everything(6991)
 
     train_loader, test_loader = AO.utils.load_MNIST_data()
     model = AO.utils.load_MNIST_model()
