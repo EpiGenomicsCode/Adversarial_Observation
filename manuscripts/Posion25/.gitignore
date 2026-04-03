@@ -1,9 +1,0 @@
-AudioMNIST*
-results/
-*.pyc
-__pycache__/
-*.pkl
-*.keras
-slurm_jobs/
-false_data
-MNIST_train_*
