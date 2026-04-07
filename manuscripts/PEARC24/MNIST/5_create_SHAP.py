@@ -34,22 +34,40 @@ def save_and_plot_shap_values(dataloader, model):
     data, target = getData(dataloader)
     data = data.to(device)
     target = target.to(device)
-
     model = model.to(device)
 
     explainer = shap.DeepExplainer(model, data)
-    shap_values = explainer.shap_values(data)  # List of [class][samples, features]
+    shap_values = explainer.shap_values(data)  
+    
+    # --- ROBUST SHAP SHAPE NORMALIZATION ---
+    # SHAP can return a list of 10 arrays OR a list of 1 array containing all classes.
+    # This block forces the data into a standard shape: (batch_size, num_classes, 28, 28)
+    if isinstance(shap_values, list):
+        if len(shap_values) == 10:
+            # Case A: List of 10 classes. Convert to array and swap axes to (batch, class, ...)
+            shap_tensor = np.array(shap_values).swapaxes(0, 1)
+        elif len(shap_values) == 1:
+            # Case B: List of 1 containing everything. Extract the array directly.
+            shap_tensor = np.array(shap_values[0])
+        else:
+            shap_tensor = np.array(shap_values)
+    else:
+        # Case C: Returned a raw numpy array right out of the gate
+        shap_tensor = np.array(shap_values)
+        
+    # Flatten out the channel dimension and strictly enforce (10_images, 10_classes, 28, 28)
+    shap_tensor = shap_tensor.reshape(len(data), 10, 28, 28)
+    # ---------------------------------------
 
     save_dir = 'SHAP'
     os.makedirs(save_dir, exist_ok=True)
 
     # Create a 10x11 grid: 1 original + 10 SHAP values
     fig, axes = plt.subplots(10, 11, figsize=(20, 22))
-    last_img = None  # For colorbar
+    last_img = None  
 
     for i in range(len(data)):
         label = target[i].item()
-        shap_i = [class_shap[i] for class_shap in shap_values]  # SHAP per class, for this image
 
         # Save original image
         np.save(f'{save_dir}/{i}_original.npy', data[i].cpu().numpy())
@@ -57,33 +75,23 @@ def save_and_plot_shap_values(dataloader, model):
         axes[i, 0].set_title(f'Label: {label}')
         axes[i, 0].axis('off')
 
-        for j in range(min(10, len(shap_i))):
-            shap_array = shap_i[j]
-            try:
-                reshaped = shap_array.reshape(10, 28, 28)[j]  # extract correct class
-            except Exception as e:
-                print(f"[ERROR] SHAP reshape failed for sample {i}, class {j}: {e}")
-                continue
-
-            np.save(f'{save_dir}/{i}_shap_{j}.npy', shap_array)
+        # 1. Main Grid Plotting
+        for j in range(10):
+            reshaped = shap_tensor[i, j] # Safely extracts the exact 28x28 grid
+            np.save(f'{save_dir}/{i}_shap_{j}.npy', reshaped)
             last_img = axes[i, j+1].imshow(reshaped, cmap='jet')
             axes[i, j+1].axis('off')
 
-
-        # Fill remaining columns
-        for j in range(len(shap_i) + 1, 11):
-            axes[i, j].axis('off')
-
-        # Save row as standalone image
+        # 2. Save row as standalone image
         row_fig, row_axes = plt.subplots(1, 11, figsize=(20, 2))
         row_axes[0].imshow(data[i].cpu().reshape(28, 28), cmap='gray')
         row_axes[0].set_title(f'Label: {label}')
         row_axes[0].axis('off')
-        for j in range(min(10, len(shap_i))):
-            row_axes[j+1].imshow(shap_i[j][:784].reshape(28, 28), cmap='jet')
+        
+        for j in range(10):
+            row_axes[j+1].imshow(shap_tensor[i, j], cmap='jet')
             row_axes[j+1].axis('off')
-        for j in range(len(shap_i) + 1, 11):
-            row_axes[j].axis('off')
+            
         plt.tight_layout()
         row_fig.savefig(f'{save_dir}/row_{i}.png')
         plt.close(row_fig)

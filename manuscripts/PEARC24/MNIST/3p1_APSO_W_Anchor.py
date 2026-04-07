@@ -7,7 +7,7 @@ import tqdm
 import matplotlib.pyplot as plt
 
 import Adversarial_Observation as AO
-from Adversarial_Observation.Swarm import ParticleSwarm  # ← This is your custom swarm class
+from Adversarial_Observation.Swarm import ParticleSwarm  
 
 # --- Global Config ---
 optimize = 3  # Target class for the attack
