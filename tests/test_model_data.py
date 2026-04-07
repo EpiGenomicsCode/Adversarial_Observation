@@ -2,7 +2,7 @@
 
 import pytest
 import torch
-from Adversarial_Observation.utils import load_MNIST_model, load_data
+from Adversarial_Observation.utils import load_MNIST_data, load_MNIST_model
 from torch.utils.data import DataLoader
 
 def test_model_loading():
@@ -12,7 +12,7 @@ def test_model_loading():
     assert isinstance(model, torch.nn.Module), "Loaded model is not a valid PyTorch model"
 
 def test_data_loading():
-    train_loader, test_loader = load_data(batch_size=32)
+    train_loader, test_loader = load_MNIST_data(batch_size=32)
 
     # Check if data loaders are of correct type
     assert isinstance(train_loader, DataLoader), "Train loader is not a DataLoader"
