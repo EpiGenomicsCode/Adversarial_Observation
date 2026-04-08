@@ -105,7 +105,7 @@ def fgsm_attack(model, x, y, eps=0.05, clamp_min=0.0, clamp_max=1.0):
     """
     Generates adversarial examples for x using FGSM (l_infty).
     Assumes inputs are in [clamp_min, clamp_max].
-    eps is in the same scale as x (e.g., MNIST ToTensor -> [0,1]).
+    eps is in the same scale as x (e.g., cifar10 ToTensor -> [0,1]).
     """
     model_device = next(model.parameters()).device
     x = x.detach().to(model_device)

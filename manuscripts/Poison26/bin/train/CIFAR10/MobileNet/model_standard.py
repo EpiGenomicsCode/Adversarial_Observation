@@ -121,8 +121,8 @@ def evaluate_model(model, test_loader, device):
 # Main
 # ----------------------------
 def main():
-    parser = argparse.ArgumentParser(description="MNIST training code (PyTorch)")
-    parser.add_argument("--output", type=str, default="mnist_model1.pt", help="Model output name")
+    parser = argparse.ArgumentParser(description="cifar10 training code (PyTorch)")
+    parser.add_argument("--output", type=str, default="cifar10_model1.pt", help="Model output name")
     parser.add_argument("--batch-size", type=int, default=64)
     parser.add_argument("--epochs", type=int, default=5, help="Number of training epochs")
     args = parser.parse_args()

@@ -63,7 +63,7 @@ def pgd_attack(model, x, y, eps=0.05, alpha=0.01, steps=40, random_start=True, c
     """
     Generates adversarial examples for x using PGD (l_infty).
     Assumes inputs are in [clamp_min, clamp_max].
-    eps/alpha are in the same scale as x (e.g., MNIST ToTensor -> [0,1]).
+    eps/alpha are in the same scale as x (e.g., cifar10 ToTensor -> [0,1]).
     """
     model_device = next(model.parameters()).device
     x = x.detach().to(model_device)
@@ -205,8 +205,8 @@ def evaluate_model(model, test_loader, device, robust=False, eps=0.05, alpha=0.0
 # Main
 # ----------------------------
 def main():
-    parser = argparse.ArgumentParser(description="MNIST training code (PyTorch) with PGD adversarial training")
-    parser.add_argument("--output", type=str, default="mnist_model5.pt", help="Model output name")
+    parser = argparse.ArgumentParser(description="cifar10 training code (PyTorch) with PGD adversarial training")
+    parser.add_argument("--output", type=str, default="cifar10_model5.pt", help="Model output name")
     parser.add_argument("--epochs", type=int, default=5, help="Number of training epochs")
     parser.add_argument("--batch-size", type=int, default=64)
     parser.add_argument("--lr", type=float, default=1e-3)

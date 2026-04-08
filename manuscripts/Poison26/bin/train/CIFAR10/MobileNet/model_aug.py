@@ -21,18 +21,25 @@ from MobileNet import MobileNet
 # Dataset loading
 # ----------------------------
 def load_data(batch_size=32):
-    transform = transforms.Compose([
+    # Data augmentation for training
+    train_transform = transforms.Compose([
+        transforms.RandomCrop(32, padding=4),
+        transforms.RandomHorizontalFlip(),
         transforms.ToTensor(), # Converts to [0,1]
     ])
 
-    train_dataset = datasets.CIFAR10(root="./data", train=True, download=True, transform=transform)
-    test_dataset = datasets.CIFAR10(root="./data", train=False, download=True, transform=transform)
+    # No augmentation for testing
+    test_transform = transforms.Compose([
+        transforms.ToTensor(),
+    ])
+
+    train_dataset = datasets.CIFAR10(root="./data", train=True, download=True, transform=train_transform)
+    test_dataset = datasets.CIFAR10(root="./data", train=False, download=True, transform=test_transform)
 
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=2)
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=2)
 
     return train_loader, test_loader
-
 # ----------------------------
 # Training loop
 # ----------------------------
@@ -120,20 +127,20 @@ def evaluate_model(model, test_loader, device):
 # Main
 # ----------------------------
 def main():
-    parser = argparse.ArgumentParser(description="MNIST training code (PyTorch) with Augmentation")
-    parser.add_argument("--output", type=str, default="mnist_model_aug.pt", help="Model output name")
+    parser = argparse.ArgumentParser(description="cifar10 training code (PyTorch) with Augmentation")
+    parser.add_argument("--output", type=str, default="cifar10_model_aug.pt", help="Model output name")
     parser.add_argument("--batch-size", type=int, default=64)
     parser.add_argument("--epochs", type=int, default=5, help="Number of training epochs")
     args = parser.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    # Initialize MobileNet dynamically for 1-channel, 28x28 inputs
-    dummy_batch = torch.zeros(1, 1, 28, 28)
-    model = MobileNet(one_batch=dummy_batch, num_classes=10)
-
     # Load data
     train_loader, test_loader = load_data(batch_size=args.batch_size)
+    dummy_batch =  train_loader.dataset[0][0].unsqueeze(0)  # Get a single sample and add batch dimension
+    
+    # Initialize MobileNet dynamically for 1-channel, 28x28 inputs
+    model = MobileNet(one_batch=dummy_batch, num_classes=10)
 
     # Train
     train(model, train_loader, device, epochs=args.epochs)

@@ -9,14 +9,12 @@ class DepthwiseSeparableConv(nn.Module):
     def __init__(self, in_channels, out_channels, stride=1):
         super(DepthwiseSeparableConv, self).__init__()
 
-        # Depthwise layer with BN and ReLU6
         self.depthwise = nn.Sequential(
             nn.Conv2d(in_channels, in_channels, kernel_size=3, stride=stride, padding=1, groups=in_channels, bias=False),
             nn.BatchNorm2d(in_channels),
             nn.ReLU6(inplace=True)
         )
         
-        # Pointwise layer with BN and ReLU6
         self.pointwise = nn.Sequential(
             nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=1, padding=0, bias=False),
             nn.BatchNorm2d(out_channels),
@@ -32,10 +30,9 @@ class DepthwiseSeparableConv(nn.Module):
 # MobileNetV1 (Model Definition)
 # -------------------------
 class MobileNet(nn.Module):
-    def __init__(self, one_batch=None, num_classes=1000):
+    def __init__(self, one_batch=None, num_classes=10):
         super(MobileNet, self).__init__()
 
-        # Handle dynamic input sizes
         if one_batch is not None:
             _, in_channels, H, W = one_batch.shape
             self.input_channels = in_channels
@@ -44,18 +41,12 @@ class MobileNet(nn.Module):
             self.input_channels = 3
             self.input_size = (3, 224, 224)
 
-        # -------------------------
-        # Stem
-        # -------------------------
         self.stem = nn.Sequential(OrderedDict([
             ('conv1', nn.Conv2d(self.input_channels, 32, kernel_size=3, stride=2, padding=1, bias=False)),
             ('bn1', nn.BatchNorm2d(32)),
             ('relu1', nn.ReLU6(inplace=True)),
         ]))
 
-        # -------------------------
-        # Full MobileNetV1 Architecture
-        # -------------------------
         layers = [
             DepthwiseSeparableConv(32, 64, stride=1),
             DepthwiseSeparableConv(64, 128, stride=2),
@@ -65,29 +56,19 @@ class MobileNet(nn.Module):
             DepthwiseSeparableConv(256, 512, stride=2)
         ]
 
-        # 5x repeating blocks of 512 channels
         for _ in range(5):
             layers.append(DepthwiseSeparableConv(512, 512, stride=1))
 
-        # Final expansion to 1024 channels
         layers.extend([
             DepthwiseSeparableConv(512, 1024, stride=2),
             DepthwiseSeparableConv(1024, 1024, stride=1)
         ])
 
-        # Pack the layers into an nn.Sequential for cleaner forward pass
         self.features = nn.Sequential(*layers)
-
-        # -------------------------
-        # Classifier Setup
-        # -------------------------
         self.pool = nn.AdaptiveAvgPool2d(1)
         self.fc_input_features = self._get_flattened_feature_size(one_batch)
         self.fc = nn.Linear(self.fc_input_features, num_classes)
 
-    # -------------------------
-    # Compute FC feature size dynamically
-    # -------------------------
     def _get_flattened_feature_size(self, one_batch):
         was_training = self.training
         self.eval()
@@ -109,9 +90,6 @@ class MobileNet(nn.Module):
 
         return out_features
 
-    # -------------------------
-    # Forward
-    # -------------------------
     def forward(self, x):
         x = self.stem(x)
         x = self.features(x)
