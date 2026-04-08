@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 import numpy as np
 import os
-from Adversarial_Observation.Swarm import ParticleSwarm
+from Adversarial_Observation.Swarm import PSO
 
 @pytest.fixture
 def simple_model():
@@ -13,58 +13,56 @@ def simple_model():
         nn.Linear(4 * 26 * 26, 10)
     )
 
-@pytest.fixture
-def test_data():
-    input_images = torch.rand((5, 1, 28, 28))
-    starting_class = 0
-    target_class = 9
-    return input_images, starting_class, target_class
+def dummy_cost_func(model, position):
+    # A dummy cost function to satisfy the PSO requirements during testing
+    return torch.sum(position).item()
 
 @pytest.fixture
-def particle_swarm(simple_model, test_data, tmp_path):
-    input_images, starting_class, target_class = test_data
-    
-    # Use pytest's built-in tmp_path fixture to avoid all permission errors
-    save_dir = str(tmp_path / 'test_results')
-    
-    swarm = ParticleSwarm(
+def test_data():
+    # 5 particles, dimensions: (1, 28, 28)
+    input_images = torch.rand((5, 1, 28, 28))
+    return input_images
+
+@pytest.fixture
+def particle_swarm(simple_model, test_data):
+    swarm = PSO(
+        starting_positions=test_data,
+        cost_func=dummy_cost_func,
         model=simple_model,
-        input_set=input_images,
-        starting_class=starting_class,
-        target_class=target_class,
-        num_iterations=2,
-        save_dir=save_dir,
-        enable_logging=True
+        minclamp=0.0,
+        maxclamp=1.0
     )
     return swarm
 
 def test_particle_swarm_initialization(particle_swarm):
     """Test if swarm initializes components correctly."""
-    assert particle_swarm.num_iterations == 2
-    assert particle_swarm.start_class == 0
-    assert len(particle_swarm.particles) == 5
-    assert particle_swarm.global_best_score == -float('inf')
+    assert particle_swarm.epoch == 0
+    assert len(particle_swarm.swarm) == 5
+    assert particle_swarm.cos_best_g > -float('inf')
 
 def test_pso_optimization(particle_swarm):
     """Test the full optimization loop and score improvement."""
-    initial_score = particle_swarm.global_best_score
-    particle_swarm.optimize()
+    initial_score = particle_swarm.cos_best_g.clone()
+    particle_swarm.run(epochs=2)
     
-    # The score should have updated after evaluation
-    assert particle_swarm.global_best_score > initial_score or particle_swarm.global_best_score > -float('inf')
+    # The score should have updated (or at least maintained) after evaluation
+    assert particle_swarm.cos_best_g >= initial_score
 
-def test_logging_creation(particle_swarm):
-    """Verify log files are created in the temporary directory."""
-    particle_swarm.optimize()
-    log_path = os.path.join(particle_swarm.save_dir, 'iteration_log.log')
-    assert os.path.exists(log_path)
+def test_logging_creation(particle_swarm, tmp_path):
+    """Verify history files are created in the temporary directory."""
+    particle_swarm.run(epochs=2)
+    save_path = str(tmp_path / 'history.csv')
+    
+    particle_swarm.save_history(save_path)
+    assert os.path.exists(save_path)
 
 def test_getters(particle_swarm):
     """Expand testing to ensure data extraction methods return expected types and shapes."""
     best_pos = particle_swarm.getBest()
-    assert isinstance(best_pos, np.ndarray)
+    # PSO getBest returns a torch.Tensor, not an ndarray
+    assert isinstance(best_pos, torch.Tensor)
 
     points = particle_swarm.getPoints()
-    assert isinstance(points, list)
-    assert len(points) == 5
-    assert isinstance(points[0], np.ndarray)
+    # PSO getPoints returns a vertically stacked torch.Tensor
+    assert isinstance(points, torch.Tensor)
+    assert points.shape[0] == 5

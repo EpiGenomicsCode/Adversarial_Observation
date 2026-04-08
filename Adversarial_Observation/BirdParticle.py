@@ -1,93 +1,91 @@
 import torch
-import torch.nn.functional as F
 import numpy as np
 
 class BirdParticle:
-    """
-    Represents a particle in the Particle Swarm Optimization (PSO) algorithm for adversarial attacks (PyTorch version).
-    """
-
-    def __init__(self, model: torch.nn.Module, input_data: torch.Tensor, target_class: int, num_iterations: int = 20,
-                 velocity: torch.Tensor = None, inertia_weight: float = 0.5, 
-                 cognitive_weight: float = 1.0, social_weight: float = 1.0, 
-                 momentum: float = 0.9, clip_value_position: float = 1.0, device='cpu'):
+    def __init__(self, position, w=1.0, c1=0.8, c2=0.2, minclamp=0.0, maxclamp=1.0, name=None):
         """
-        Initialize a particle in the PSO algorithm.
-        
+        Initializes a particle.
+
         Args:
-            model (torch.nn.Module): The model to attack.
-            input_data (torch.Tensor): The input data (image) to attack.
-            target_class (int): The target class for misclassification.
-            velocity (torch.Tensor, optional): Initial velocity; defaults to zero.
-            inertia_weight (float): Inertia weight for velocity update.
-            cognitive_weight (float): Cognitive weight for velocity update.
-            social_weight (float): Social weight for velocity update.
-            momentum (float): Momentum for velocity update.
-            clip_value_position (float): Max absolute value to clip position.
-            device (str): Device to run on.
+            position (torch.Tensor): The initial position of the particle.
+            w (float): The inertia weight.
+            c1 (float): The cognitive weight.
+            c2 (float): The social weight.
         """
-        self.device = device
-        self.model = model.to(device)
-        self.num_iterations = num_iterations
-        self.original_data = input_data.clone().detach().to(device)
-        self.position = input_data.clone().detach().to(device)
-        self.target_class = target_class
-        self.velocity = velocity.clone().detach().to(device) if velocity is not None else torch.zeros_like(input_data).to(device)
-        self.best_position = self.position.clone().detach()
-        self.best_score = -np.inf
-        self.history = [self.position.clone().detach()]
-        self.clip_value_position = clip_value_position
 
-        # PSO hyperparameters
-        self.inertia_weight = inertia_weight
-        self.cognitive_weight = cognitive_weight
-        self.social_weight = social_weight
-        self.momentum = momentum
+        self.position_i = position.clone().detach()
+        self.velocity_i = torch.rand(position.shape)  # velocity
+        # copy the current position to the best position
 
-    def fitness(self) -> float:
+        self.history = [self.position_i]
+        
+        self.pos_best_i = position.clone().detach()   # best position individual
+        self.cost_best_i = -1   # best error individual
+        self.cost_i = -1   # error individual
+
+        self.w = w
+        self.c1 = c1
+        self.c2 = c2
+        self.minclamp = minclamp
+        self.maxclamp = maxclamp
+        self.name = name
+
+    def evaluate(self, costFunc: callable, model: torch.nn.Module):
         """
-        Compute the fitness score for the particle, which is the softmax probability of the target class.
+        Evaluates the current fitness of the particle.
+
+        Args:
+            costFunc (callable): The cost function to be maximized.
+                This should be a function that takes in a PyTorch model and a tensor of positions and returns a tensor of shape (n, 1) where n is the number of particles.
+
+            model (torch.nn.Module): The model to be used in the cost function.
+            
+        """
+        self.cost_i = costFunc(model, self.position_i)
+
+        # check to see if the current position is an individual best
+        # best has the highest confidence
+        if self.cost_i >= self.cost_best_i:
+            self.pos_best_i = self.position_i
+            self.cost_best_i = self.cost_i
+
+    def update_velocity(self, pos_best_g: list):
+        """
+        Updates the particle velocity based on its own position and the global best position.
+
+        Args:
+            pos_best_g (list): the global best position
+        """
+        r1 = torch.rand_like(self.position_i)
+        r2 = torch.rand_like(self.position_i)
+
+        vel_cognitive = self.c1 * r1 * (self.pos_best_i - self.position_i)
+        vel_social = self.c2 * r2 * (pos_best_g - self.position_i)
+        self.velocity_i = self.w * self.velocity_i + vel_cognitive + vel_social
+
+        # velocity clamping to prevent explosion
+        vmax = 0.5 * (self.maxclamp - self.minclamp)
+        self.velocity_i = torch.clamp(self.velocity_i, -vmax, vmax)
+
+    def update_position(self):
+        """
+        Updates the particle position based on its velocity.
+        """
+        # update position based on velocity
+        self.position_i = self.position_i +  self.velocity_i
+        self.position_i = torch.clamp(self.position_i, self.minclamp, self.maxclamp)
+
+        # add current position to history
+        self.history.append(self.position_i)
+
+    def get_history(self):
+        """
+        Returns the history of the particle's positions.
+
+        Args:
+            None
+
         Returns:
-            float: Target class softmax probability.
+            list: The history of the particle's positions.
         """
-        self.model.eval()
-        with torch.no_grad():
-            input_tensor = self.position 
-            output = self.model(input_tensor.to(self.device))
-            probabilities = F.softmax(output, dim=1)
-            target_prob = probabilities[:, self.target_class]
-            return target_prob.item()
-
-    def update_velocity(self, global_best_position: torch.Tensor) -> None:
-        """
-        Update the particle's velocity using the PSO rule.
-        
-        Args:
-            global_best_position (torch.Tensor): Global best position in the swarm.
-        """
-        r1 = torch.rand_like(self.position).to(self.device)
-        r2 = torch.rand_like(self.position).to(self.device)
-        
-        inertia = self.inertia_weight * self.velocity
-        cognitive = self.cognitive_weight * r1 * (self.best_position - self.position)
-        social = self.social_weight * r2 * (global_best_position.to(self.device) - self.position)
-        
-        self.velocity = self.momentum * self.velocity + inertia + cognitive + social
-
-    def update_position(self) -> None:
-        """
-        Update the particle's position based on the new velocity.
-        """
-        self.position = self.position + self.velocity
-        self.position = torch.clamp(self.position, 0.0, 1.0)  # Keep values in [0, 1]
-        self.position = torch.clamp(self.position, -self.clip_value_position, self.clip_value_position)
-        self.history.append(self.position.clone().detach())
-
-    def evaluate(self) -> None:
-        """
-        Evaluate current fitness and update personal best if needed.
-        """
-        score = self.fitness()
-        if score > self.best_score:
-            self.best_score = score
-            self.best_position = self.position.clone().detach()
+        return self.history
