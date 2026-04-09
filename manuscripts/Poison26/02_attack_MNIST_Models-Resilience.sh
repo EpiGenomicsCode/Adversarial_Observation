@@ -5,9 +5,11 @@ WORKINGDIR=/storage/group/bfp2/default/wkl2-WillLai/Adversarial_Project/Adversar
 
 # ==========================================
 # CONFIGURATION
-# Set the model you want to attack here (e.g., mnist_basic_standard, mnist_adv_fgsm, mnist_adv_pgd)
+# Set the model and its architecture here
+# Available architectures: basic, adv, MobileNet, RegNetX
 # ==========================================
 MODEL_NAME="mnist_adv_fgsm"
+ARCH="adv"
 MODEL_FILE="${MODEL_NAME}.pt"
 
 OUTPUT=$WORKINGDIR/MNIST_test_${MODEL_NAME}
@@ -30,7 +32,7 @@ RETRY=5
 COHORT_ID=0
 COHORT_INDEX=0
 
-echo "Preparing cohort: $COHORT_ID for model: $MODEL_NAME"
+echo "Preparing cohort: $COHORT_ID for model: $MODEL_NAME (Arch: $ARCH)"
 echo -e $HEADER > $OUTPUT/attack_$COHORT_ID.slurm
 echo "cd $OUTPUT" >> $OUTPUT/attack_$COHORT_ID.slurm
 
@@ -46,8 +48,8 @@ while read line; do
     trueLabel=$(echo "$line" | awk '{print $2}')
     falseLabel=$(echo "$line" | awk '{print $3}')
 
-    # Execute poisoning
-    echo "singularity exec -B $WORKINGDIR/models:/models $SIF bash -c \"time python $POISON --modelPath /models/$MODEL_FILE --epochs $EPOCH --particleNum $PARTICLE --maxRetries $RETRY --outputPath MNIST_test_$index --targetLabel $falseLabel --sourceIndex $index\"" >> $OUTPUT/attack_$COHORT_ID.slurm
+    # Execute poisoning (Now passing --arch)
+    echo "singularity exec -B $WORKINGDIR/models:/models $SIF bash -c \"time python $POISON --modelPath /models/$MODEL_FILE --arch $ARCH --epochs $EPOCH --particleNum $PARTICLE --maxRetries $RETRY --outputPath MNIST_test_$index --targetLabel $falseLabel --sourceIndex $index\"" >> $OUTPUT/attack_$COHORT_ID.slurm
     ((COHORT_INDEX++))
 
     if [ $COHORT_INDEX -gt 70 ]; then
