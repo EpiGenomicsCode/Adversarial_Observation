@@ -1,0 +1,55 @@
+Bootstrap: docker
+From: continuumio/miniconda3:latest
+
+%files
+    Adversarial_Observation /opt/Adversarial_Observation
+
+%post
+    apt-get update && apt-get install -y git && apt-get clean
+
+    # Enable conda command in non-interactive build shell
+    . /opt/conda/etc/profile.d/conda.sh
+
+    # Write your environment.yml inside the container
+    cat <<'EOF' > /tmp/environment.yml
+name: pytorch-captum
+channels:
+  - pytorch
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - pytorch=2.4.1
+  - torchvision=0.19.1
+  - torchaudio=2.4.1
+  - numpy
+  - scipy
+  - librosa
+  - matplotlib
+  - scikit-learn
+  - pandas
+  - imageio
+  - pip
+  - pip:
+      - captum
+EOF
+
+    # Create the conda environment
+    conda env create -f /tmp/environment.yml
+
+    # Clean conda and pip caches
+    conda clean -a -y
+    rm -rf /opt/conda/pkgs/*
+    rm -rf /root/.cache/pip
+    
+    # Remove only the environment.yml we created
+    rm -f /tmp/environment.yml
+
+%environment
+    export PATH=/opt/conda/bin:$PATH
+    export PYTHONPATH=/opt:$PYTHONPATH
+    . /opt/conda/etc/profile.d/conda.sh
+    conda activate pytorch-captum
+
+%runscript
+    exec "$@"
