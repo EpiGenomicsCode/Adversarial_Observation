@@ -37,6 +37,12 @@ EOF
     # Create the conda environment
     conda env create -f /tmp/environment.yml
 
+    # Install the Adversarial_Observation package into the conda environment.
+    # Use --no-deps to avoid reinstalling conda-managed packages or pulling in
+    # setup.py dependencies (e.g. tensorflow) that conflict with this environment.
+    conda activate pytorch-captum
+    pip install --no-deps /opt/Adversarial_Observation
+
     # Clean conda and pip caches
     conda clean -a -y
     rm -rf /opt/conda/pkgs/*
@@ -47,7 +53,6 @@ EOF
 
 %environment
     export PATH=/opt/conda/bin:$PATH
-    export PYTHONPATH=/opt:$PYTHONPATH
     . /opt/conda/etc/profile.d/conda.sh
     conda activate pytorch-captum
 

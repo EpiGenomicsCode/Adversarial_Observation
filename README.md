@@ -1,49 +1,53 @@
-# Adversarial Attack Workflow with Particle Swarm Optimization
+# Adversarial Observation
 
-This repository contains a framework for generating **adversarial attacks** on a pre-trained or newly trained on image classification models using **Particle Swarm Optimization (PSO)**. The workflow includes model training, adversarial attack generation, explainability visualizations, and detailed analysis of attack results.
+A framework for black-box adversarial poisoning attacks using **Particle Swarm Optimization (PSO)**, with analysis of attack resilience across model architectures and adversarial training regimes.
+
+The current manuscript (in preparation) evaluates PSO-based poisoning attacks against models trained on **MNIST**, **CIFAR-10**, and **AudioMNIST**, examining how adversarial training (FGSM, PGD) and architecture choice (CNN, MobileNet, RegNetX) affect resilience, and whether poisoning transfers across model families.
+
+---
 
 ## Table of Contents
 
 1. [Overview](#overview)
 2. [Requirements](#requirements)
 3. [Setup and Installation](#setup-and-installation)
-4. [Package Structure](#package-structure)
-5. [Usage](#usage)
-   * [Train a New Model](#train-a-new-model)
-   * [Load a Pre-trained Model](#load-a-pre-trained-model)
-   * [Perform Adversarial Attack](#perform-adversarial-attack)
-6. [Directory Structure](#directory-structure)
-7. [Results and Analysis](#results-and-analysis)
-8. [Documentation](#documentation)
-9. [Contributing](#contributing)
-10. [Citing This Work](#citing-this-work)
-11. [License](#license)
+4. [Singularity Container](#singularity-container)
+   * [Build](#build)
+   * [Run](#run)
+5. [Package Structure](#package-structure)
+6. [Experimental Design](#experimental-design)
+7. [Pipeline](#pipeline)
+   * [Step 0 — Train Models](#step-0--train-models)
+   * [Step 1 — Generate Attack Labels](#step-1--generate-attack-labels)
+   * [Steps 2–4 — Run PSO Attacks](#steps-24--run-pso-attacks)
+   * [Steps 5–6 — Aggregate Results](#steps-56--aggregate-results)
+8. [Directory Structure](#directory-structure)
+9. [Documentation](#documentation)
+10. [Contributing](#contributing)
+11. [Citing This Work](#citing-this-work)
+12. [License](#license)
 
 ---
 
 ## Overview
 
-This project demonstrates how to attack a **PyTorch-based MNIST classifier** using several **adversarial attack** methods and explainability techniques. The main capabilities include:
+**Adversarial Observation** provides a PSO-based black-box adversarial attack framework built on PyTorch. The swarm optimizer searches the input space to find minimal perturbations that cause a target model to misclassify an input as a chosen false label, without requiring gradient access.
 
-* **Model Training:** Create and train a convolutional neural network (CNN) for classification using PyTorch.
-* **Adversarial Attacks:** Black-box adversarial attack that uses swarm intelligence to generate perturbations causing misclassification.
-* **Analysis:** Collect detailed metrics during attacks, including confidence values, softmax outputs, and pixel-wise differences from the original image.
+The Poison26 experiments systematically measure:
 
-The model can either be trained from scratch or loaded from a pre-trained checkpoint. Attack results are saved with detailed logs and images for further analysis.
+* **Resilience** — how adversarial training strategies (standard, FGSM, PGD) affect susceptibility to PSO-based poisoning
+* **Transfer** — whether poisoning attacks that succeed against one architecture generalize to others trained on the same data
 
 ---
 
 ## Requirements
 
-This project requires the following Python libraries:
+* Python 3.10+
+* PyTorch 2.4.1 / torchvision 0.19.1 / torchaudio 2.4.1
+* numpy, scipy, matplotlib, scikit-learn, pandas, imageio, librosa
+* captum
 
-* `torch` / `torchvision` (for model building, training, and data loading)
-* `numpy` (for numerical operations)
-* `matplotlib` (for visualizations)
-* `tqdm` (for progress bars)
-* `scipy` (for utility functions)
-
-You can install the necessary dependencies by running:
+For HPC / reproducible runs, use the provided Singularity container (see below). For local development:
 
 ```bash
 pip install -r requirements.txt
@@ -53,149 +57,157 @@ pip install -r requirements.txt
 
 ## Setup and Installation
 
-1. **Clone the repository:**
-
 ```bash
 git clone https://github.com/EpiGenomicsCode/Adversarial_Observation.git
 cd Adversarial_Observation
-```
-
-2. **Install dependencies:**
-
-```bash
-pip install -r requirements.txt
-```
-
-3. **Install the package** (optional, for importable module usage):
-
-```bash
 pip install -e .
 ```
 
-4. **Run the script** with the desired parameters.
+---
+
+## Singularity Container
+
+A Singularity definition file is provided at [manuscripts/Poison26/singularity/apso_poison.def](manuscripts/Poison26/singularity/apso_poison.def). It builds a `pytorch-captum` conda environment and installs the `Adversarial_Observation` package into it.
+
+### Build
+
+Run from the **repository root** so the `%files` directive can locate the `Adversarial_Observation/` package:
+
+```bash
+singularity build apso_poison.sif manuscripts/Poison26/singularity/apso_poison.def
+```
+
+### Run
+
+Pass any command as arguments — the container executes it inside the `pytorch-captum` environment:
+
+```bash
+singularity exec apso_poison.sif python manuscripts/Poison26/bin/train/MNIST/train_MNIST.py \
+    --arch basic --training standard --output mnist_basic_standard.pt
+```
+
+The SLURM runbooks in `manuscripts/Poison26/` reference the container via `$SIF` and are ready to submit directly to an A100 GPU partition.
 
 ---
 
 ## Package Structure
 
-The `Adversarial_Observation` package is organized into the following modules:
+The `Adversarial_Observation` package:
 
-* **`Attacks`** — Core attack and explainability methods:
-  * `fgsm_attack()` — FGSM adversarial attack
-  * `gradient_ascent()` — Neuron activation maximization via gradient ascent
-  * `gradient_map()` — Gradient-based input attribution (vanilla, guided, ReLU backprop)
-  * `saliency_map()` — Saliency map generation for a target class
-* **`utils`** — Data loading, model loading, metrics, and reproducibility:
-  * `load_MNIST_data()` — Load MNIST train/test data loaders
-  * `load_MNIST_model()` — Load a sequential CNN model
-  * `fgsm_attack()` — Standalone FGSM utility with device support
-  * `compute_success_rate()` — Compute attack success rate
-  * `log_metrics()` — Log success rate and perturbation magnitude
-  * `seed_everything()` — Set random seeds for reproducibility
-  * `visualize_adversarial_examples()` — Plot original vs. adversarial images
-* **`visualize`** — Animation and visualization:
-  * `visualize_gif()` — Generate GIF animations of attack progression
+| Module | Purpose |
+|---|---|
+| `Swarm.py` | PSO orchestration — runs particles across iterations, tracks global best |
+| `BirdParticle.py` | Individual particle: position, velocity, personal best |
+| `Attacks.py` | FGSM, gradient ascent, gradient maps, saliency maps |
+| `utils.py` | Data loading, model loading, metrics, seed utilities |
+| `visualize.py` | GIF generation from per-iteration attack frames |
 
 ---
 
-## Usage
+## Experimental Design
 
-### Train a New Model
+| Dataset | Architectures | Training Regimes |
+|---|---|---|
+| MNIST | basic CNN, adv CNN, MobileNet, RegNetX | standard, FGSM, PGD (± augmentation) |
+| CIFAR-10 | basic CNN, adv CNN, MobileNet, RegNetX | standard, FGSM, PGD (± augmentation) |
+| AudioMNIST | basic CNN, adv CNN, MobileNet, RegNetX | standard, FGSM, PGD (± augmentation) |
 
-To train a new **MNIST classifier** model from scratch, run:
+Each model variant is trained, then subjected to PSO-based poisoning attacks targeting each possible misclassification label. Results are aggregated to produce per-model resilience scores and cross-model transfer statistics.
 
-```bash
-python taint_MNIST.py --iterations 50 --particles 100 --save_dir "analysis_results"
-```
+---
 
-This command will train the model on the MNIST dataset and save the trained model if no pre-trained model path is provided.
+## Pipeline
 
-### Load a Pre-trained Model
+All steps are SLURM-ready scripts under `manuscripts/Poison26/`. Set `$SIF` to your built `apso_poison.sif` path before running.
 
-If you already have a pre-trained model, load it with the `--model_path` argument:
-
-```bash
-python taint_MNIST.py --model_path "path_to_model/mnist_model.pt" --iterations 50 --particles 100 --save_dir "analysis_results"
-```
-
-This will load the provided pre-trained model, evaluate it on the test dataset, and then perform the adversarial attack.
-
-### Perform Adversarial Attack
-
-Once the model is trained or loaded, the script will automatically perform a **black-box adversarial attack** on a specified image in the test dataset using **Particle Swarm Optimization (PSO)**.
-
-**Example:**
+### Step 0 — Train Models
 
 ```bash
-python taint_MNIST.py --iterations 50 --particles 100 --save_dir "analysis_results"
+sbatch manuscripts/Poison26/00_train_models.sh
 ```
 
-This command performs the PSO attack with **50 iterations** and **100 particles**.
+Trains all architecture × training-regime combinations for MNIST, CIFAR-10, and AudioMNIST. Model weights are saved to `models/{MNIST,CIFAR10,AUDIOMNIST}/`.
+
+### Step 1 — Generate Attack Labels
+
+```bash
+sbatch manuscripts/Poison26/01_generate_attack_labels.sh
+```
+
+Exports true labels for each dataset's test split and generates false-label targets (`labels/*_labels-misclassify.tsv`) used as PSO attack objectives.
+
+### Steps 2–4 — Run PSO Attacks
+
+```bash
+sbatch manuscripts/Poison26/02_attack_MNIST_Models-Resilience.sh
+sbatch manuscripts/Poison26/03_attack_CIFAR10_Models-Resilience.sh
+sbatch manuscripts/Poison26/04_attack_audioMNIST_Models-Resilience.sh
+```
+
+For each dataset, runs `bin/attack/poison_<dataset>.py` against every trained model variant, saving per-sample attack results (best perturbation, confidence trajectory, outcome) to TSV files.
+
+### Steps 5–6 — Aggregate Results
+
+```bash
+sbatch manuscripts/Poison26/05_calculate_FirstPass_Stats.sh
+sbatch manuscripts/Poison26/06_calculate_model_Scores.sh
+```
+
+Computes first-iteration success rates and aggregate resilience scores. Visualization scripts in `bin/chart/` generate violin and bar plots for cross-model and cross-label comparisons.
 
 ---
 
 ## Directory Structure
 
-After running the attack, the results will be saved in the `analysis_results` directory (or the directory specified by `--save_dir`):
-
 ```
-analysis_results/
-│
-├── original.png                  # Original image before attack
-├── iteration_1/                  # Directory for each iteration
-│   ├── attack-vector_image_1.png  # Perturbed image for particle 1 at iteration 1
-│   ├── attack-vector_image_2.png  # Perturbed image for particle 2 at iteration 1
-│   └── ...
-├── iteration_2/
-│   ├── attack-vector_image_1.png
-│   └── ...
-├── attack_analysis.json           # JSON file containing analysis results
-└── ...
+Adversarial_Observation/       # installable Python package
+manuscripts/
+├── PEARC24/                   # companion code for the published PEARC'24 paper
+└── Poison26/                  # current manuscript experiments
+    ├── bin/
+    │   ├── attack/            # PSO poisoning scripts (MNIST, CIFAR10, AudioMNIST)
+    │   ├── chart/             # violin and bar chart generators
+    │   ├── eval/              # attack success evaluation
+    │   ├── infer/             # result aggregation / CSV merging
+    │   ├── train/             # model training scripts by dataset and architecture
+    │   └── utils/             # label export and model evaluation utilities
+    ├── labels/                # generated true/false label TSV files
+    ├── models/                # trained model checkpoints (not committed)
+    ├── singularity/           # container definition files
+    ├── 00_train_models.sh
+    ├── 01_generate_attack_labels.sh
+    ├── 02_attack_MNIST_Models-Resilience.sh
+    ├── 03_attack_CIFAR10_Models-Resilience.sh
+    ├── 04_attack_audioMNIST_Models-Resilience.sh
+    ├── 05_calculate_FirstPass_Stats.sh
+    └── 06_calculate_model_Scores.sh
+tests/                         # unit tests for PSO, particle, attacks, data loading
+docs/                          # Sphinx API documentation source
 ```
-
-### Key Files
-
-* **`original.png`**: The original image before the attack.
-* **`attack-vector_image_*.png`**: Perturbed images generated by particles at each iteration.
-* **`attack_analysis.json`**: Analysis of the attack including confidence values, perturbation differences, and more.
-
----
-
-## Results and Analysis
-
-After the attack is complete, the following information is saved:
-
-* **Images** showing pixel-wise differences between the original image and perturbed versions generated by each particle.
-* **Analysis JSON file** containing details for each particle: perturbed image positions, softmax confidence values, maximum output values over time, and differences from the original image.
-
-You can open `attack_analysis.json` for a detailed analysis of the attack.
 
 ---
 
 ## Documentation
 
-Full API documentation is available at: [https://epigenomicscode.github.io/Adversarial_Observation/](https://epigenomicscode.github.io/Adversarial_Observation/)
+Full API documentation: [https://epigenomicscode.github.io/Adversarial_Observation/](https://epigenomicscode.github.io/Adversarial_Observation/)
 
 ---
 
 ## Contributing
 
-Feel free to fork this repository and submit pull requests. Contributions are always welcome!
+Pull requests are welcome. Please:
 
-Please ensure any changes you propose adhere to the following guidelines:
-
-* Write clear commit messages.
-* Add or update tests as needed.
-* Ensure that the code follows the existing style and conventions.
+* Write clear commit messages
+* Add or update tests as needed
+* Follow existing code style and conventions
 
 ---
 
 ## Citing This Work
 
-If you use or refer to this code in your research, please cite the following paper:
+If you use this code, please cite the published PEARC'24 paper:
 
-
-```
+```bibtex
 @incollection{gafur2024adversarial,
   title={Adversarial Robustness and Explainability of Machine Learning Models},
   author={Gafur, Jamil and Goddard, Steve and Lai, William},
@@ -205,8 +217,10 @@ If you use or refer to this code in your research, please cite the following pap
 }
 ```
 
+A manuscript describing the Poison26 experiments is currently in preparation.
+
 ---
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE.txt](LICENSE.txt) file for details.
+This project is licensed under the MIT License. See [LICENSE.txt](LICENSE.txt) for details.
