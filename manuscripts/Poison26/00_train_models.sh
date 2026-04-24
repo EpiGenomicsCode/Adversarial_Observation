@@ -50,33 +50,47 @@ singularity exec $SIF python bin/train/MNIST/train_MNIST_RegNetX.py --training p
 singularity exec $SIF python bin/train/MNIST/train_MNIST_RegNetX.py --training pgd      --aug --output mnist_regnetx_pgd_aug.pt
 
 mv mnist_*.pt models/MNIST/ 2>/dev/null
-exit
 
 # ==========================================
 # 2. Train CIFAR-10 Prediction Models (E=20)
 # ==========================================
 echo "Starting CIFAR-10 Training..."
 E=20
+mkdir -p models/CIFAR10
 
 # Basic
-singularity exec $SIF python bin/train/CIFAR10/basic/model_standard_CIFAR10_basic.py --output cifar10_basic_standard.pt --epochs $E
-singularity exec $SIF python bin/train/CIFAR10/basic/model_aug_CIFAR10_basic.py      --output cifar10_basic_standard_aug.pt --epochs $E
-singularity exec $SIF python bin/train/CIFAR10/basic/model_fgsm_CIFAR10_basic.py     --output cifar10_basic_fgsm.pt     --epochs $E --adv-train
-singularity exec $SIF python bin/train/CIFAR10/basic/model_pgd_CIFAR10_basic.py      --output cifar10_basic_pgd.pt      --epochs $E --adv-train
+singularity exec $SIF python bin/train/CIFAR10/train_CIFAR10.py --arch basic --training standard      --output cifar10_basic_standard.pt     --epochs $E
+singularity exec $SIF python bin/train/CIFAR10/train_CIFAR10.py --arch basic --training standard --aug --output cifar10_basic_standard_aug.pt --epochs $E
+singularity exec $SIF python bin/train/CIFAR10/train_CIFAR10.py --arch basic --training fgsm          --output cifar10_basic_fgsm.pt          --epochs $E
+singularity exec $SIF python bin/train/CIFAR10/train_CIFAR10.py --arch basic --training fgsm     --aug --output cifar10_basic_fgsm_aug.pt     --epochs $E
+singularity exec $SIF python bin/train/CIFAR10/train_CIFAR10.py --arch basic --training pgd           --output cifar10_basic_pgd.pt           --epochs $E
+singularity exec $SIF python bin/train/CIFAR10/train_CIFAR10.py --arch basic --training pgd      --aug --output cifar10_basic_pgd_aug.pt      --epochs $E
+
+# Adv
+singularity exec $SIF python bin/train/CIFAR10/train_CIFAR10.py --arch adv --training standard      --output cifar10_adv_standard.pt     --epochs $E
+singularity exec $SIF python bin/train/CIFAR10/train_CIFAR10.py --arch adv --training standard --aug --output cifar10_adv_standard_aug.pt --epochs $E
+singularity exec $SIF python bin/train/CIFAR10/train_CIFAR10.py --arch adv --training fgsm          --output cifar10_adv_fgsm.pt          --epochs $E
+singularity exec $SIF python bin/train/CIFAR10/train_CIFAR10.py --arch adv --training fgsm     --aug --output cifar10_adv_fgsm_aug.pt     --epochs $E
+singularity exec $SIF python bin/train/CIFAR10/train_CIFAR10.py --arch adv --training pgd           --output cifar10_adv_pgd.pt           --epochs $E
+singularity exec $SIF python bin/train/CIFAR10/train_CIFAR10.py --arch adv --training pgd      --aug --output cifar10_adv_pgd_aug.pt      --epochs $E
 
 # MobileNet
-singularity exec $SIF python bin/train/CIFAR10/MobileNet/model_standard_CIFAR10_MobileNet.py --output cifar10_mobilenet_standard.pt --epochs $E
-singularity exec $SIF python bin/train/CIFAR10/MobileNet/model_aug_CIFAR10_MobileNet.py      --output cifar10_mobilenet_standard_aug.pt --epochs $E
-singularity exec $SIF python bin/train/CIFAR10/MobileNet/model_fgsm_CIFAR10_MobileNet.py     --output cifar10_mobilenet_fgsm.pt     --epochs $E --adv-train
-singularity exec $SIF python bin/train/CIFAR10/MobileNet/model_pgd_CIFAR10_MobileNet.py      --output cifar10_mobilenet_pgd.pt      --epochs $E --adv-train
+singularity exec $SIF python bin/train/CIFAR10/MobileNet/train_CIFAR10_MobileNet.py --training standard      --output cifar10_mobilenet_standard.pt     --epochs $E
+singularity exec $SIF python bin/train/CIFAR10/MobileNet/train_CIFAR10_MobileNet.py --training standard --aug --output cifar10_mobilenet_standard_aug.pt --epochs $E
+singularity exec $SIF python bin/train/CIFAR10/MobileNet/train_CIFAR10_MobileNet.py --training fgsm          --output cifar10_mobilenet_fgsm.pt          --epochs $E
+singularity exec $SIF python bin/train/CIFAR10/MobileNet/train_CIFAR10_MobileNet.py --training fgsm     --aug --output cifar10_mobilenet_fgsm_aug.pt     --epochs $E
+singularity exec $SIF python bin/train/CIFAR10/MobileNet/train_CIFAR10_MobileNet.py --training pgd           --output cifar10_mobilenet_pgd.pt           --epochs $E
+singularity exec $SIF python bin/train/CIFAR10/MobileNet/train_CIFAR10_MobileNet.py --training pgd      --aug --output cifar10_mobilenet_pgd_aug.pt      --epochs $E
 
 # RegNetX
-singularity exec $SIF python bin/train/CIFAR10/RegNetX/model_standard_CIFAR10_RegNetX.py --output cifar10_regnetx_standard.pt --epochs $E
-singularity exec $SIF python bin/train/CIFAR10/RegNetX/model_aug_CIFAR10_RegNetX.py      --output cifar10_regnetx_standard_aug.pt --epochs $E
-singularity exec $SIF python bin/train/CIFAR10/RegNetX/model_fgsm_CIFAR10_RegNetX.py     --output cifar10_regnetx_fgsm.pt     --epochs $E --adv-train
-singularity exec $SIF python bin/train/CIFAR10/RegNetX/model_pgd_CIFAR10_RegNetX.py      --output cifar10_regnetx_pgd.pt      --epochs $E --adv-train
+singularity exec $SIF python bin/train/CIFAR10/RegNetX/train_CIFAR10_RegNetX.py --training standard      --output cifar10_regnetx_standard.pt     --epochs $E
+singularity exec $SIF python bin/train/CIFAR10/RegNetX/train_CIFAR10_RegNetX.py --training standard --aug --output cifar10_regnetx_standard_aug.pt --epochs $E
+singularity exec $SIF python bin/train/CIFAR10/RegNetX/train_CIFAR10_RegNetX.py --training fgsm          --output cifar10_regnetx_fgsm.pt          --epochs $E
+singularity exec $SIF python bin/train/CIFAR10/RegNetX/train_CIFAR10_RegNetX.py --training fgsm     --aug --output cifar10_regnetx_fgsm_aug.pt     --epochs $E
+singularity exec $SIF python bin/train/CIFAR10/RegNetX/train_CIFAR10_RegNetX.py --training pgd           --output cifar10_regnetx_pgd.pt           --epochs $E
+singularity exec $SIF python bin/train/CIFAR10/RegNetX/train_CIFAR10_RegNetX.py --training pgd      --aug --output cifar10_regnetx_pgd_aug.pt      --epochs $E
 
-mv cifar10_*.pt models/ 2>/dev/null
+mv cifar10_*.pt models/CIFAR10/ 2>/dev/null
 
 # ==========================================
 # 3. Train AudioMNIST Prediction Models (E=10)
