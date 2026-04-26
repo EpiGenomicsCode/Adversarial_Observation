@@ -13,8 +13,8 @@ import csv
 
 from PIL import Image
 
-from Adversarial_Observation.Swarm_Observer.Swarm import PSO as ParticleSwarm
-from Adversarial_Observation.Adversarial_Observation.utils import seedEverything
+from Adversarial_Observation.Swarm import PSO as ParticleSwarm
+from Adversarial_Observation.utils import seed_everything as seedEverything
 from captum.attr import Saliency, IntegratedGradients, DeepLiftShap
 
 from sklearn.metrics import roc_auc_score, average_precision_score
@@ -110,9 +110,11 @@ def load_model(model_path, arch):
     elif arch == "adv":
         model = MNISTModel2()
     elif arch == "MobileNet":
-        model = MNISTWrapper2D(MobileNet)
+        dummy_batch = torch.zeros(1, 1, 28, 28)
+        model = MobileNet(one_batch=dummy_batch, num_classes=10)
     elif arch == "RegNetX":
-        model = MNISTWrapper2D(RegNetX_400MF)
+        dummy_batch = torch.zeros(1, 1, 28, 28)
+        model = RegNetX_400MF(one_batch=dummy_batch, num_classes=10)
     else:
         raise ValueError(f"Unknown architecture: {arch}")
         
@@ -365,9 +367,6 @@ def main() -> None:
     model.to(device)
     model.eval()
 
-    def wrapped_cost(model_arg, img):
-        return costFunc(model, img, args.targetLabel)
-
     if args.sourceIndex < 0 or args.sourceIndex >= len(test_dataset):
         raise ValueError(f"Image index {args.sourceIndex} is out of bounds. Dataset size: {len(test_dataset)}")
 
@@ -377,6 +376,9 @@ def main() -> None:
     if args.targetLabel < 0 or args.targetLabel > 9:
         single_misclassification_target = (baseline_label + 1) % 10
         print(f"Invalid target label detected. Overriding to {single_misclassification_target}")
+
+    def wrapped_cost(_, img):
+        return costFunc(model, img, single_misclassification_target)
 
     assert baseline_label != single_misclassification_target, \
         "Target classes should be different for misclassification."
@@ -427,7 +429,7 @@ def main() -> None:
         for epoch in trange(epochs + 1, desc="APSO Optimization", unit="epoch"):
             APSO.step()
             probs = log_probabilities(model, APSO.pos_best_g.detach().cpu().float().view(1, 1, 28, 28).to(device), epoch, prob_log)
-            perturbed_img = reduce_excess_perturbations(APSO, baseline_img.squeeze(), APSO.pos_best_g.numpy().squeeze().reshape(28, 28).copy(), args.targetLabel)
+            perturbed_img = reduce_excess_perturbations(APSO, baseline_img.squeeze(), APSO.pos_best_g.detach().cpu().numpy().squeeze().reshape(28, 28).copy(), single_misclassification_target)
             img_tensor = torch.from_numpy(perturbed_img).float().unsqueeze(0).unsqueeze(0).to(device)
             probs = log_probabilities(model, img_tensor, epoch, prob_log_denoise)
 
@@ -446,9 +448,9 @@ def main() -> None:
     if not success:
         print(f"Attack failed after {args.maxRetries} retries.")
 
-    particle_comparison_analysis(APSO, APSO.pos_best_g.numpy().squeeze().reshape(28, 28).copy(), baseline_img.squeeze(), args.targetLabel, args.outputPath)
-    reduced_img = reduce_excess_perturbations(APSO, baseline_img.squeeze(), APSO.pos_best_g.numpy().squeeze().reshape(28, 28).copy(), args.targetLabel)
-    particle_comparison_analysis(APSO, reduced_img.reshape(28, 28).copy(), baseline_img.squeeze(), args.targetLabel, args.outputPath, denoise=True)
+    particle_comparison_analysis(APSO, APSO.pos_best_g.detach().cpu().numpy().squeeze().reshape(28, 28).copy(), baseline_img.squeeze(), single_misclassification_target, args.outputPath)
+    reduced_img = reduce_excess_perturbations(APSO, baseline_img.squeeze(), APSO.pos_best_g.detach().cpu().numpy().squeeze().reshape(28, 28).copy(), single_misclassification_target)
+    particle_comparison_analysis(APSO, reduced_img.reshape(28, 28).copy(), baseline_img.squeeze(), single_misclassification_target, args.outputPath, denoise=True)
 
     prob_path = os.path.join(args.outputPath, "epoch_probabilities.csv")
     with open(prob_path, 'w', newline='') as f:
