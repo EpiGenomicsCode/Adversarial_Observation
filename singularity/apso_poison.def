@@ -1,6 +1,10 @@
 Bootstrap: docker
 From: continuumio/miniconda3:latest
 
+%files
+    setup.py /opt/Adversarial_Observation/setup.py
+    Adversarial_Observation /opt/Adversarial_Observation/Adversarial_Observation
+
 %post
     apt-get update && apt-get install -y git && apt-get clean
 
@@ -12,6 +16,7 @@ From: continuumio/miniconda3:latest
 name: pytorch-captum
 channels:
   - pytorch
+  - conda-forge
   - defaults
 dependencies:
   - python=3.10
@@ -20,6 +25,7 @@ dependencies:
   - torchaudio=2.4.1
   - numpy
   - scipy
+  - librosa
   - matplotlib
   - scikit-learn
   - pandas
@@ -27,9 +33,25 @@ dependencies:
   - pip
   - pip:
       - captum
+      - pytest
 EOF
 
+    # Create the conda environment
     conda env create -f /tmp/environment.yml
+
+    # Install the Adversarial_Observation package into the conda environment.
+    # Use --no-deps to avoid reinstalling conda-managed packages or pulling in
+    # setup.py dependencies (e.g. tensorflow) that conflict with this environment.
+    conda activate pytorch-captum
+    pip install --no-deps /opt/Adversarial_Observation
+
+    # Clean conda and pip caches
+    conda clean -a -y
+    rm -rf /opt/conda/pkgs/*
+    rm -rf /root/.cache/pip
+    
+    # Remove only the environment.yml we created
+    rm -f /tmp/environment.yml
 
 %environment
     export PATH=/opt/conda/bin:$PATH

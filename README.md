@@ -14,18 +14,19 @@ The current manuscript (in preparation) evaluates PSO-based poisoning attacks ag
 4. [Singularity Container](#singularity-container)
    * [Build](#build)
    * [Run](#run)
-5. [Package Structure](#package-structure)
-6. [Experimental Design](#experimental-design)
-7. [Pipeline](#pipeline)
+5. [Testing](#testing)
+6. [Package Structure](#package-structure)
+7. [Experimental Design](#experimental-design)
+8. [Pipeline](#pipeline)
    * [Step 0 — Train Models](#step-0--train-models)
    * [Step 1 — Generate Attack Labels](#step-1--generate-attack-labels)
    * [Steps 2–4 — Run PSO Attacks](#steps-24--run-pso-attacks)
    * [Steps 5–6 — Aggregate Results](#steps-56--aggregate-results)
-8. [Directory Structure](#directory-structure)
-9. [Documentation](#documentation)
-10. [Contributing](#contributing)
-11. [Citing This Work](#citing-this-work)
-12. [License](#license)
+9. [Directory Structure](#directory-structure)
+10. [Documentation](#documentation)
+11. [Contributing](#contributing)
+12. [Citing This Work](#citing-this-work)
+13. [License](#license)
 
 ---
 
@@ -67,14 +68,14 @@ pip install -e .
 
 ## Singularity Container
 
-A Singularity definition file is provided at [manuscripts/Poison26/singularity/apso_poison.def](manuscripts/Poison26/singularity/apso_poison.def). It builds a `pytorch-captum` conda environment and installs the `Adversarial_Observation` package into it.
+A Singularity definition file is provided at [singularity/apso_poison.def](singularity/apso_poison.def). It builds a `pytorch-captum` conda environment and installs the `Adversarial_Observation` package into it.
 
 ### Build
 
-Run from the **repository root** so the `%files` directive can locate the `Adversarial_Observation/` package:
+Run from the **repository root** — the `%files` directive copies `setup.py` and the `Adversarial_Observation/` package relative to the current directory:
 
 ```bash
-singularity build apso_poison.sif manuscripts/Poison26/singularity/apso_poison.def
+singularity build apso_poison.sif singularity/apso_poison.def
 ```
 
 ### Run
@@ -87,6 +88,27 @@ singularity exec apso_poison.sif python manuscripts/Poison26/bin/train/MNIST/tra
 ```
 
 The SLURM runbooks in `manuscripts/Poison26/` reference the container via `$SIF` and are ready to submit directly to an A100 GPU partition.
+
+---
+
+## Testing
+
+Unit tests cover the PSO optimizer, individual particles, adversarial attacks, and data loading. All tests require PyTorch; run them inside the Singularity container or any environment where the package is installed.
+
+**Inside the container:**
+
+```bash
+singularity exec apso_poison.sif python -m pytest tests/ -v
+```
+
+**In a local conda/venv environment:**
+
+```bash
+pip install -e .
+pytest tests/ -v
+```
+
+The `test_apso_singularity.py` suite specifically validates the APSO workflow as used by the Poison26 attack scripts (initialization, step invariants, position clamping, and captum availability). The captum test is automatically skipped if captum is not installed in the local environment.
 
 ---
 
@@ -161,6 +183,8 @@ Computes first-iteration success rates and aggregate resilience scores. Visualiz
 
 ```
 Adversarial_Observation/       # installable Python package
+singularity/
+└── apso_poison.def            # Singularity container definition (build from repo root)
 manuscripts/
 ├── PEARC24/                   # companion code for the published PEARC'24 paper
 └── Poison26/                  # current manuscript experiments
@@ -173,7 +197,6 @@ manuscripts/
     │   └── utils/             # label export and model evaluation utilities
     ├── labels/                # generated true/false label TSV files
     ├── models/                # trained model checkpoints (not committed)
-    ├── singularity/           # container definition files
     ├── 00_train_models.sh
     ├── 01_generate_attack_labels.sh
     ├── 02_attack_MNIST_Models-Resilience.sh
