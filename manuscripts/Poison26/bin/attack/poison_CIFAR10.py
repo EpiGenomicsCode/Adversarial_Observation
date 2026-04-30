@@ -13,14 +13,13 @@ import csv
 
 from PIL import Image
 
-from Adversarial_Observation.Swarm_Observer.Swarm import PSO as ParticleSwarm
-from Adversarial_Observation.Adversarial_Observation.utils import seedEverything
+from Adversarial_Observation.Swarm import PSO as ParticleSwarm
+from Adversarial_Observation.utils import seed_everything as seedEverything
 from captum.attr import Saliency, IntegratedGradients, DeepLiftShap
 
 from sklearn.metrics import roc_auc_score, average_precision_score
 import matplotlib
 matplotlib.use("Agg")  # disables GUI, enables PNG/PDF saving
-import matplotlib.pyplot as plt
 
 # Import our new model architectures
 from MobileNet import MobileNet
@@ -155,6 +154,13 @@ def parse_arguments():
     parser.add_argument('--targetLabel', type=int, default=-1, help='Target label for the attack (0-9)')
     parser.add_argument('--maxRetries', type=int, default=5, help="Maximum number of retries if attack fails.")
     parser.add_argument('--particleGrowth', type=float, default=2.0, help="Growth factor for number of particles on each retry (e.g., 1.5 means increase by 50% per retry).")
+    parser.add_argument('--startFromBaseline', action='store_true', help='If set, initialize particles as sparse noise added to the baseline image.')
+    parser.add_argument('--variableInit', action='store_true', help='If set, sample epsilon and sparsity per particle from specified min/max ranges.')
+    parser.add_argument('--epsilon', type=float, default=1.0, help='Static epsilon for particle initialization')
+    parser.add_argument('--epsilonMin', type=float, default=0.1, help='Minimum epsilon when using variable initialization')
+    parser.add_argument('--epsilonMax', type=float, default=1.0, help='Maximum epsilon when using variable initialization')
+    parser.add_argument('--sparsityMin', type=float, default=0.1, help='Minimum sparsity when using variable initialization')
+    parser.add_argument('--sparsityMax', type=float, default=0.9, help='Maximum sparsity when using variable initialization')
     return parser.parse_args()
 
 # --- Logging ---
@@ -259,7 +265,6 @@ def particle_comparison_analysis(attacker, adv_img: np.ndarray, original_img: np
             return np.transpose(a, (2, 0, 1))
         return a
 
-    best_img = attacker.pos_best_g.detach().cpu().numpy().squeeze().reshape(3, 32, 32)
     adv_img_np = to_chw(adv_img)
     if adv_img_np.shape != (3, 32, 32):
         adv_img_np = adv_img_np.reshape(3, 32, 32)
@@ -282,7 +287,7 @@ def particle_comparison_analysis(attacker, adv_img: np.ndarray, original_img: np
         max_abs = 1.0  
     
     diff_hwc = np.transpose(diff_chw, (1, 2, 0))
-    vis_rgb = 1.0 - (diff_hwc / (2 * max_abs)) 
+    vis_rgb = 0.5 + (diff_hwc / (2 * max_abs))
     vis_rgb = np.clip(vis_rgb, 0.0, 1.0)
     
     plt.figure(figsize=(3, 3), dpi=100)
@@ -314,7 +319,7 @@ def particle_comparison_analysis(attacker, adv_img: np.ndarray, original_img: np
     print(f"Best Class\t{max_output_class}")
     print(f"Target Class\t{single_misclassification_target}")
 
-def reduce_excess_perturbations(attacker, original_img, adv_img, target_label, tol=1e-3, max_iter=10, margin=0.0001):
+def reduce_excess_perturbations(attacker, original_img, adv_img, target_label, tol=1e-3, max_iter=10, margin=0.0001, max_passes=10, clip_min=0.0, clip_max=1.0):
     if isinstance(original_img, torch.Tensor):
         original_img = original_img.detach().cpu().numpy()
     if isinstance(adv_img, torch.Tensor):
@@ -339,38 +344,50 @@ def reduce_excess_perturbations(attacker, original_img, adv_img, target_label, t
         second_val = float(topk.values[1].item()) if topk.values.size(0) > 1 else 0.0
         return (top1 == target_label and float(probs[target_label].item()) - second_val > margin), probs
 
-    changed = True
-    while changed:
-        changed = False
-        for c in range(original_img.shape[0]):
-            for i in range(original_img.shape[1]):
-                for j in range(original_img.shape[2]):
-                    if np.isclose(original_img[c, i, j], adv_img[c, i, j], atol=1e-12):
-                        continue
-                    orig_val = original_img[c, i, j]
-                    adv_val = adv_img[c, i, j]
+    for _ in range(max_passes):
+        any_change = False
+        diff = np.abs(adv_img - original_img)
+        flat_order = np.argsort(-diff, axis=None)
 
-                    adv_img[c, i, j] = orig_val
-                    ok, _ = confident(adv_img)
-                    if ok:
-                        changed = True
-                        continue
+        for idx in flat_order:
+            c, i, j = np.unravel_index(idx, adv_img.shape)
 
-                    low, high = orig_val, adv_val
-                    best_val = adv_val
-                    for _ in range(max_iter):
-                        mid = (low + high) / 2.0
-                        adv_img[c, i, j] = mid
-                        ok, _ = confident(adv_img)
-                        if ok:
-                            best_val = mid
-                            high = mid
-                            changed = True
-                        else:
-                            low = mid
-                        if abs(high - low) < tol:
-                            break
-                    adv_img[c, i, j] = best_val
+            orig_val = original_img[c, i, j]
+            adv_val = adv_img[c, i, j]
+
+            if abs(orig_val - adv_val) < tol:
+                continue
+
+            adv_img[c, i, j] = orig_val
+            ok, _ = confident(adv_img)
+            if ok:
+                any_change = True
+                continue
+
+            adv_img[c, i, j] = adv_val
+            delta = adv_val - orig_val
+
+            low, high = 0.0, 1.0
+            best_frac = 1.0
+            for _ in range(max_iter):
+                mid = 0.5 * (low + high)
+                candidate = np.clip(orig_val + mid * delta, clip_min, clip_max)
+                adv_img[c, i, j] = candidate
+                ok, _ = confident(adv_img)
+                if ok:
+                    best_frac = mid
+                    high = mid
+                    any_change = True
+                else:
+                    low = mid
+                if high - low < tol:
+                    break
+
+            adv_img[c, i, j] = np.clip(orig_val + best_frac * delta, clip_min, clip_max)
+
+        if not any_change:
+            break
+
     return adv_img
 
 def main() -> None:
@@ -387,13 +404,17 @@ def main() -> None:
     epochs = args.epochs
     sparsity = args.sparsity
 
+    epsilon_static = args.epsilon
+    epsilon_min = args.epsilonMin
+    epsilon_max = args.epsilonMax
+    sparsity_static = args.sparsity
+    sparsity_min = args.sparsityMin
+    sparsity_max = args.sparsityMax
+
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = load_model(args.modelPath, args.arch)
     model.to(device)
     model.eval()
-
-    def wrapped_cost(model_arg, img):
-        return costFunc(model, img, args.targetLabel)
 
     if args.sourceIndex < 0 or args.sourceIndex >= len(test_dataset):
         raise ValueError(f"Image index {args.sourceIndex} is out of bounds.")
@@ -404,6 +425,9 @@ def main() -> None:
     if args.targetLabel < 0 or args.targetLabel > 9:
         single_misclassification_target = (baseline_label + 1) % 10
         print(f"Invalid target label detected. Overriding to {single_misclassification_target}")
+
+    def wrapped_cost(_, img):
+        return costFunc(model, img, single_misclassification_target)
 
     assert baseline_label != single_misclassification_target, \
         "Target classes should be different for misclassification."
@@ -429,18 +453,30 @@ def main() -> None:
     while attempt < args.maxRetries and not success:
         print(f"\nAttempt #{attempt + 1} with {currentParticles} particles")
 
-        epsilon = 1.0  
         initialPoints = []
-        baseline_np = baseline_img.view(1, -1).detach().cpu().numpy()  
+        baseline_np = baseline_img.view(-1).detach().cpu().numpy()
 
         for _ in range(currentParticles):
-            noise = np.random.uniform(-epsilon, epsilon, size=(1, modelSize))
-            mask = np.random.choice([0, 1], size=noise.shape, p=[sparsity, 1 - sparsity])
-            sparse_noise = noise * mask
-            arr = np.clip(baseline_np + sparse_noise, 0, 1)
+            if args.variableInit:
+                eps_i = np.random.uniform(epsilon_min, epsilon_max)
+                sparsity_i = np.clip(np.random.uniform(sparsity_min, sparsity_max), 0, 1)
+            else:
+                eps_i = epsilon_static
+                sparsity_i = np.clip(sparsity_static, 0, 1)
+
+            if args.startFromBaseline:
+                noise = np.random.uniform(-eps_i, eps_i, size=(modelSize,)).astype(np.float32)
+                mask = np.random.choice([0, 1], size=noise.shape, p=[sparsity_i, 1 - sparsity_i]).astype(np.float32)
+                sparse_noise = noise * mask
+                arr = np.clip(baseline_np + sparse_noise, 0.0, 1.0)
+            else:
+                arr = np.random.uniform(0.0, 1.0, size=(modelSize,)).astype(np.float32)
+                mask = np.random.choice([0, 1], size=arr.shape, p=[sparsity_i, 1 - sparsity_i]).astype(np.float32)
+                arr *= mask
+
             initialPoints.append(arr)
 
-        initialPoints = np.array(initialPoints, dtype=np.float32).reshape(-1, modelSize)
+        initialPoints = np.array(initialPoints, dtype=np.float32)
         APSO = ParticleSwarm(torch.from_numpy(initialPoints), wrapped_cost, model, w=args.inertiaWeight, c1=args.cognitiveWeight, c2=args.socialWeight)
 
         prob_log = []
@@ -452,7 +488,7 @@ def main() -> None:
             best_tensor = APSO.pos_best_g.detach().cpu().float().view(1, 3, 32, 32)
             probs = log_probabilities(model, best_tensor.to(device), epoch, prob_log)
 
-            perturbed_img = reduce_excess_perturbations(APSO, baseline_img.numpy(), APSO.pos_best_g.detach().cpu().numpy().squeeze().reshape(3, 32, 32).copy(), args.targetLabel)
+            perturbed_img = reduce_excess_perturbations(APSO, baseline_img.numpy(), APSO.pos_best_g.detach().cpu().numpy().squeeze().reshape(3, 32, 32).copy(), single_misclassification_target)
             img_tensor = torch.from_numpy(perturbed_img).float().unsqueeze(0).to(device)
             probs = log_probabilities(model, img_tensor, epoch, prob_log_denoise)
 
@@ -473,9 +509,9 @@ def main() -> None:
         print(f"Attack failed after {args.maxRetries} retries.")
 
     best_raw = APSO.pos_best_g.detach().cpu().numpy().squeeze().reshape(3, 32, 32).copy()
-    particle_comparison_analysis(APSO, best_raw, baseline_img.numpy(), args.targetLabel, args.outputPath)
-    reduced_img = reduce_excess_perturbations(APSO, baseline_img.numpy(), best_raw.copy(), args.targetLabel)
-    particle_comparison_analysis(APSO, reduced_img.copy(), baseline_img.numpy(), args.targetLabel, args.outputPath, denoise=True)
+    particle_comparison_analysis(APSO, best_raw, baseline_img.numpy(), single_misclassification_target, args.outputPath)
+    reduced_img = reduce_excess_perturbations(APSO, baseline_img.numpy(), best_raw.copy(), single_misclassification_target)
+    particle_comparison_analysis(APSO, reduced_img.copy(), baseline_img.numpy(), single_misclassification_target, args.outputPath, denoise=True)
 
     prob_path = os.path.join(args.outputPath, "epoch_probabilities.csv")
     with open(prob_path, 'w', newline='') as f:
