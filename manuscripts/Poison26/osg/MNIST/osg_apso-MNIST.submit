@@ -1,0 +1,43 @@
+# HTCondor Submit File: osg_apso.submit
+
+executable = apso_MNIST.sh
+arguments = $(index) $(falseLabel) $(modelID)
+
+# Use singularity container
+Requirements = HAS_SINGULARITY == TRUE
+OSDF_LOCATION = osdf:///ospool/ap41/data/wklai/
+container_image = $(OSDF_LOCATION)/260425_apso_poison.sif
+
+# Allow 2,000 jobs to be HELD until space frees up in the queue
+max_idle = 2000
+
+# List of files that need to be transferred to the job
+transfer_input_files = apso_MNIST.sh, poison_MNIST.py, model_arch/MobileNet.py, model_arch/RegNetX.py, models/MNIST/MNIST_regnetx/
+#transfer_input_files = apso_MNIST.sh, poison_MNIST.py, model_arch/MobileNet.py, model_arch/RegNetX.py, models/MNIST/MNIST_mobilenet/
+#transfer_input_files = apso_MNIST.sh, poison_MNIST.py, model_arch/MobileNet.py, model_arch/RegNetX.py, models/MNIST/MNIST_adv/
+#transfer_input_files = apso_MNIST.sh, poison_MNIST.py, model_arch/MobileNet.py, model_arch/RegNetX.py, models/MNIST/MNIST_basic/
+
+# Transfer full output back to results
+transfer_output_files = MNIST_test_$(modelID)_$(index)
+#transfer_output_files = MNIST-rand_test_$(modelID)_$(index)
+
+log           = logs/MNIST_$(index)_$(modelID)_job.$(Cluster).$(Process).log
+error         = logs/MNIST_$(index)_$(modelID)_job.$(Cluster).$(Process).error
+output        = logs/MNIST_$(index)_$(modelID)_job.$(Cluster).$(Process).out
+
++WantGlidein = True
+# Retry job if held up to 3 times
++RetryCount = 3
+periodic_release = (NumJobStarts < 3) && (JobStatus == 5)
+
+# Resource Requests
+request_cpus = 4
+request_disk = 6GB
+request_memory = 6GB
+
+# Iterate through state file
+#queue index,falseLabel,modelID from MNIST-misclassify_modelALL_temp.states 
+queue index,falseLabel,modelID from MNIST-misclassify_modelALL-RegNetX.states
+#queue index,falseLabel,modelID from MNIST-misclassify_modelALL-MobileNet.states
+#queue index,falseLabel,modelID from MNIST-misclassify_modelALL-adv.states
+#queue index,falseLabel,modelID from MNIST-misclassify_modelALL-basic.states

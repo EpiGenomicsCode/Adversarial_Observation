@@ -1,0 +1,43 @@
+# HTCondor Submit File: osg_apso.submit
+
+executable = apso_CIFAR10.sh
+arguments = $(index) $(falseLabel) $(modelID)
+
+# Use singularity container
+Requirements = HAS_SINGULARITY == TRUE
+OSDF_LOCATION = osdf:///ospool/ap41/data/wklai/
+container_image = $(OSDF_LOCATION)/260425_apso_poison.sif
+
+# Allow 2,000 jobs to be HELD until space frees up in the queue
+max_idle = 2000
+
+# List of files that need to be transferred to the job
+transfer_input_files = apso_CIFAR10.sh, poison_CIFAR10.py, model_arch/MobileNet.py, model_arch/RegNetX.py, models/CIFAR10/CIFAR10_regnetx/, $(OSDF_LOCATION)/data/cifar-10-python.tar.gz
+#transfer_input_files = apso_CIFAR10.sh, poison_CIFAR10.py, model_arch/MobileNet.py, model_arch/RegNetX.py, models/CIFAR10/CIFAR10_mobilenet/
+#transfer_input_files = apso_CIFAR10.sh, poison_CIFAR10.py, model_arch/MobileNet.py, model_arch/RegNetX.py, models/CIFAR10/CIFAR10_adv/
+#transfer_input_files = apso_CIFAR10.sh, poison_CIFAR10.py, model_arch/MobileNet.py, model_arch/RegNetX.py, models/CIFAR10/CIFAR10_basic/
+
+# Transfer full output back to results
+transfer_output_files = CIFAR10_test_$(modelID)_$(index)
+#transfer_output_files = CIFAR10-rand_test_$(modelID)_$(index)
+
+log           = logs/CIFAR10_$(index)_$(modelID)_job.$(Cluster).$(Process).log
+error         = logs/CIFAR10_$(index)_$(modelID)_job.$(Cluster).$(Process).error
+output        = logs/CIFAR10_$(index)_$(modelID)_job.$(Cluster).$(Process).out
+
++WantGlidein = True
+# Retry job if held up to 3 times
++RetryCount = 3
+periodic_release = (NumJobStarts < 3) && (JobStatus == 5)
+
+# Resource Requests
+request_cpus = 4
+request_disk = 10GB
+request_memory = 8GB
+
+# Iterate through state file
+#queue index,falseLabel,modelID from CIFAR10-misclassify_modelALL_temp.states
+queue index,falseLabel,modelID from CIFAR10-misclassify_modelALL-RegNetX.states
+#queue index,falseLabel,modelID from CIFAR10-misclassify_modelALL-MobileNet.states
+#queue index,falseLabel,modelID from CIFAR10-misclassify_modelALL-adv.states
+#queue index,falseLabel,modelID from CIFAR10-misclassify_modelALL-basic.states
