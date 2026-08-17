@@ -7,7 +7,7 @@ import pandas as pd
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data", type=str, default="./data/AudioMNIST", help="Path to AudioMNIST dataset")
+    parser.add_argument("--data", type=str, default="./data/AudioMNIST/data", help="Path to AudioMNIST dataset")
     parser.add_argument("--output", type=str, default="audioMNIST_test_labels.tsv", help="Output file name")
     args = parser.parse_args()
 
@@ -16,8 +16,10 @@ def main():
         print(f"Warning: No .wav files found in {args.data}. Are you sure the dataset is downloaded?")
         return
 
-    # Deterministic shuffle to match training pipeline
-    wav_files = sorted(wav_files, key=lambda x: hashlib.md5(x.encode()).hexdigest())
+    # Deterministic shuffle to match the training pipeline. Must stay identical to
+    # split_key() in bin/train/AUDIOMNIST/train_AUDIOMNIST*.py: hashing the basename
+    # keeps the ordering independent of how --data is spelled.
+    wav_files = sorted(wav_files, key=lambda x: hashlib.md5(os.path.basename(x).encode()).hexdigest())
 
     # 80/20 Split
     train_size = int(0.8 * len(wav_files))
